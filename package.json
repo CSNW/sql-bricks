@@ -1,0 +1,8 @@
+{
+  "name": "sql-composer",
+  "version": "0.1.0",
+  "dependencies": {
+    "underscore": "1.4.x",
+    "underscore.string": "2.3.x"
+  }
+}
