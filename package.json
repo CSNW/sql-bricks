@@ -1,8 +1,14 @@
 {
   "name": "sql-composer",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "main": "sql.js",
   "dependencies": {
-    "underscore": "1.4.x",
-    "underscore.string": "2.3.x"
+    "underscore": "1.4.x"
+  },
+  "devDependencies": {
+    "mocha": "1.13.x"
+  },
+  "scripts": {
+    "test": "mocha"
   }
 }
