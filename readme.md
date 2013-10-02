@@ -22,7 +22,7 @@ SQL Bricks doesn't use or require a schema (though you can provide a set of tabl
 
 ### Matches the SQL Language
 
-SQL Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. The overriding idea is that all SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed with literal objects:
+SQL Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed with literal objects:
 
 ```javascript
 select('*').from('user').innerJoin('address').on({'user.addr_id': 'address.id'});
