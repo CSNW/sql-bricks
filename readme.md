@@ -1,12 +1,12 @@
 # SQL-Bricks
 
-SQL is a complicated, expressive DSL. SQL-Bricks is not an abstraction layer and makes no attempt to hide user from SQL syntax. On the contrary, it is designed to match SQL as faithfully as possible so that the experienced SQL user can easily guess the API. Soon, we hope to make it fully comprehensive, so that it supports all possible variations on the four supported SQL statements (`SELECT`/`INSERT`/`UPDATE`/`DELETE`).
+SQL is a complicated, expressive DSL. SQL-Bricks is not an abstraction layer and makes no attempt to hide the user from SQL syntax. On the contrary, it is designed to match SQL as faithfully as possible so that the experienced SQL user is immediately familiar with the API. Our goal is to make it fully comprehensive, so that it supports all possible variations on the four supported SQL statements (`SELECT, INSERT, UPDATE, DELETE`).
 
-SQL-Bricks provides easy parameter substitution, automatic quoting of columns collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
+SQL-Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
 
 ## Project Goals
 
-**Composable:** The primary goal of SQL-Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed on to it):
+**Composable:** The primary goal of SQL-Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
 ```javascript
 var stmt = select('*').from('user');
@@ -18,7 +18,7 @@ stmt.where({'active': true});
 
 **Zero Configuration:** SQL-Bricks doesn't use or require a schema (though you can provide a set of abbreviations for convenience, see below).
 
-**Matches the SQL Language:** SQL-Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. The overriding idea is that SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed by literal objects:
+**Matches the SQL Language:** SQL-Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. The overriding idea is that all SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed by literal objects:
 
 ```javascript
 select('*').from('user').innerJoin('address').on({'user.addr_id': 'address.id'});
@@ -28,11 +28,11 @@ select('*').from('user').innerJoin('address').on({'user.addr_id': 'address.id'})
 Since method chaining cannot express nested AND/OR groupings, SQL-Bricks uses nestable functions for `WHERE` criteria (`and(), or(), not(), like(), in(), isNull(), isNotNull(), eq(), lt(), lte(), etc`):
 
 ```javascript
-select('*').from('user').where(or(like('last_name': 'Flint%'), {'first_name': 'Fred'}));
+select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
 // SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
 ```
 
-For convenience, `.and()` can be chained (since it is unambiguous), or multiple criteria can be passed in an object literal to `.where()`:
+For convenience, `.and()` can be chained (since it is unambiguous), or multiple criteria can be passed via an object literal to `.where()`:
 
 ```javascript
 select('*').from('user').where('last_name', 'Flintstone').and('first_name', 'Fred');
@@ -41,9 +41,9 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 // SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
 ```
 
-**User-Supplied Abbreviations and Join Criteria Functions for Higher Signal/Noise:**
+**Conveniences for a Higher Signal/Noise Ratio:**
 
-* long method names have short aliases (`.join()`, `.group()`, `.order()`, etc)
+* short aliases are provided for multi-word method names (`.join()`, `.group()`, `.order()`, etc)
 * `select()` with no arguments defaults to `'*'`
 * `.on()` criteria can be passed as a second argument to `.join()`
 * `.on()` criteria can be auto-generated via a `joinCriteria()` helper function
@@ -61,7 +61,9 @@ select().from('usr').join('addr');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-**Pseudo-Views:** Another way that SQL-Bricks allows re-use is through pseudo-views. Perhaps this isn't as helpful for Postgres, where real, native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems unless they can be flattened (see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)). SQL-Bricks allows the definition of a pseudo-view, consisting of a main table, optional join tables and optional where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
+**Pseudo-Views:** Another way that SQL-Bricks allows re-use is through pseudo-views. This isn't as helpful for Postgres, where real, native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+
+SQL-Bricks allows the definition of a pseudo-view, consisting of a main table, optional join tables and optional where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 
 ```javascript
 sql.defineView('localUser', 'user')
@@ -76,9 +78,7 @@ select('*').from('person')
 // WHERE l_usr_address.local = true
 ```
 
-**Parameterized SQL:**
-
-Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains the SQL with `$1, $2, etc`, etc, placeholders and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
+**Parameterized SQL:** Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains the SQL with `$1, $2, etc` placeholders and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
 
 ```javascript
 update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
@@ -96,7 +96,8 @@ Document the join criteria auto-generation in more detail, especially what `.joi
 Add support for:
 
 * .into()
-* .join().on() / .using()
+* .join().on() syntax
+* .using()
 * .leftJoin / .rightJoin / .fullJoin / .crossJoin
 * .union() / .intersect() / .except()
 * .limit() / .offset()
@@ -110,7 +111,7 @@ Add support for:
 
 # Acknowledgements
 
-Huge thanks to [Brian C.](https://github.com/brianc) for his work on the [node-sql](https://github.com/brianc/node-sql) library, his patience with me as I hacked on it and his encouragement when I pitched the idea for an alternative approach to SQL generation.
+Huge thanks to [Brian C](https://github.com/brianc) for his work on the [node-sql](https://github.com/brianc/node-sql) library, his patience with me as I hacked on it and his encouragement when I pitched the idea for an alternative approach to SQL generation.
 
 # License
 
