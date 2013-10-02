@@ -4,8 +4,6 @@ SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and
 
 SQL Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
 
-## Goals
-
 ### Composable
 
 The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
@@ -99,7 +97,7 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 // {'text': 'UPDATE user SET first_name = $1 WHERE last_name = $2, 'values': ['Fred', 'Flintstone']}
 ```
 
-# To-Do
+## To-Do
 
 Document the join criteria auto-generation in more detail, especially what `.join('tbl1', 'tbl2').join('tbl3')` does (and note that auto-generation of criteria for complex JOIN table layouts is not supported).
 
@@ -120,14 +118,14 @@ Add support for:
 * old browsers (via polyfills)
 * passing non-values into the right-hand side of `WHERE` criteria and into `INSERT/UPDATE` statements (via `sql('tbl.col')`?)
 
-# Contributions
+## Contributions
 
 The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies).
 
-# Acknowledgements
+## Acknowledgements
 
 Huge thanks to [Brian C](https://github.com/brianc) for his work on the [node-sql](https://github.com/brianc/node-sql) library, his patience with me as I hacked on it and his encouragement when I pitched the idea for an alternative approach to SQL generation.
 
-# License
+## License
 
 SQL Bricks is [MIT licensed](https://github.com/CSNW/sql-bricks/raw/master/LICENSE.md).
