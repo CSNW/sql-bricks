@@ -1,6 +1,7 @@
 var _ = require('underscore');
 
 var sql = {};
+sql.views = {};
 
 sql.select = function select(cols) {
   var stmt = new Statement('select');
@@ -44,7 +45,6 @@ sql.Statement = Statement;
 // SELECT
 var proto = Statement.prototype;
 proto.from = function from(tbl) {
-  this.left_tbl = tbl;
   this.tbl = abbrCheck(tbl);
   return this;
 };
@@ -65,14 +65,24 @@ proto.join = proto.innerJoin = function join() {
   }
 
   tbls.forEach(function(tbl) {
-    if (!on && sql.joinCriteria)
-      var auto_on = sql.joinCriteria(this.left_tbl, tbl);
-    
-    this.joins.push({'tbl': abbrCheck(tbl), 'on': quoteReservedObj(on || auto_on)});
+    tbl = abbrCheck(tbl);
+    var tbl_name = getTable(tbl);
+    if (tbl_name in sql.views)
+      this.applyView(tbl_name, getAlias(tbl), on);
+    else
+      this._join(tbl, on);
   }.bind(this));
 
-  this.left_tbl = tbls[tbls.length - 1];
+  this.last_join = tbls[tbls.length - 1];
   return this;
+};
+
+proto._join = function _join(tbl, on) {
+  var left_tbl = this.last_join || this.tbl;
+  var auto_on;
+  if (!on && sql.joinCriteria)
+    auto_on = sql.joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
+  this.joins.push({'tbl': tbl, 'on': quoteReservedObj(on || auto_on)});
 };
 
 proto.and = proto.where = function where() {
@@ -131,6 +141,59 @@ proto.group = proto.groupBy = function groupBy(cols) {
     this.group_by = cols;
 
   return this;
+};
+
+proto.applyView = function(view_name, alias, on) {
+  var view = sql.views[view_name];
+  this._join(getTable(view.tbl) + ' ' + alias, on);
+  var new_aliases = {};
+  new_aliases[getAlias(view.tbl)] = alias;
+
+  if (view.joins) {
+    view.joins.forEach(function(join) {
+      var join_alias = getAlias(join.tbl);
+      var new_alias = alias + '_' + join_alias;
+      new_aliases[join_alias] = new_alias;
+    });
+
+    view.joins.forEach(function(join) {
+      var join_alias = getAlias(join.tbl);
+      var join_tbl = getTable(join.tbl);
+      var namespaced_on = {};
+      for (var key in join.on)
+        namespaced_on[convert(key)] = convert(join.on[key]);
+      this.join(join_tbl + ' ' + new_aliases[join_alias], namespaced_on);
+    }.bind(this));
+  }
+
+  if (view._where) {
+    var where = view._where.clone();
+    convertExpr(where);
+    this.where(where);
+  }
+
+  function convertExpr(expr) {
+    if (expr.col)
+      expr.col = convert(expr.col);
+    if (expr.expressions)
+      expr.expressions.forEach(convertExpr);
+  }
+
+  function convert(col) {
+    var col_parts = col.split('.');
+    if (col_parts.length == 1)
+      return col;
+    
+    var tbl_ix = col_parts.length - 2;
+    var tbl_alias = col_parts[tbl_ix];
+    if (tbl_alias in new_aliases) {
+      col_parts[tbl_ix] = new_aliases[tbl_alias];
+      return col_parts.join('.');
+    }
+    else {
+      return col;
+    }
+  }
 };
 
 // INSERT & UPDATE
@@ -226,141 +289,133 @@ proto.toString = function toString(opts) {
   return sql.trim();
 };
 
-sql.abbrs = {};
+sql._abbrs = {};
+sql.tblToAbbr = {};
+sql.setAbbrs = function setAbbrs(abbrs) {
+  sql._abbrs = abbrs;
+  for (var abbr in sql._abbrs)
+    sql.tblToAbbr[sql._abbrs[abbr]] = abbr;
+}
+sql.getAbbr = function getAbbr(tbl) {
+  if (!(tbl in sql.tblToAbbr))
+    throw new Error('table "' + tbl + '" has no abbr, unable to auto-generate join criteria');
+  return sql.tblToAbbr[tbl];
+}
 function abbrCheck(tbl) {
-  return tbl in sql.abbrs ? sql.abbrs[tbl] + ' ' + tbl : tbl;
+  return tbl in sql._abbrs ? sql._abbrs[tbl] + ' ' + tbl : tbl;
 }
 
-sql.and = function and() {
-  var expressions = [];
-  _.each(arguments, function(expr) {
-    if (isExpr(expr))
-      expressions.push(expr);
-    else
-      expressions = expressions.concat(objToEquals(expr));
-  });
-
-  return {
-    'expressions': expressions,
-    'toString': function(opts) {
-      var sql = this.expressions.map(function(expr) {
-        return expr.toString(opts);
-      }).join(' AND ');
-      if (this.expressions.length > 1 && this.parens !== false)
-        sql = '(' + sql + ')';
-      return sql;
-    }
-  };
+sql.defineView = function defineView(view_name, tbl) {
+  return sql.views[view_name] = new Statement('select').from(tbl);
 };
 
-sql.or = function or() {
-  var expressions = [];
-  _.each(arguments, function(expr) {
-    if (isExpr(expr))
-      expressions.push(expr);
-    else
-      expressions = expressions.concat(objToEquals(expr));
-  });
+// SQL Expression language
 
-  return {
-    'toString': function(opts) {
-      var sql = expressions.map(function(expr) {
-        return expr.toString(opts);
-      }).join(' OR ');
-      if (this.parens !== false)
-        sql = '(' + sql + ')';
-      return sql;
-    }
-  };
+sql.and = function and() { return new Group('AND', _.toArray(arguments)); };
+sql.or = function or() { return new Group('OR', _.toArray(arguments)); };
+
+function Group(op, expressions) {
+  this.op = op;
+  this.expressions = [];
+  expressions.forEach(function(expr) {
+    if (isExpr(expr))
+      this.expressions.push(expr);
+    else
+      this.expressions = this.expressions.concat(objToEquals(expr));
+  }.bind(this));
+}
+Group.prototype.clone = function clone() {
+  return new Group(this.op, _.invoke(this.expressions, 'clone'));
+};
+Group.prototype.toString = function toString(opts) {
+  var sql = this.expressions.map(function(expr) {
+    return expr.toString(opts);
+  }).join(' ' + this.op + ' ');
+  if (this.expressions.length > 1 && this.parens !== false)
+    sql = '(' + sql + ')';
+  return sql;
 };
 
 sql.not = function not(expr) {
+  return new Not(expr);
+};
+function Not(expr) {
   if (!isExpr(expr))
-    expr = sql.and(expr);
-
-  return {
-    'toString': function(opts) {
-      return 'NOT ' + expr.toString(opts);
-    }
-  };
+    this.expressions = [sql.and(expr)];
+  else
+    this.expressions = [expr];
+}
+Not.prototype.clone = function clone() {
+  return new Not(this.expressions[0].clone());
+};
+Not.prototype.toString = function toString(opts) {
+  return 'NOT ' + this.expressions[0].toString(opts);
 };
 
-sql.like = function like(col, val) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' LIKE ' + quoteValue(val, opts);
-    }
-  };
+sql.like = function like(col, val) { return new Binary('LIKE', col, val); };
+sql.eq = sql.equal = function equal(col, val) { return new Binary('=', col, val); };
+sql.lt = function lt(col, val) { return new Binary('<', col, val); };
+sql.lte = function lte(col, val) { return new Binary('<=', col, val); };
+sql.gt = function gt(col, val) { return new Binary('>', col, val); };
+sql.gte = function gte(col, val) { return new Binary('>=', col, val); };
+
+function Binary(op, col, val) {
+  this.op = op;
+  this.col = col;
+  this.val = val;
+}
+Binary.prototype.clone = function clone() {
+  return new Binary(this.op, this.col, this.val);
+};
+Binary.prototype.toString = function toString(opts) {
+  return quoteReserved(this.col) + ' ' + this.op + ' ' + quoteValue(this.val, opts);
+}
+
+sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
+sql.isNotNull = function isNotNull(col) { return new Unary('IS NOT NULL', col); };
+
+function Unary(op, col) {
+  this.op = op;
+  this.col = col;
+}
+Unary.prototype.clone = function clone() {
+  return new Unary(this.op, this.col);
+};
+Unary.prototype.toString = function toString(opts) {
+  return quoteReserved(this.col) + ' ' + this.op;
 };
 
-sql.eq = sql.equal = function equal(col, val) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' = ' + quoteValue(val, opts);
-    }
-  };
+sql['in'] = function(col, list) { return new In(col, list); };
+
+function In(col, list) {
+  this.col = col;
+  this.list = list;
+}
+In.prototype.clone = function clone() {
+  return new In(this.col, this.list.slice());
+};
+In.prototype.toString = function toString(opts) {
+  return quoteReserved(this.col) + ' IN (' + this.list.map(function(val) {
+    return quoteValue(val, opts);
+  }).join(', ') + ')';
 };
 
-sql.lt = function equal(col, val) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' < ' + quoteValue(val, opts);
-    }
-  };
-};
 
-sql.lte = function equal(col, val) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' <= ' + quoteValue(val, opts);
-    }
-  };
-};
-
-sql.gt = function equal(col, val) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' > ' + quoteValue(val, opts);
-    }
-  };
-};
-
-sql.gte = function equal(col, val) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' >= ' + quoteValue(val, opts);
-    }
-  };
-};
-
-sql.isNull = function isNull(col) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' IS NULL';
-    }
-  };
-};
-
-sql.isNotNull = function isNotNull(col) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' IS NOT NULL';
-    }
-  };
-};
-
-sql['in'] = function(col, list) {
-  return {
-    'toString': function(opts) {
-      return quoteReserved(col) + ' IN (' + list.map(function(val) {
-        return quoteValue(val, opts);
-      }).join(', ') + ')';
-    }
-  };
-};
+function getAlias(tbl) {
+  var space_ix = tbl.indexOf(' ');
+  if (space_ix > -1)
+    return tbl.slice(space_ix + 1);
+  return tbl;
+}
+function getTable(tbl) {
+  var space_ix = tbl.indexOf(' ');
+  if (space_ix > -1)
+    return tbl.slice(0, space_ix);
+  return tbl;
+}
 
 function isExpr(expr) {
-  return expr.hasOwnProperty('toString');
+  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In;
 }
 
 // raw objects default to equals

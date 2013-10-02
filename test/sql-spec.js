@@ -5,10 +5,11 @@ var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
 
-sql.abbrs = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
-sql.joinCriteria = function(left_tbl, right_tbl) {
+sql.setAbbrs({'usr': 'user', 'psn': 'person', 'addr': 'address'});
+
+sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
-  criteria[left_tbl + '.' + right_tbl + '_fk'] = right_tbl + '.pk';
+  criteria[left_alias + '.' + sql.getAbbr(right_tbl) + '_fk'] = right_alias + '.pk';
   return criteria;
 };
 
@@ -40,13 +41,15 @@ describe('sql composer', function() {
       'SELECT * FROM user usr INNER JOIN person psn ON usr.psn_fk = psn.pk');
   });
 
+  it('should support aliases', function() {
+    check(select().from('user usr2').join('address addr2'),
+      'SELECT * FROM user usr2 INNER JOIN address addr2 ON usr2.addr_fk = addr2.pk');
+  });
+
   it('should auto-generate join criteria using supplied joinCriteria() function', function() {
     check(select().from('usr').join('psn'),
       'SELECT * FROM user usr INNER JOIN person psn ON usr.psn_fk = psn.pk');
   });
-  // We could make it unambiguous & support all possible combinations via a hierarchy:
-  //   .join(['usr', {'psn': 'addr'}])
-  // but this seems pretty extreme
   it('should auto-generate join criteria to multiple tables', function() {
     check(select().from('usr').join('psn').join('addr'),
       'SELECT * FROM user usr ' +
@@ -178,6 +181,39 @@ describe('sql composer', function() {
     it('with a db and table prefix and a suffix', function() {
       check(select('db.usr.desc AS usr_desc').from('usr'),
         'SELECT db.usr."desc" AS usr_desc FROM user usr');
+    });
+  });
+
+  describe('pseudo-views', function() {
+    it('should namespace joined tables', function() {
+      sql.defineView('activeUsers', 'usr').join('psn');
+      check(select().from('accounts').join('activeUsers a_usr'),
+        'SELECT * FROM accounts ' + 
+        'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
+        'INNER JOIN person a_usr_psn ON a_usr.psn_fk = a_usr_psn.pk');
+    });
+    it('should properly quote reserved words in join tables and allow custom ON criteria', function() {
+      sql.defineView('activeUsers', 'usr').join('psn', {'usr.psn_desc': 'psn.desc'});
+      check(select().from('accounts').join('activeUsers a_usr'),
+        'SELECT * FROM accounts ' +
+        'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
+        'INNER JOIN person a_usr_psn ON a_usr.psn_desc = a_usr_psn."desc"');
+    });
+    it('should add namespaced WHERE criteria', function() {
+      sql.defineView('activeUsers', 'usr').join('psn').where({'usr.active': true, 'psn.active': true});
+      check(select().from('accounts').join('activeUsers a_usr'),
+        'SELECT * FROM accounts ' + 
+        'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
+        'INNER JOIN person a_usr_psn ON a_usr.psn_fk = a_usr_psn.pk ' +
+        'WHERE a_usr.active = true AND a_usr_psn.active = true');
+    });
+    it('should re-alias when re-using a view w/ a diff alias', function() {
+      sql.defineView('activeUsers', 'usr').where({'usr.active': true});
+      check(select().from('accounts').join('activeUsers a_usr', 'activeUsers a_usr2'),
+        'SELECT * FROM accounts ' +
+        'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
+        'INNER JOIN user a_usr2 ON accounts.usr_fk = a_usr2.pk ' +
+        'WHERE a_usr.active = true AND a_usr2.active = true');
     });
   });
 });
