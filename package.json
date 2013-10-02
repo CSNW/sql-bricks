@@ -2,6 +2,7 @@
   "name": "sql-composer",
   "version": "0.2.0",
   "main": "sql.js",
+  "license": "MIT",
   "dependencies": {
     "underscore": "1.4.x"
   },
