@@ -6,7 +6,9 @@ SQL Bricks provides easy parameter substitution, automatic quoting of columns th
 
 ## Goals
 
-**Composable:** The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
+### Composable
+
+The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
 ```javascript
 var stmt = select('*').from('user');
@@ -16,9 +18,13 @@ stmt.where({'active': true});
 // SELECT * FROM user WHERE first_name = 'Fred' AND active = true ORDER BY last_name
 ```
 
-**Zero Configuration:** SQL Bricks doesn't use or require a schema (though you can provide a set of table abbreviations for convenience, see below).
+### Zero Configuration
 
-**Matches the SQL Language:** SQL Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. The overriding idea is that all SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed by literal objects:
+SQL Bricks doesn't use or require a schema (though you can provide a set of table abbreviations for convenience, see below).
+
+### Matches the SQL Language
+
+SQL Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. The overriding idea is that all SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed with literal objects:
 
 ```javascript
 select('*').from('user').innerJoin('address').on({'user.addr_id': 'address.id'});
@@ -41,7 +47,7 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 // SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
 ```
 
-**Conveniences for a Higher Signal/Noise Ratio:**
+### Conveniences for a Higher Signal/Noise Ratio
 
 * short aliases are provided for multi-word method names (`.join()`, `.group()`, `.order()`, etc)
 * `select()` with no arguments defaults to `'*'`
@@ -61,7 +67,9 @@ select().from('usr').join('addr');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-**Pseudo-Views:** Another way that SQL Bricks allows re-use is through pseudo-views. This isn't as helpful for Postgres, where native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+### Pseudo-Views
+
+Another way that SQL Bricks allows re-use is through pseudo-views. This isn't as helpful for Postgres, where native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
 SQL Bricks allows the definition of a pseudo-view, consisting of a main table, optional join tables and optional where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 
@@ -78,7 +86,9 @@ select('*').from('person')
 // WHERE l_usr_address.local = true
 ```
 
-**Parameterized SQL:** Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains `$1, $2, etc` placeholders in the SQL and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
+### Parameterized SQL
+
+Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains `$1, $2, etc` placeholders in the SQL and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
 
 ```javascript
 update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
