@@ -1,7 +1,7 @@
 {
   "name": "sql-bricks",
   "version": "0.2.0",
-  "main": "sql.js",
+  "main": "sql-bricks.js",
   "license": "MIT",
   "dependencies": {
     "underscore": "1.4.x"
