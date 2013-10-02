@@ -78,7 +78,7 @@ select('*').from('person')
 // WHERE l_usr_address.local = true
 ```
 
-**Parameterized SQL:** Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains the SQL with `$1, $2, etc` placeholders and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
+**Parameterized SQL:** Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains `$1, $2, etc` placeholders in the SQL and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
 
 ```javascript
 update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
@@ -104,10 +104,11 @@ Add support for:
 * .fetch()
 * .forUpdate() / .forShare()
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
-* querying directly off of a pseudo-view: select().from(viewName)
+* querying directly off of a pseudo-view: `select().from(viewName)`
 * cloning statements
-* SQLite support (server-side and client-side examples)
-* Support for old browsers via polyfills
+* SQLite dialect (server-side and client-side examples)
+* old browsers (via polyfills)
+* passing non-values into the right-hand side of WHERE criteria and into INSERT/UPDATE statements (via `sql('tbl.col')`?)
 
 # Acknowledgements
 
