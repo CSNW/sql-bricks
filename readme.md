@@ -32,7 +32,7 @@ select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'F
 // SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
 ```
 
-For convenience, `.and()` can be chained (since it is unambiguous), or multiple criteria can be passed via an object literal to `.where()`:
+For convenience, `.and()` can be chained (since it is unambiguous), and multiple criteria can also be passed via an object literal to `.where()`:
 
 ```javascript
 select('*').from('user').where('last_name', 'Flintstone').and('first_name', 'Fred');
@@ -120,4 +120,4 @@ Huge thanks to [Brian C](https://github.com/brianc) for his work on the [node-sq
 
 # License
 
-SQL-Bricks is [MIT licensed](https://github.com/CSNW/sql-bricks/raw/master/LICENSE.md).
+SQL Bricks is [MIT licensed](https://github.com/CSNW/sql-bricks/raw/master/LICENSE.md).
