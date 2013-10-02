@@ -10,6 +10,6 @@
     "mocha": "1.13.x"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha tests.js"
   }
 }

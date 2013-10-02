@@ -4,7 +4,7 @@ SQL is a complicated, expressive DSL. SQL-Bricks is not an abstraction layer and
 
 SQL-Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
 
-## Project Goals
+## Goals
 
 **Composable:** The primary goal of SQL-Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
@@ -16,7 +16,7 @@ stmt.where({'active': true});
 // SELECT * FROM user WHERE first_name = 'Fred' AND active = true ORDER BY last_name
 ```
 
-**Zero Configuration:** SQL-Bricks doesn't use or require a schema (though you can provide a set of abbreviations for convenience, see below).
+**Zero Configuration:** SQL-Bricks doesn't use or require a schema (though you can provide a set of table abbreviations for convenience, see below).
 
 **Matches the SQL Language:** SQL-Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. The overriding idea is that all SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed by literal objects:
 
@@ -61,7 +61,7 @@ select().from('usr').join('addr');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-**Pseudo-Views:** Another way that SQL-Bricks allows re-use is through pseudo-views. This isn't as helpful for Postgres, where real, native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+**Pseudo-Views:** Another way that SQL-Bricks allows re-use is through pseudo-views. This isn't as helpful for Postgres, where native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
 SQL-Bricks allows the definition of a pseudo-view, consisting of a main table, optional join tables and optional where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 

@@ -1,5 +1,5 @@
 var assert = require('assert');
-var sql = require('../sql.js');
+var sql = require('./sql.js');
 var select = sql.select, insert = sql.insert, update = sql.update;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
