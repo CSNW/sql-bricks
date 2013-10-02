@@ -108,7 +108,11 @@ Add support for:
 * cloning statements
 * SQLite dialect (server-side and client-side examples)
 * old browsers (via polyfills)
-* passing non-values into the right-hand side of WHERE criteria and into INSERT/UPDATE statements (via `sql('tbl.col')`?)
+* passing non-values into the right-hand side of `WHERE` criteria and into `INSERT/UPDATE` statements (via `sql('tbl.col')`?)
+
+# Contributions
+
+The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies).
 
 # Acknowledgements
 
