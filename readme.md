@@ -1,4 +1,4 @@
-# SQL-Bricks
+# SQL Bricks.js
 
 SQL is a complicated, expressive DSL. SQL-Bricks is not an abstraction layer and makes no attempt to hide the user from SQL syntax. On the contrary, it is designed to match SQL as faithfully as possible so that the experienced SQL user is immediately familiar with the API. Our goal is to make it fully comprehensive, so that it supports all possible variations on the four supported SQL statements (`SELECT, INSERT, UPDATE, DELETE`).
 
