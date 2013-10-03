@@ -1,6 +1,6 @@
 # SQL Bricks.js
 
-SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience immediately know with the API.
+SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
 SQL Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
 
@@ -10,10 +10,10 @@ The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy 
 
 ```javascript
 var select = require('sql-bricks').select;
-var users = select('*').from('user').orderBy('last_name');
-// SELECT * FROM user ORDER BY last_name
-var active_users = users.clone().where({'active': true});
-// SELECT * FROM user WHERE active = true ORDER BY last_name
+var active_users = select('*').from('user').where({'active': true});
+// SELECT * FROM user WHERE active = true
+var local_users = users.clone().where({'local': true});
+// SELECT * FROM user WHERE active = true AND local = true
 ```
 
 ### Zero Configuration
@@ -95,7 +95,6 @@ Calling `.toParams()` (as opposed to `.toString()`) will return an object with a
 update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
 // {'text': 'UPDATE user SET first_name = $1 WHERE last_name = $2, 'values': ['Fred', 'Flintstone']}
 
-// alternate syntax
 update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
 // {'text': 'UPDATE user SET first_name = $1 WHERE last_name = $2, 'values': ['Fred', 'Flintstone']}
 ```
@@ -130,13 +129,11 @@ select().from('user').join('address');
 The "left table" passed to the join criteria generator function will always be the most recently used table -- either the most recently join()ed table or, if there is none, the main table in the statement. If you want to perform a "chain" of joins, where each table joins from the previous one, you can call `.join()` multiple times, but if you want to join from one table directly to a number of related tables, you can call `.join()` once and pass the table names in as separate arguments:
 
 ```javascript
-// chaining joins from one table to the next
 select().from('usr').join('addr').join('zip');
 // SELECT * FROM user usr
 // INNER JOIN address addr ON usr.addr_id = addr.id
 // INNER JOIN zipcode zip ON addr.zip_id = zip.id
 
-// joining from one table to multiple tables
 select().from('usr').join('addr', 'psn');
 // SELECT * FROM user usr
 // INNER JOIN address addr ON usr.addr_id = addr.id
@@ -146,7 +143,6 @@ select().from('usr').join('addr', 'psn');
 If multiple tables are passed to `.join()`, the last one is the most recently used one and it will be used as the basis for the next `.join()`:
 
 ```javascript
-// joining from one table to multiple tables
 select().from('usr').join('psn', 'addr').join('zip');
 // SELECT * FROM user usr
 // INNER JOIN person psn ON usr.psn_id = psn.id
