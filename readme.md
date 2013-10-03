@@ -1,6 +1,6 @@
 # SQL Bricks.js
 
-SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience are immediately familiar with the API.
+SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience immediately know with the API.
 
 SQL Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
 
@@ -9,6 +9,7 @@ SQL Bricks provides easy parameter substitution, automatic quoting of columns th
 The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
 ```javascript
+var select = require('sql-bricks').select;
 var users = select('*').from('user').orderBy('last_name');
 // SELECT * FROM user ORDER BY last_name
 var active_users = users.clone().where({'active': true});
@@ -21,7 +22,7 @@ SQL Bricks doesn't use or require a schema (though you can provide a set of tabl
 
 ### Matches the SQL Language
 
-The SQL Bricks API mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are passed in as strings. The result is that one can transliterate long, complex SQL statements easily and without needing to reference the documentation:
+The SQL Bricks API mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are passed in as strings. The result is that one can write and read long, complex SQL statements easily, without needing to reference the documentation:
 
 ```javascript
 update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
@@ -39,7 +40,7 @@ The SQL Bricks API also allows object literals to be used wherever they make sen
 ```javascript
 update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone');
 // UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
-insert('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
+insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
 // INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
 select('*').from('user').join('address').on({'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
@@ -56,7 +57,7 @@ select().from('user').join('address', {'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-While it is possible to chain `WHERE` criteria at the top-level via repeated calls to `.where()` and `.and()`, method chaining cannot express nested `AND`, `OR` and `NOT` groupings. To handle this, SQL Bricks provides a set of nestable functions for building `WHERE` criteria: `and(), or(), not(), like(), in(), isNull(), isNotNull(), eq(), lt(), lte(), etc`. Object literals can also be used: `{name: 'Fred'}` renders as `name = 'Fred'` and multiple key/value pairs in an object literal are `AND`ed together:
+While it is possible to chain `WHERE` criteria at the top-level via repeated calls to `.where()` and `.and()`, method chaining cannot express nested `AND`, `OR` and `NOT` groupings. To handle this, SQL Bricks provides a set of nestable functions for building `WHERE` criteria: `and()`, `or()`, `not()`, `like()`, `in()`, `isNull()`, `isNotNull()`, `eq()`, `lt()`, `lte()`, `gt()` and `gte()`. Object literals can also be used: `{name: 'Fred'}` renders as `name = 'Fred'` and multiple key/value pairs in an object literal are `AND`ed together:
 
 ```javascript
 select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
