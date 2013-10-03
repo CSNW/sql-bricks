@@ -9,10 +9,9 @@ SQL Bricks provides easy parameter substitution, automatic quoting of columns th
 The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
 ```javascript
-var select = require('sql-bricks').select;
 var active_users = select('*').from('user').where({'active': true});
 // SELECT * FROM user WHERE active = true
-var local_users = users.clone().where({'local': true});
+var local_users = active_users.clone().where({'local': true});
 // SELECT * FROM user WHERE active = true AND local = true
 ```
 
@@ -27,7 +26,7 @@ The SQL Bricks API mirrors SQL as faithfully as possible. SQL keywords are chain
 ```javascript
 update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
 // UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
-insertInto('user', ['first_name', 'last_name']).values('Fred', 'Flintstone');
+insertInto('user', 'first_name', 'last_name').values('Fred', 'Flintstone');
 // INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
 select('*').from('user').innerJoin('address').on('user.addr_id', 'address.id');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
@@ -38,7 +37,7 @@ select('*').from('user').where('first_name', 'Fred');
 The SQL Bricks API also allows object literals to be used wherever they make sense, to make the API more javascript-friendly:
 
 ```javascript
-update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone');
+update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone'});
 // UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
 insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
 // INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
@@ -80,7 +79,7 @@ sql.defineView('localUser', 'user')
   .where({'address.local': true});
 
 select('*').from('person')
-  .join('localUser l_usr').on({'person.usr_id': 'user.id'});
+  .join('localUser l_usr').on({'person.usr_id': 'l_usr.id'});
 // SELECT * FROM person
 // INNER JOIN user l_usr ON person.usr_id = l_usr.id
 // INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id
@@ -93,10 +92,10 @@ Calling `.toParams()` (as opposed to `.toString()`) will return an object with a
 
 ```javascript
 update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
-// {'text': 'UPDATE user SET first_name = $1 WHERE last_name = $2, 'values': ['Fred', 'Flintstone']}
+// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
 
 update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
-// {'text': 'UPDATE user SET first_name = $1 WHERE last_name = $2, 'values': ['Fred', 'Flintstone']}
+// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
 ```
 
 If you need to pass in SQL (such as a column name) somewhere that SQL Bricks expects a value (the right-hand side of `WHERE` criteria or something passed into `insert()` or `update()`), you can do this by wrapping the string in the `sql()` function:
@@ -113,7 +112,7 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 Frequently-used table abbreviations can be set via `setAbbrs()`:
 
 ```javascript
-sql.setAbbrs({'usr': 'user', 'addr': 'address', 'zip': 'zipcode'});
+sql.setAbbrs({'usr': 'user', 'addr': 'address', 'zip': 'zipcode', 'psn': 'person'});
 select().from('usr').join('addr', {'usr.addr_id': 'addr.id'});
 // SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id
 ```
@@ -164,7 +163,6 @@ Note that this scheme doesn't support complex JOIN table layouts: if you do some
 Add support for:
 
 * .into()
-* .join().on() syntax
 * .using()
 * .leftJoin / .rightJoin / .fullJoin / .crossJoin
 * .union() / .intersect() / .except()
@@ -173,10 +171,8 @@ Add support for:
 * .forUpdate() / .forShare()
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
 * querying directly off of a pseudo-view: `select().from(viewName)`
-* cloning statements
 * SQLite dialect (server-side and client-side examples)
 * old browsers (via polyfills)
-* passing non-values into the right-hand side of `WHERE` criteria and into `INSERT/UPDATE` statements (via `sql('tbl.col')`?)
 
 ## Contributions
 

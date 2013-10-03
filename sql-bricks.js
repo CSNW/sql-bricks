@@ -1,6 +1,15 @@
 var _ = require('underscore');
 
-var sql = {};
+// sql() wrapper to enable SQL (such as a column name) where a value is expected
+function sql(str) {
+  if (!(this instanceof sql))
+    return new sql(str);
+  this.str = str;
+}
+sql.prototype.toString = function toString() {
+  return this.str;
+};
+
 sql.views = {};
 
 sql.select = function select(cols) {
@@ -25,8 +34,17 @@ sql.update = sql.update = function update(tbl, values) {
 sql.insert = sql.insertInto = function insertInto(tbl, values) {
   var stmt = new Statement('insert');
   stmt.tbl = tbl;
-  if (values)
-    stmt.values(values);
+  if (values) {
+    if (typeof values == 'object') {
+      stmt.values(values);
+    }
+    else {
+      stmt._values = {};
+      _.toArray(arguments).slice(1).forEach(function(key) {
+        stmt._values[key] = null;
+      });
+    }
+  }
   return stmt;
 };
 
@@ -58,10 +76,11 @@ proto.join = proto.innerJoin = function join() {
   if (typeof arguments[1] == 'string') {
     tbls = _.toArray(arguments);
   }
-  // .join(tbl, on)
+  // .join(tbl, on, options)
   else {
     tbls = [arguments[0]];
     on = arguments[1];
+    var opts = arguments[2];
   }
 
   tbls.forEach(function(tbl) {
@@ -70,19 +89,40 @@ proto.join = proto.innerJoin = function join() {
     if (tbl_name in sql.views)
       this.applyView(tbl_name, getAlias(tbl), on);
     else
-      this._join(tbl, on);
+      this._join(tbl, on, opts);
   }.bind(this));
 
   this.last_join = tbls[tbls.length - 1];
   return this;
 };
 
-proto._join = function _join(tbl, on) {
+proto._join = function _join(tbl, on, opts) {
   var left_tbl = this.last_join || this.tbl;
   var auto_on;
   if (!on && sql.joinCriteria)
     auto_on = sql.joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
-  this.joins.push({'tbl': tbl, 'on': quoteReservedObj(on || auto_on)});
+  var join = {'tbl': tbl, 'on': quoteReservedObj(on || auto_on)};
+  if (opts && opts.auto_injected)
+    join.auto_injected = true;
+  this.joins.push(join);
+};
+
+proto.on = function on(on_criteria) {
+  if (typeof on_criteria != 'object') {
+    var key = on_criteria.slice();
+    var value = arguments[1];
+    on_criteria = {};
+    on_criteria[key] = value;
+  }
+
+  // the .on() doesn't apply to joins that are auto-injected (implied)
+  // from a view, they apply to the most recent *explicit* .join()
+  var join_ix = this.joins.length - 1;
+  while (this.joins[join_ix].auto_injected)
+    join_ix--;
+
+  this.joins[join_ix].on = quoteReservedObj(on_criteria);
+  return this;
 };
 
 proto.and = proto.where = function where() {
@@ -150,19 +190,19 @@ proto.applyView = function(view_name, alias, on) {
   new_aliases[getAlias(view.tbl)] = alias;
 
   if (view.joins) {
-    view.joins.forEach(function(join) {
-      var join_alias = getAlias(join.tbl);
-      var new_alias = alias + '_' + join_alias;
-      new_aliases[join_alias] = new_alias;
+    _.pluck(view.joins, 'tbl').map(getAlias).forEach(function(join_alias) {
+      new_aliases[join_alias] = alias + '_' + join_alias;
     });
 
     view.joins.forEach(function(join) {
       var join_alias = getAlias(join.tbl);
       var join_tbl = getTable(join.tbl);
       var namespaced_on = {};
-      for (var key in join.on)
-        namespaced_on[convert(key)] = convert(join.on[key]);
-      this.join(join_tbl + ' ' + new_aliases[join_alias], namespaced_on);
+      if (join.on) {
+        for (var key in join.on)
+          namespaced_on[convert(key)] = convert(join.on[key]);
+      }
+      this.join(join_tbl + ' ' + new_aliases[join_alias], namespaced_on, {'auto_injected': true});
     }.bind(this));
   }
 
@@ -198,15 +238,37 @@ proto.applyView = function(view_name, alias, on) {
 
 // INSERT & UPDATE
 proto.values = function values(values) {
-  this._values = quoteReservedKeys(values);
+  if (typeof values == 'object') {
+    this._values = quoteReservedKeys(values);
+  }
+  else if (this._values) {
+    var args = arguments;
+    Object.keys(this._values).forEach(function(key, ix) {
+      this._values[key] = args[ix];
+    }.bind(this));
+  }
+  else {
+    throw new Error('Unsupported argument passed to .values(): "' + JSON.stringify(values) + '"');
+  }
   return this;
 }
 
 // UPDATE
-proto.set = function set(key, value) {
+proto.set = function set(arg1, arg2) {
+  var new_values;
+  if (typeof arg1 == 'object') {
+    new_values = arg1;
+  }
+  else {
+    new_values = {};
+    new_values[arg1] = arg2;
+  }
+  
   if (!this._values)
     this._values = {};
-  this._values[quoteReserved(key)] = value;
+  for (var key in new_values) {
+    this._values[quoteReserved(key)] = new_values[key];
+  }
   return this;
 };
 
@@ -245,12 +307,8 @@ proto.toString = function toString(opts) {
       }).join(' ') + ' ';
     }
 
-    if (this._where) {
-      this._where.parens = false;
-      if (this._where.expressions && this._where.expressions.length == 1)
-        this._where.expressions[0].parens = false;
-      sql += 'WHERE ' + this._where.toString(opts) + ' ';
-    }
+    if (this._where)
+      sql += this.whereToString(opts);
 
     if (this.group_by)
       sql += 'GROUP BY ' + this.group_by.join(', ') + ' ';
@@ -263,7 +321,10 @@ proto.toString = function toString(opts) {
     sql = 'UPDATE ' + this.tbl + ' SET ';
     sql += _.map(this._values, function(value, key) {
       return key + ' = ' + quoteValue(value, opts);
-    }).join(', ');
+    }).join(', ') + ' ';
+
+    if (this._where)
+      sql += this.whereToString(opts);
   }
 
   else if (this.type == 'insert') {
@@ -287,6 +348,13 @@ proto.toString = function toString(opts) {
   }
 
   return sql.trim();
+};
+
+proto.whereToString = function whereToString(opts) {
+  this._where.parens = false;
+  if (this._where.expressions && this._where.expressions.length == 1)
+    this._where.expressions[0].parens = false;
+  return 'WHERE ' + this._where.toString(opts) + ' ';
 };
 
 sql._abbrs = {};
@@ -432,6 +500,9 @@ function objToEquals(obj) {
 // quoteValue() must be called as the SQL is constructed
 // in the exact order it is constructed
 function quoteValue(val, opts) {
+  if (val instanceof sql)
+    return val.toString();
+
   if (opts.parameterized) {
     opts.values.push(val);
     return '$' + opts.value_ix++;
