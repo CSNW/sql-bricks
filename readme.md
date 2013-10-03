@@ -69,9 +69,9 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 
 ### Pseudo-Views
 
-Another way that SQL Bricks allows re-use is through pseudo-views. This isn't as helpful for Postgres, where native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+Another way that SQL Bricks allows re-use is through pseudo-views. This may not be as helpful for Postgres, where native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
-SQL Bricks allows the definition of a pseudo-view, consisting of a main table, optional join tables and optional where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
+The definition of a pseudo-view consists of a main table and, optionally, join tables and where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 
 ```javascript
 sql.defineView('localUser', 'user')
@@ -113,7 +113,7 @@ select().from('usr').join('addr', {'usr.addr_id': 'addr.id'});
 
 #### User-Supplied Join Criteria Function
 
-The `.on()` criteria for joins can be auto-generated if you supply a `joinCriteria()` helper function:
+The user can supply a function to automatically generate the `.on()` criteria for joins whenever it is not supplied explicitly, via a `joinCriteria()` function:
 
 ```javascript
 sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
@@ -126,7 +126,7 @@ select().from('user').join('address');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-The auto-generated join criteria assumes that the "left table" you're joining from is the most recently used table -- either from the most recent join() -- if there is none -- the main table in the statement. So if you want to perform a "chain" of joins, where each table joins from the previous one, you can call `.join()` multiple times, but if you want to join from one table to a number of related tables, you can call `.join()` once and pass multiple table names in as separate arguments:
+The "left table" passed to the join criteria generator function will always be the most recently used table -- either the most recently join()ed table or, if there is none, the main table in the statement. If you want to perform a "chain" of joins, where each table joins from the previous one, you can call `.join()` multiple times, but if you want to join from one table directly to a number of related tables, you can call `.join()` once and pass the table names in as separate arguments:
 
 ```javascript
 // chaining joins from one table to the next
@@ -142,7 +142,7 @@ select().from('usr').join('addr', 'psn');
 // INNER JOIN person psn ON usr.psn_id = psn.id
 ```
 
-If you chain from a join with multiple tables, it will join to the last table in the list:
+If multiple tables are passed to `.join()`, the last one is the most recently used one and it will be used as the basis for the next `.join()`:
 
 ```javascript
 // joining from one table to multiple tables
@@ -153,7 +153,7 @@ select().from('usr').join('psn', 'addr').join('zip');
 // INNER JOIN zipcode zip ON addr.zip_id = zip.id
 ```
 
-Note that this scheme doesn't support doesn't support complex JOIN table layouts: if you do something like `.join('psn', 'addr').join('zip')` above, it is impossible to also join something to the `'psn'` table. This *could* be achieved by adding a way to explicitly specify the table you're joining from: `.join('psn', 'addr').join('zip').join('psn->employer')`, but this hasn't been implemented yet.
+Note that this scheme doesn't support complex JOIN table layouts: if you do something like `.join('psn', 'addr').join('zip')` above, it is impossible to also join something to the `'psn'` table. This *could* be achieved by adding a way to explicitly specify the table you're joining from: `.join('psn', 'addr').join('zip').join('psn->employer')`, but this hasn't been implemented.
 
 ## To-Do
 
