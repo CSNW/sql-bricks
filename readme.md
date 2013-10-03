@@ -22,7 +22,7 @@ SQL Bricks doesn't use or require a schema (though you can provide a set of tabl
 
 ### Matches the SQL Language
 
-SQL Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed with literal objects:
+The SQL Bricks API mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are passed in as strings. The result is that one can transliterate long, complex SQL statements easily and without needing to reference the documentation:
 
 ```javascript
 update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
@@ -33,7 +33,7 @@ select('*').from('user').innerJoin('address').on('user.addr_id', 'address.id');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-For a more convenient API (but slightly divergent from SQL), multi-word keywords have shorter aliases and object literals can be passed in where natural:
+The SQL Bricks API also offers a number of conveniences to make it more javascript-friendly, for instance passing in object literals and providing shorter method name aliases:
 
 ```javascript
 update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone');
@@ -44,7 +44,7 @@ select('*').from('user').join('address').on({'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-Also, `select()` with no arguments will default to `'*'` and in cases where there are a pair of keywords that always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second method can be omitted and an object-literal argument to that keyword can be passed into the first method:
+For added convenience, `select()` with no arguments will default to `'*'` and in cases where a pair of keywords always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second method can be omitted and the key/value pairs can be passed into the first method:
 
 ```javascript
 update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
@@ -55,7 +55,7 @@ select().from('user').join('address', {'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-Since method chaining cannot express nested AND/OR groupings, SQL Bricks uses nestable functions for `WHERE` criteria (`and(), or(), not(), like(), in(), isNull(), isNotNull(), eq(), lt(), lte(), etc`) -- though it is possible to chain `.and()`s at the top level (`.where().and().and()`. An object literal with a single key/value pair is treated like an `eq(key, value)` and an object literal with multiple keys/values is treated like an `and(eq(key1, value1), eq(key2, value2), ...)`:
+Since method chaining cannot express nested relationships in `AND`, `OR` and `NOT` expressions, SQL Bricks provides a set of nestable functions for building `WHERE` criteria (`and(), or(), not(), like(), in(), isNull(), isNotNull(), eq(), lt(), lte(), etc`) -- though it is also possible to chain `.and()`s at the top level (`.where().and().and()`). Object literals can also be used: `{name: 'Fred'}` renders as `name = 'Fred'` and multiple key/value pairs are `AND`ed together:
 
 ```javascript
 select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
