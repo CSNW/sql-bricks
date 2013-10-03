@@ -99,6 +99,13 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 // {'text': 'UPDATE user SET first_name = $1 WHERE last_name = $2, 'values': ['Fred', 'Flintstone']}
 ```
 
+If you need to pass in SQL (such as a column name) somewhere that SQL Bricks expects a value (the right-hand side of `WHERE` criteria or something passed into `insert()` or `update()`), you can do this by wrapping the string in the `sql()` function:
+
+```javascript
+select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
+// SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
+```
+
 ### Conveniences for a Higher Signal/Noise Ratio
 
 #### Table Abbreviations
