@@ -54,7 +54,7 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 * frequently-used table abbreviations can be set via `setAbbrs()`
 
 ```javascript
-sql.setAbbrs({'usr': 'user', 'addr': 'address'});
+sql.setAbbrs({'usr': 'user', 'addr': 'address', 'zip': 'zipcode'});
 sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
   criteria[left_alias + '.' + sql.getAbbr(right_tbl) + '_id'] = right_alias + '.id';
@@ -62,8 +62,37 @@ sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
 };
 
 select().from('usr').join('addr');
-// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+// SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id
 ```
+
+The auto-generated join criteria assumes that the "left table" you're joining from is the most recently used table -- either from the most recent join() -- if there is none -- the main table in the statement. So if you want to perform a "chain" of joins, where each table joins from the previous one, you can call `.join()` multiple times, but if you want to join from one table to a number of related tables, you can call `.join()` once and pass multiple table names in as separate arguments:
+
+```javascript
+// chaining joins from one table to the next
+select().from('user').join('address').join('zip');
+// SELECT * FROM user usr
+// INNER JOIN address addr ON usr.addr_id = addr.id
+// INNER JOIN zipcode zip ON addr.zip_id = zip.id
+
+// joining from one table to multiple tables
+select().from('usr').join('addr', 'psn');
+// SELECT * FROM user usr
+// INNER JOIN address addr ON usr.addr_id = addr.id
+// INNER JOIN person psn ON usr.psn_id = psn.id
+```
+
+If you chain from a join with multiple tables, it will join to the last table in the list:
+
+```javascript
+// joining from one table to multiple tables
+select().from('usr').join('psn', 'addr').join('zip');
+// SELECT * FROM user usr
+// INNER JOIN person psn ON usr.psn_id = psn.id
+// INNER JOIN address addr ON usr.addr_id = addr.id
+// INNER JOIN zipcode zip ON addr.zip_id = zip.id
+```
+
+Note that this scheme doesn't support doesn't support complex JOIN table layouts: if you do something like `.join('psn', 'addr').join('zip')` above, it is impossible to also join something to the `'psn'` table. This *could* be achieved by adding a way to explicitly specify the table you're joining from: `.join('psn', 'addr').join('zip').join('psn->employer')`, but this hasn't been implemented yet.
 
 ### Pseudo-Views
 
@@ -98,8 +127,6 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 ```
 
 ## To-Do
-
-Document the join criteria auto-generation in more detail, especially what `.join('tbl1', 'tbl2').join('tbl3')` does (and note that auto-generation of criteria for complex JOIN table layouts is not supported).
 
 Add support for:
 
