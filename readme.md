@@ -160,6 +160,10 @@ Note that this scheme doesn't support complex JOIN table layouts: if you do some
 
 ## To-Do
 
+Fix bugs:
+
+* clone() isn't deep, so most kinds of changes affect both the clone and the original
+
 Add support for:
 
 * .into()
