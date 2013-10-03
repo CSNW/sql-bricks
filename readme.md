@@ -1,6 +1,6 @@
 # SQL Bricks.js
 
-SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide the user from SQL syntax. On the contrary, it is designed to match SQL as faithfully as possible so that the experienced SQL user is immediately familiar with the API. Our goal is to make it fully comprehensive, so that it supports all possible variations on the four supported SQL statements (`SELECT, INSERT, UPDATE, DELETE`).
+SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to match SQL as faithfully as possible so that the experienced SQL user is immediately familiar with the API.
 
 SQL Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
 
@@ -25,27 +25,26 @@ SQL Bricks doesn't use or require a schema (though you can provide a set of tabl
 SQL Bricks doesn't introduce a new, complex API: the API was designed to be easily guessable for those who already know SQL. SQL keywords are chainable camelCase methods, non-keywords are passed in as strings and `WHERE`/`JOIN` criteria can be expressed with literal objects:
 
 ```javascript
-select('*').from('user').innerJoin('address').on({'user.addr_id': 'address.id'});
+update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
+// UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
+insertInto('user', ['first_name', 'last_name']).values('Fred', 'Flintstone');
+// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+select('*').from('user').innerJoin('address').on('user.addr_id', 'address.id');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-Since method chaining cannot express nested AND/OR groupings, SQL Bricks uses nestable functions for `WHERE` criteria (`and(), or(), not(), like(), in(), isNull(), isNotNull(), eq(), lt(), lte(), etc`):
+For a more convenient API (but slightly divergent from SQL), multi-word keywords have shorter aliases and object literals can be passed in where natural:
 
 ```javascript
-select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
-// SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone');
+// UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
+insert('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
+// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+select('*').from('user').join('address').on({'user.addr_id': 'address.id'});
+// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-For convenience, `.and()` can be chained (since it is unambiguous), and multiple criteria can also be passed via an object literal to `.where()`:
-
-```javascript
-select('*').from('user').where('last_name', 'Flintstone').and('first_name', 'Fred');
-// SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
-select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'});
-// SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
-```
-
-Also multi-word keywords can be accessed via shorter, one-word method aliases (`.join()`, `.group()`, `.order()`, etc) and `select()` with no arguments will default to `'*'`. In cases where there are a pair of keywords that always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second keyword can be omitted and the argument to that keyword can be passed into the first argument:
+Also, `select()` with no arguments will default to `'*'` and in cases where there are a pair of keywords that always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second method can be omitted and an object-literal argument to that keyword can be passed into the first method:
 
 ```javascript
 update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
@@ -54,6 +53,17 @@ insert('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
 // INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
 select().from('user').join('address', {'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+```
+
+Since method chaining cannot express nested AND/OR groupings, SQL Bricks uses nestable functions for `WHERE` criteria (`and(), or(), not(), like(), in(), isNull(), isNotNull(), eq(), lt(), lte(), etc`) -- though it is possible to chain `.and()`s at the top level (`.where().and().and()`. An object literal with a single key/value pair is treated like an `eq(key, value)` and an object literal with multiple keys/values is treated like an `and(eq(key1, value1), eq(key2, value2), ...)`:
+
+```javascript
+select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
+// SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+select('*').from('user').where('last_name', 'Flintstone').and('first_name', 'Fred');
+// SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
+select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'});
+// SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
 ```
 
 ### Pseudo-Views
