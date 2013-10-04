@@ -36,6 +36,22 @@ describe('SQL Bricks', function() {
       }), 'SELECT * FROM user WHERE removed = $1 AND name = $2',
       [0, 'Fred Flintstone']);
     });
+    it('should not escape single quotes in the values returned by toParams()', function() {
+      checkParams(update('user', {'name': "Muad'Dib"}),
+        'UPDATE user SET name = $1',
+        ["Muad'Dib"]);
+    });
+  });
+
+  describe('value handling', function() {
+    it('should escape single quotes when toString() is used', function() {
+      check(update('user', {'name': "Muad'Dib"}),
+        "UPDATE user SET name = 'Muad''Dib'");
+    });
+    it('should escape multiple single quotes in the same string', function() {
+      check(update('address', {'city': "Liu'e, Hawai'i"}),
+        "UPDATE address SET city = 'Liu''e, Hawai''i'");
+    });
   });
 
   it('should expand abbreviations in FROM and JOINs', function() {

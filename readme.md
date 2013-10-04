@@ -4,11 +4,12 @@ The SQL language is a complicated, expressive DSL. SQL Bricks is not an abstract
 
 SQL Bricks provides:
 
-* easy generation of parameterized SQL statements
-* automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
-* a simple, consistent API
-* high signal-to-noise via user-supplied table abbreviations and join criteria functions
-* most importantly, **easy composition and re-use of SQL**.
+* Easy generation of parameterized (and non-parameterized) SQL statements
+* Support for the **Postgres** dialect (I intend to also add support for SQLite, but not for other dialects, see the *Contributing* section)
+* Automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
+* A simple, consistent API
+* High signal/noise ratio via user-supplied table abbreviations and join criteria functions
+* Most importantly, **easy composition and re-use of SQL**.
 
 ### Composable
 
@@ -168,7 +169,6 @@ Note that this scheme doesn't support complex JOIN table layouts: if you do some
 
 Fix bugs:
 
-* Add proper escaping of values when toString() instead of toParams() is used
 * clone() isn't deep, so most changes will affect both the clone and the original
 * Add support for arrays being passed to select()/group()/on()/etc
 * Make `.order(arg1).order(arg2)` == `.order(arg1, arg2)` (same for select/group/etc)

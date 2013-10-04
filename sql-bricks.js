@@ -49,6 +49,9 @@ sql.insert = sql.insertInto = function insertInto(tbl, values) {
 };
 
 
+// all the statements share a single class to enable
+// cloning a statement and changing its type
+// this is useful if you want to re-use the same joins on an update and a select
 function Statement(type) {
   this.type = type;
 };
@@ -497,7 +500,7 @@ function quoteValue(val, opts) {
     return '$' + opts.value_ix++;
   }
   else {
-    return (typeof val == 'string') ? "'" + val + "'" : val;
+    return (typeof val == 'string') ? "'" + val.replace(/'/g, "''") + "'" : val;
   }
 }
 
