@@ -48,12 +48,6 @@ sql.insert = sql.insertInto = function insertInto(tbl, values) {
   return stmt;
 };
 
-sql.alter = sql.alterTable = function alterTable(tbl) {
-  var stmt = new Statement('alter');
-  stmt.tbl = tbl;
-  return stmt;
-};
-
 
 function Statement(type) {
   this.type = type;
@@ -272,16 +266,6 @@ proto.set = function set(arg1, arg2) {
   return this;
 };
 
-// ALTER
-proto.drop = proto.dropColumn = function dropColumn(cols) {
-  this.drop_cols = Array.isArray(cols) ? cols : [cols];
-  return this;
-};
-
-proto.add = proto.addColumn = function addColumn(col) {
-  this.add_cols = Array.isArray(cols) ? cols : [cols];
-  return this;
-};
 
 // GENERIC
 proto.clone = function clone() {
@@ -295,59 +279,64 @@ proto.toParams = function toParams() {
 };
 
 proto.toString = function toString(opts) {
+  var sql;
   if (!opts) opts = {};
-  var sql = '';
-  if (this.type == 'select') {
-    sql = 'SELECT ' + this.cols + ' FROM ' + this.tbl + ' ';
-    if (this.joins) {
-      sql += this.joins.map(function(join) {
-        return 'INNER JOIN ' + join.tbl + ' ON ' + Object.keys(join.on).map(function(key) {
-          return key + ' = ' + join.on[key];
-        });
-      }).join(' ') + ' ';
-    }
-
-    if (this._where)
-      sql += this.whereToString(opts);
-
-    if (this.group_by)
-      sql += 'GROUP BY ' + this.group_by.join(', ') + ' ';
-
-    if (this.order_by)
-      sql += 'ORDER BY ' + this.order_by.join(', ') + ' ';
-  }
-
-  else if (this.type == 'update') {
-    sql = 'UPDATE ' + this.tbl + ' SET ';
-    sql += _.map(this._values, function(value, key) {
-      return key + ' = ' + quoteValue(value, opts);
-    }).join(', ') + ' ';
-
-    if (this._where)
-      sql += this.whereToString(opts);
-  }
-
-  else if (this.type == 'insert') {
-    var keys = Object.keys(this._values).join(', ');
-    var values = _.values(this._values).map(function(val) {
-      return quoteValue(val, opts);
-    }).join(', ');
-    sql = 'INSERT INTO ' + this.tbl + ' (' + keys + ') VALUES (' + values + ')';
-  }
   
-  else if (this.type == 'alter') {
-    sql = 'ALTER TABLE ' + tbl + ' ';
-    if (this.drop_cols)
-      sql += drop_cols.map(function(col) { return 'DROP COLUMN ' + col; }) + ' ';
-    if (this.add_cols)
-      sql += drop_cols.map(function(col) { return 'ADD COLUMN ' + col; }) + ' ';
-  }
-
-  else {
-    throw new Error('Unknown type: "' + this.type + '"');
+  switch(this.type) {
+    case 'select':
+      sql = this.selectToString(opts);
+      break;
+    case 'update':
+      sql = this.updateToString(opts);
+      break;
+    case 'insert':
+      sql = this.insertToString(opts);
+      break;
+    default:
+      throw new Error('Unknown statement type: "' + this.type + '"');
   }
 
   return sql.trim();
+};
+
+proto.selectToString = function selectToString(opts) {
+  var sql = 'SELECT ' + this.cols + ' FROM ' + this.tbl + ' ';
+  if (this.joins) {
+    sql += this.joins.map(function(join) {
+      return 'INNER JOIN ' + join.tbl + ' ON ' + Object.keys(join.on).map(function(key) {
+        return key + ' = ' + join.on[key];
+      });
+    }).join(' ') + ' ';
+  }
+
+  if (this._where)
+    sql += this.whereToString(opts);
+
+  if (this.group_by)
+    sql += 'GROUP BY ' + this.group_by.join(', ') + ' ';
+
+  if (this.order_by)
+    sql += 'ORDER BY ' + this.order_by.join(', ') + ' ';
+  return sql;
+};
+
+proto.updateToString = function updateToString(opts) {
+  var sql = 'UPDATE ' + this.tbl + ' SET ';
+  sql += _.map(this._values, function(value, key) {
+    return key + ' = ' + quoteValue(value, opts);
+  }).join(', ') + ' ';
+
+  if (this._where)
+    sql += this.whereToString(opts);
+  return sql;
+};
+
+proto.insertToString = function insertToString(opts) {
+  var keys = Object.keys(this._values).join(', ');
+  var values = _.values(this._values).map(function(val) {
+    return quoteValue(val, opts);
+  }).join(', ');
+  return 'INSERT INTO ' + this.tbl + ' (' + keys + ') VALUES (' + values + ')';
 };
 
 proto.whereToString = function whereToString(opts) {

@@ -1,8 +1,14 @@
 # SQL Bricks.js
 
-SQL is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
+The SQL language is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks provides easy parameter substitution, automatic quoting of columns that collide with SQL keywords ("order", "desc", etc), a nice chainable syntax, a few conveniences (support for user-supplied abbreviations and auto-generated join criteria) and, most importantly, **easy composition and re-use of SQL**.
+SQL Bricks provides:
+
+* easy generation of parameterized SQL statements
+* automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
+* a simple, consistent API
+* high signal-to-noise via user-supplied table abbreviations and join criteria functions
+* most importantly, **easy composition and re-use of SQL**.
 
 ### Composable
 
@@ -162,7 +168,10 @@ Note that this scheme doesn't support complex JOIN table layouts: if you do some
 
 Fix bugs:
 
-* clone() isn't deep, so most kinds of changes affect both the clone and the original
+* Add proper escaping of values when toString() instead of toParams() is used
+* clone() isn't deep, so most changes will affect both the clone and the original
+* Add support for arrays being passed to select()/group()/on()/etc
+* Make `.order(arg1).order(arg2)` == `.order(arg1, arg2)` (same for select/group/etc)
 
 Add support for:
 
@@ -173,14 +182,24 @@ Add support for:
 * .limit() / .offset()
 * .fetch()
 * .forUpdate() / .forShare()
-* Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
 * querying directly off of a pseudo-view: `select().from(viewName)`
+
+Lower-priority TODOs:
+
+* Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
+* allow literal values in select()
+* allow binary data being passed to insert()/update()
+* allow custom expressions in `.join()`?
 * SQLite dialect (server-side and client-side examples)
-* old browsers (via polyfills)
+* legacy browsers (via polyfills)
 
-## Contributions
+## Contributing
 
-The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies).
+Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are also run as tests.
+
+Note that I will not accept pull requests for supporting dialects beyond Postgres and SQLite. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork. I have no interest in adding code, generalizations or hooks to support other dialects, however small these may be.
+
+I will also not accept pull requests for supporting SQL statements beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and possibly `TRIGGER`. The other statements do not benefit nearly as much from re-use and composition, so the time, energy and complexity of supporting them is not worth the value, IMO. My goal is to keep SQL Bricks small, sharp and low-maintenance.
 
 ## Acknowledgements
 
