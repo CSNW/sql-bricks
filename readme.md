@@ -197,11 +197,11 @@ Lower-priority TODOs:
 
 ## Contributing
 
-Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are also run as tests.
+Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are run as tests, in addition to the tests in tests.js.
 
-Note that I will not accept pull requests for supporting dialects beyond Postgres and SQLite. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork. I have no interest in adding code, generalizations or hooks to support other dialects, however small these may be.
+Note that I will not accept pull requests for supporting dialects beyond Postgres and SQLite. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork. I have no interest in adding code, generalizations or hooks to support other dialects.
 
-I will also not accept pull requests for supporting SQL statements beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and possibly `TRIGGER`. The other statements do not benefit nearly as much from re-use and composition, so the time, energy and complexity of supporting them is not worth the value, IMO. My goal is to keep SQL Bricks small, sharp and low-maintenance.
+I will also not accept pull requests that add support for SQL statements beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and possibly `TRIGGER`. The other statements do not benefit nearly as much from re-use and composition, so the time and complexity of supporting them is not worth the value, IMO. My goal is to keep SQL Bricks small, sharp and low-maintenance.
 
 ## Acknowledgements
 

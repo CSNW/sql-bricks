@@ -114,6 +114,12 @@ proto.on = function on(on_criteria) {
 
   // the .on() doesn't apply to joins that are auto-injected (implied)
   // from a view, they apply to the most recent *explicit* .join()
+
+  // TODO: remove this complexity by making views a single .join()
+  // and overloading their .toString() to walk internal joins...
+  // It would decouple & make pseudo-views an extension instead of part of the core
+  // (perhaps a subclass of a Join() class? or From(), if we support that too...)
+  // it would be best to pull pseudo-views into a separate, optional, file
   var join_ix = this.joins.length - 1;
   while (this.joins[join_ix].auto_injected)
     join_ix--;
@@ -147,7 +153,8 @@ proto.and = proto.where = function where() {
 };
 
 proto.order = proto.orderBy = function orderBy(cols) {
-  if (cols.indexOf(','))
+  // TODO: re-use this same functionality in all applicable places
+  if (cols.indexOf(',') > -1)
     cols = _.invoke(cols.split(','), 'trim');
   else if (Array.isArray(cols))
     cols = cols;

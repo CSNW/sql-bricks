@@ -111,6 +111,13 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('ORDER BY clause', function() {
+    it('should support .orderBy(arg1, arg2)', function() {
+      check(select().from('user').orderBy('last_name', 'order'),
+        'SELECT * FROM user ORDER BY last_name, "order"');
+    });
+  });
+
   describe('WHERE clauses', function() {
     it('should AND multiple where() criteria by default', function() {
       check(select().from('user').where({
