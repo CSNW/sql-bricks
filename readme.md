@@ -50,6 +50,8 @@ insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
 // INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
 select('*').from('user').join('address').on({'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+select('*').from('user').where({'first_name': 'Fred'});
+// SELECT * FROM user WHERE first_name = 'Fred'
 ```
 
 For added convenience, `select()` defaults to `'*'`, shorter one-word method aliases are provided and in cases where a pair of keywords always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second can be omitted, with the key/value pairs passed to the first method:
@@ -170,7 +172,7 @@ Note that this scheme doesn't support complex JOIN table layouts: if you do some
 Fix bugs:
 
 * clone() isn't deep, so most changes will affect both the clone and the original
-* Add support for arrays being passed to select()/group()/on()/etc
+* Add support for arrays being passed to group()/order()/etc
 * Make `.order(arg1).order(arg2)` == `.order(arg1, arg2)` (same for select/group/etc)
 
 Add support for:
