@@ -78,7 +78,7 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 
 ### Pseudo-Views
 
-Another way that SQL Bricks allows re-use is through pseudo-views. This may not be as helpful for Postgres, where native views are fast, but it is helpful for MySQL and SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+Another way that SQL Bricks allows re-use is through pseudo-views. This may not be as helpful for Postgres, where native views are fast, but it is helpful for SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
 The definition of a pseudo-view consists of a main table and, optionally, join tables and where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 
@@ -141,7 +141,7 @@ select().from('user').join('address');
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-The "left table" passed to the join criteria generator function will always be the most recently used table -- either the most recently join()ed table or, if there is none, the main table in the statement. If you want to perform a "chain" of joins, where each table joins from the previous one, you can call `.join()` multiple times, but if you want to join from one table directly to a number of related tables, you can call `.join()` once and pass the table names in as separate arguments:
+The "left table" passed to the join criteria generator function will always be the most recently used table -- either the most recently joined table or, if there is none, the main table in the statement. If you want to perform a "chain" of joins, where each table joins from the previous one, you can call `.join()` multiple times, but if you want to join from one table directly to a number of related tables, you can call `.join()` once and pass the table names in as separate arguments:
 
 ```javascript
 select().from('usr').join('addr').join('zip');
@@ -172,8 +172,6 @@ Note that this scheme doesn't support complex JOIN table layouts: if you do some
 Fix bugs:
 
 * clone() isn't deep, so most changes will affect both the clone and the original
-* Add support for arrays being passed to group()/order()/etc
-* Make `.order(arg1).order(arg2)` == `.order(arg1, arg2)` (same for select/group/etc)
 
 Add support for:
 

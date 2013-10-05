@@ -12,15 +12,9 @@ sql.prototype.toString = function toString() {
 
 sql.views = {};
 
-sql.select = function select(cols) {
+sql.select = function select() {
   var stmt = new Statement('select');
-  
-  if (!cols)
-    cols = ['*'];
-  else if (!Array.isArray(cols))
-    cols = [cols];
-  stmt.cols = cols.map(quoteReserved);
-  return stmt;
+  return stmt.select.apply(stmt, arguments);
 };
 
 sql.update = sql.update = function update(tbl, values) {
@@ -35,13 +29,15 @@ sql.insert = sql.insertInto = function insertInto(tbl, values) {
   var stmt = new Statement('insert');
   stmt.tbl = tbl;
   if (values) {
-    if (typeof values == 'object') {
+    if (typeof values == 'object' && !_.isArray(values)) {
       stmt.values(values);
     }
     else {
+      stmt._split_keys_vals_mode = true;
       stmt._values = {};
-      _.toArray(arguments).slice(1).forEach(function(key) {
-        stmt._values[key] = null;
+      var val_arr = argsToArray(_.toArray(arguments).slice(1));
+      val_arr.forEach(function(key) {
+        stmt._values[quoteReserved(key)] = null;
       });
     }
   }
@@ -59,6 +55,10 @@ sql.Statement = Statement;
 
 // SELECT
 var proto = Statement.prototype;
+proto.select = function select() {
+  return this.addColumnArgs(arguments, 'cols');
+};
+
 proto.from = function from(tbl) {
   this.tbl = abbrCheck(tbl);
   return this;
@@ -68,16 +68,13 @@ proto.join = proto.innerJoin = function join() {
   if (!this.joins)
     this.joins = [];
 
-  // .join(tbl1, tbl2, tbl3, ...)
-  var on, tbls;
-  if (typeof arguments[1] == 'string') {
-    tbls = _.toArray(arguments);
-  }
-  // .join(tbl, on, options)
-  else {
-    tbls = [arguments[0]];
-    on = arguments[1];
+  if (typeof arguments[1] == 'object') {
+    var tbls = [arguments[0]];
+    var on = arguments[1];
     var opts = arguments[2];
+  }
+  else {
+    tbls = argsToArray(arguments);
   }
 
   tbls.forEach(function(tbl) {
@@ -153,38 +150,11 @@ proto.and = proto.where = function where() {
 };
 
 proto.order = proto.orderBy = function orderBy(cols) {
-  // TODO: re-use this same functionality in all applicable places
-  if (cols.indexOf(',') > -1)
-    cols = _.invoke(cols.split(','), 'trim');
-  else if (Array.isArray(cols))
-    cols = cols;
-  else
-    cols = _.toArray(arguments);
-  cols = cols.map(quoteReserved);
-
-  if (this.order_by)
-    this.order_by = this.order_by.concat(cols);
-  else
-    this.order_by = cols
-
-  return this;
+  return this.addColumnArgs(arguments, 'order_by');
 };
 
 proto.group = proto.groupBy = function groupBy(cols) {
-  if (cols.indexOf(',') > -1)
-    cols = _.invoke(cols.split(','), 'trim');
-  else if (Array.isArray(cols))
-    cols = cols;
-  else
-    cols = _.toArray(arguments);
-  cols = cols.map(quoteReserved);
-
-  if (this.group_by)
-    this.group_by = this.group_by.concat(cols);
-  else
-    this.group_by = cols;
-
-  return this;
+  return this.addColumnArgs(arguments, 'group_by');
 };
 
 proto.applyView = function(view_name, alias, on) {
@@ -241,39 +211,23 @@ proto.applyView = function(view_name, alias, on) {
 };
 
 // INSERT & UPDATE
-proto.values = function values(values) {
-  if (typeof values == 'object') {
-    this._values = quoteReservedKeys(values);
-  }
-  else if (this._values) {
+proto.values = function values() {
+  if (this._split_keys_vals_mode) {
     var args = arguments;
     Object.keys(this._values).forEach(function(key, ix) {
       this._values[key] = args[ix];
     }.bind(this));
   }
   else {
-    throw new Error('Unsupported argument passed to .values(): "' + JSON.stringify(values) + '"');
+    this.addToObj(quoteReservedKeys(argsToObject(arguments)), '_values');
   }
   return this;
-}
+};
 
 // UPDATE
-proto.set = function set(arg1, arg2) {
-  var new_values;
-  if (typeof arg1 == 'object') {
-    new_values = arg1;
-  }
-  else {
-    new_values = {};
-    new_values[arg1] = arg2;
-  }
-  
-  if (!this._values)
-    this._values = {};
-  for (var key in new_values) {
-    this._values[quoteReserved(key)] = new_values[key];
-  }
-  return this;
+proto.set = function set() {
+  var values = quoteReservedKeys(argsToObject(arguments));
+  return this.addToObj(values, '_values');
 };
 
 
@@ -283,9 +237,9 @@ proto.clone = function clone() {
 };
 
 proto.toParams = function toParams() {
-  var values = [];
-  var sql = this.toString({'parameterized': true, 'values': values, 'value_ix': 1});
-  return {'text': sql, 'values': values};  
+  var opts = {'parameterized': true, 'values': [], 'value_ix': 1};
+  var sql = this.toString(opts);
+  return {'text': sql, 'values': opts.values};
 };
 
 proto.toString = function toString(opts) {
@@ -310,7 +264,8 @@ proto.toString = function toString(opts) {
 };
 
 proto.selectToString = function selectToString(opts) {
-  var sql = 'SELECT ' + this.cols + ' FROM ' + this.tbl + ' ';
+  var cols = this.cols.length ? this.cols : ['*'];
+  var sql = 'SELECT ' + cols.join(', ') + ' FROM ' + this.tbl + ' ';
   if (this.joins) {
     sql += this.joins.map(function(join) {
       return 'INNER JOIN ' + join.tbl + ' ON ' + Object.keys(join.on).map(function(key) {
@@ -355,6 +310,46 @@ proto.whereToString = function whereToString(opts) {
     this._where.expressions[0].parens = false;
   return 'WHERE ' + this._where.toString(opts) + ' ';
 };
+
+proto.add = function add(arr, name) {
+  if (!this[name])
+    this[name] = [];
+  
+  this[name] = this[name].concat(arr);
+  return this;
+};
+
+proto.addToObj = function addToObj(obj, name) {
+  if (!this[name])
+    this[name] = {};
+
+  _.extend(this[name], obj);
+  return this;
+};
+
+proto.addColumnArgs = function addColumnArgs(args, name) {
+  var args = argsToArray(args).map(quoteReserved)
+  return this.add(args, name);
+};
+
+// handle an array, a comma-delimited str or separate args
+function argsToArray(args) {
+  if (Array.isArray(args[0]))
+    return args[0];
+  else if (typeof args[0] == 'string' && args[0].indexOf(',') > -1)
+    return _.invoke(args[0].split(','), 'trim');
+  else
+    return _.toArray(args);
+}
+
+function argsToObject(args) {
+  if (typeof args[0] == 'object')
+    return args[0];
+  
+  var obj = {};
+  obj[args[0]] = args[1];
+  return obj;
+}
 
 sql._abbrs = {};
 sql.tblToAbbr = {};

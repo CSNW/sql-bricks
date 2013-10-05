@@ -82,19 +82,50 @@ describe('SQL Bricks', function() {
   });
 
   describe('UPDATE statements', function() {
-    it('should handle .set() syntax', function() {
+    it('should handle .set() with (key, value)', function() {
       check(update('user').set('name', 'Fred'),
         "UPDATE user SET name = 'Fred'");
     });
-    it('should handle .values() syntax', function() {
+    it('should handle .values() with an object literal', function() {
       check(update('user').values({'name': 'Fred'}),
         "UPDATE user SET name = 'Fred'");
+    });
+    it('should handle multiple .set()s with object literals', function() {
+      check(update('user').set({'name': 'Fred'}).set({'last_name': 'Flintstone'}),
+        "UPDATE user SET name = 'Fred', last_name = 'Flintstone'");
+    });
+    it('should handle multiple .values() with (key, value)', function() {
+      check(update('user').values('name', 'Fred').values('last_name', 'Flintstone'),
+        "UPDATE user SET name = 'Fred', last_name = 'Flintstone'");
     });
     it('should handle values argument', function() {
       check(update('user', {'name': 'Fred'}),
         "UPDATE user SET name = 'Fred'");
     });
   });
+
+  describe('SELECT clause', function() {
+    it('should handle an array', function() {
+      check(select(['one', 'order']).from('user'),
+        'SELECT one, "order" FROM user');
+    });
+    it('should handle multiple args', function() {
+      check(select('one', 'order').from('user'),
+        'SELECT one, "order" FROM user');
+    });
+    it('should default to *', function() {
+      check(select().from('user'),
+        'SELECT * FROM user');
+    });
+    it('should handle a comma-delimited str', function() {
+      check(select('one, order').from('user'),
+        'SELECT one, "order" FROM user');
+    });
+    it('should handle being called multiple times', function() {
+      check(select('one, order').select(['two', 'desc']).select('three', 'four').from('user'),
+        'SELECT one, "order", two, "desc", three, four FROM user');
+    });
+  })
 
   describe('GROUP BY clause', function() {
     it('should support single group by', function() {
@@ -109,12 +140,33 @@ describe('SQL Bricks', function() {
       check(select().from('user').groupBy('last_name').groupBy('order'),
         'SELECT * FROM user GROUP BY last_name, "order"');
     });
+    it('should support an array', function() {
+      check(select().from('user').groupBy(['last_name', 'order']),
+        'SELECT * FROM user GROUP BY last_name, "order"');
+    });
   });
 
-  describe('ORDER BY clause', function() {
+  describe('.order() / .orderBy()', function() {
     it('should support .orderBy(arg1, arg2)', function() {
       check(select().from('user').orderBy('last_name', 'order'),
         'SELECT * FROM user ORDER BY last_name, "order"');
+    });
+    it('should support an array', function() {
+      check(select().from('user').orderBy(['last_name', 'order']),
+        'SELECT * FROM user ORDER BY last_name, "order"');
+    });
+    it('should support being called multiple times', function() {
+      check(select().from('user').orderBy('last_name').orderBy('order'),
+        'SELECT * FROM user ORDER BY last_name, "order"');
+    });
+  });
+
+  describe('join()', function() {
+    it('should accept a comma-delimited string', function() {
+      check(select().from('usr').join('psn, addr'),
+        'SELECT * FROM user usr ' + 
+        'INNER JOIN person psn ON usr.psn_fk = psn.pk ' +
+        'INNER JOIN address addr ON usr.addr_fk = addr.pk');
     });
   });
 
@@ -201,6 +253,10 @@ describe('SQL Bricks', function() {
     });
     it('in INSERT', function() {
       check(insert('user').values({'order': 1}),
+        'INSERT INTO user ("order") VALUES (1)');
+    });
+    it('in alternative insert() API', function() {
+      check(insert('user', 'order').values(1),
         'INSERT INTO user ("order") VALUES (1)');
     });
     it('with a db and table prefix and a suffix', function() {
