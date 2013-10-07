@@ -4,7 +4,7 @@ As with other SQL generation libraries, SQL Bricks was created to help eliminate
 
 In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords ("order", "desc", etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.
 
-SQL Bricks different from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
+SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
 SQL Bricks currently supports the **Postgres** dialect and plans are under way to add support for SQLite. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
 
