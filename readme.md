@@ -4,6 +4,7 @@ The SQL language is a complicated, expressive DSL. SQL Bricks is not an abstract
 
 SQL Bricks provides:
 
+* Zero schema-configuration out of the box
 * Easy generation of parameterized (and non-parameterized) SQL statements
 * Support for the **Postgres** dialect (I intend to also add support for SQLite, but not for other dialects, see the related note in the *Contributing* section)
 * Automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
@@ -22,13 +23,9 @@ var local_users = active_users.clone().where({'local': true});
 // SELECT * FROM user WHERE active = true AND local = true
 ```
 
-### Zero Configuration
-
-SQL Bricks doesn't use or require a schema (though you can provide a set of table abbreviations for convenience, see below).
-
 ### Transparent
 
-The SQL Bricks API mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are passed in as strings. The result is that one can write and read long, complex SQL statements easily, without needing to reference the documentation:
+The SQL Bricks mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are strings, reducing long and complex SQL statements to terse expressive javascript:
 
 ```javascript
 update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
@@ -41,7 +38,7 @@ select('*').from('user').where('first_name', 'Fred');
 // SELECT * FROM user WHERE first_name = 'Fred'
 ```
 
-The SQL Bricks API also allows object literals to be used wherever they make sense, to make the API more javascript-friendly:
+The SQL Bricks API also allows "javascript-friendly" object literals:
 
 ```javascript
 update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone'});
@@ -78,7 +75,7 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 
 ### Pseudo-Views
 
-Another way that SQL Bricks allows re-use is through pseudo-views. This may not be as helpful for Postgres, where native views are fast, but it is helpful for SQLite, where views can introduce performance problems (unless they can be flattened, see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+For those databases where native views have performance issues (like SQLite), sql-bricks provides pseudo-views (Also see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
 The definition of a pseudo-view consists of a main table and, optionally, join tables and where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 
@@ -107,17 +104,18 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 // {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
 ```
 
-If you need to pass in SQL (such as a column name) somewhere that SQL Bricks expects a value (the right-hand side of `WHERE` criteria or something passed into `insert()` or `update()`), you can do this by wrapping the string in the `sql()` function:
+Passing in a value, such as a column name (the right-hand side of `WHERE` criteria or something passed into `insert()` or `update()`), can be done by wrapping the string in the `sql()` function:
 
 ```javascript
 select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
 ```
 
-### Conveniences for a Higher Signal/Noise Ratio
+### Readability features 
 
 #### Table Abbreviations
 
+Abbreviations are a sql-bricks abstraction (not to be confused with table aliases).
 Frequently-used table abbreviations can be set via `setAbbrs()`:
 
 ```javascript
