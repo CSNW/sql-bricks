@@ -1,16 +1,17 @@
 # SQL Bricks.js
 
-The SQL language is a complicated, expressive DSL. SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
+**Transparent:** SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks provides:
+**Composable:** SQL Bricks is designed to enable the elimination of DRY in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application.
+
+**Readable:** SQL Bricks adds a few conveniences, such as automatic alias expansion and user-supplied join criteria functions, which enable a high signal/noise ratio.
+
+Other features:
 
 * Zero schema-configuration out of the box
 * Easy generation of parameterized (and non-parameterized) SQL statements
 * Support for the **Postgres** dialect (I intend to also add support for SQLite, but not for other dialects, see the related note in the *Contributing* section)
 * Automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
-* A simple, consistent API
-* High signal/noise ratio via user-supplied table abbreviations and join criteria functions
-* Most importantly, **easy composition and re-use of SQL**.
 
 ## Transparent
 
