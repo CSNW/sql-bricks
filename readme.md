@@ -1,17 +1,12 @@
 # SQL Bricks.js
 
-**Transparent:** SQL Bricks is not an abstraction layer and makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
+As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL statements.
 
-**Composable:** SQL Bricks is designed to enable the elimination of DRY in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application.
+In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less annoying: pseudo-views, automatic alias expansion, user-supplied join criteria functions, automatic quoting of column names that collide with SQL keywords ("order", "desc", etc).
 
-**Readable:** SQL Bricks adds a few conveniences, such as automatic alias expansion and user-supplied join criteria functions, which enable a high signal/noise ratio.
+What makes SQL Bricks different from other similar libraries is that it does not require a schema or any other configuration. Also, it is not an abstraction layer and it makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-Other features:
-
-* Zero schema-configuration out of the box
-* Easy generation of parameterized (and non-parameterized) SQL statements
-* Support for the **Postgres** dialect (I intend to also add support for SQLite, but not for other dialects, see the related note in the *Contributing* section)
-* Automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
+SQL Bricks currently supports the **Postgres** dialect and plans are under way to add support for SQLite. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
 
 ## Transparent
 
