@@ -7,7 +7,7 @@ var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
 
-sql.setAbbrs({'usr': 'user', 'psn': 'person', 'addr': 'address'});
+sql.aliasExpansions({'usr': 'user', 'psn': 'person', 'addr': 'address'});
 
 sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};

@@ -8,7 +8,7 @@ SQL Bricks different from similar libraries in that it does not require a schema
 
 SQL Bricks currently supports the **Postgres** dialect and plans are under way to add support for SQLite. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
 
-## Transparent
+## API
 
 SQL Bricks mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are strings, reducing long SQL statements to terse, chainable javascript:
 
@@ -58,7 +58,7 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 // SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
 ```
 
-## Composable
+## Cloning
 
 The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
@@ -69,7 +69,7 @@ var local_users = active_users.clone().where({'local': true});
 // SELECT * FROM user WHERE active = true AND local = true
 ```
 
-#### Pseudo-Views
+## Pseudo-Views
 
 For those databases where native views have performance issues (like SQLite), sql-bricks provides pseudo-views (see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
@@ -88,20 +88,18 @@ select('*').from('person')
 // WHERE l_usr_address.local = true
 ```
 
-## Readable
+## Automatic Alias Expansion
 
-#### Table Abbreviations
-
-Abbreviations are a sql-bricks abstraction (not to be confused with table aliases).
-Frequently-used table abbreviations can be set via `setAbbrs()`:
+As a convenience, frequently-used aliases can be registered with SQL Bricks for automatic expansion via `aliasExpansions()`. These table aliases (`usr`, `addr`) can be used by themselves; SQL Bricks will automatically expand them to include the table name as well as the alias:
 
 ```javascript
-sql.setAbbrs({'usr': 'user', 'addr': 'address', 'zip': 'zipcode', 'psn': 'person'});
+sql.aliasExpansions({'usr': 'user', 'addr': 'address', 'zip': 'zipcode', 'psn': 'person'});
+
 select().from('usr').join('addr', {'usr.addr_id': 'addr.id'});
 // SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id
 ```
 
-#### User-Supplied Join Criteria Function
+## User-Supplied Join Criteria Function
 
 The user can supply a function to automatically generate the `.on()` criteria for joins whenever it is not supplied explicitly, via a `joinCriteria()` function:
 

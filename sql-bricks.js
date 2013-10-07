@@ -414,7 +414,7 @@ function argsToExpressions(args) {
 
 sql._abbrs = {};
 sql.tblToAbbr = {};
-sql.setAbbrs = function setAbbrs(abbrs) {
+sql.aliasExpansions = function aliasExpansions(abbrs) {
   sql._abbrs = abbrs;
   for (var abbr in sql._abbrs)
     sql.tblToAbbr[sql._abbrs[abbr]] = abbr;
