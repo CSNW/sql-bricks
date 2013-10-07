@@ -197,7 +197,7 @@ I will also not accept pull requests that add support for SQL statements beyond 
 
 ## Acknowledgements
 
-Huge thanks to [Brian C](https://github.com/brianc) for his work on the [node-sql](https://github.com/brianc/node-sql) library, his patience with me as I hacked on it and his encouragement when I pitched the idea for an alternative approach to SQL generation.
+Huge thanks to [Brian C](https://github.com/brianc) for his work on the [node-sql](https://github.com/brianc/node-sql) library, his patience with me as I hacked on it and his encouragement when we chatted about a way to generate arbitrary SQL without needing everything in a schema.
 
 ## License
 
