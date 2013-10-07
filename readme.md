@@ -12,20 +12,9 @@ SQL Bricks provides:
 * High signal/noise ratio via user-supplied table abbreviations and join criteria functions
 * Most importantly, **easy composition and re-use of SQL**.
 
-### Composable
+## Transparent
 
-The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
-
-```javascript
-var active_users = select('*').from('user').where({'active': true});
-// SELECT * FROM user WHERE active = true
-var local_users = active_users.clone().where({'local': true});
-// SELECT * FROM user WHERE active = true AND local = true
-```
-
-### Transparent
-
-The SQL Bricks mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are strings, reducing long and complex SQL statements to terse expressive javascript:
+SQL Bricks mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are strings, reducing long SQL statements to terse, chainable javascript:
 
 ```javascript
 update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
@@ -73,9 +62,20 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 // SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
 ```
 
-### Pseudo-Views
+## Composable
 
-For those databases where native views have performance issues (like SQLite), sql-bricks provides pseudo-views (Also see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
+The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
+
+```javascript
+var active_users = select('*').from('user').where({'active': true});
+// SELECT * FROM user WHERE active = true
+var local_users = active_users.clone().where({'local': true});
+// SELECT * FROM user WHERE active = true AND local = true
+```
+
+#### Pseudo-Views
+
+For those databases where native views have performance issues (like SQLite), sql-bricks provides pseudo-views (see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
 The definition of a pseudo-view consists of a main table and, optionally, join tables and where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
 
@@ -92,26 +92,7 @@ select('*').from('person')
 // WHERE l_usr_address.local = true
 ```
 
-### Parameterized SQL
-
-Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains `$1, $2, etc` placeholders in the SQL and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
-
-```javascript
-update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
-// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
-
-update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
-// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
-```
-
-Passing in a value, such as a column name (the right-hand side of `WHERE` criteria or something passed into `insert()` or `update()`), can be done by wrapping the string in the `sql()` function:
-
-```javascript
-select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
-// SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
-```
-
-### Readability features 
+## Readable
 
 #### Table Abbreviations
 
@@ -165,14 +146,34 @@ select().from('usr').join('psn', 'addr').join('zip');
 
 Note that this scheme doesn't support complex JOIN table layouts: if you do something like `.join('psn', 'addr').join('zip')` above, it is impossible to also join something to the `'psn'` table. This *could* be achieved by adding a way to explicitly specify the table you're joining from: `.join('psn', 'addr').join('zip').join('psn->employer')`, but this hasn't been implemented.
 
+## Parameterized SQL
+
+Calling `.toParams()` (as opposed to `.toString()`) will return an object with a `text` property that contains `$1, $2, etc` placeholders in the SQL and a corresponding `values` array. Anything on the right-hand side of a `WHERE` criteria is assumed to be a value, as well as anything values passed into an `insert()` or `update()` statement:
+
+```javascript
+update('user').set('first_name', 'Fred').where('last_name', 'Flintstone').toParams();
+// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
+
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
+// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
+```
+
+At times, it is necessary to send SQL into SQL Bricks somewhere that a value is expected (the right-hand side of `WHERE` criteria, or `insert()`/`update()` values). This can be done by wrapping a string in the `sql()` function:
+
+```javascript
+select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
+// SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
+```
+
 ## To-Do
 
 Fix bugs:
 
-* clone() isn't deep, so most changes will affect both the clone and the original
+* Using AS keyword (select().from('user AS usr').join('addr')) will generate invalid SQL
 
 Add support for:
 
+* delete()
 * .into()
 * .using()
 * .leftJoin / .rightJoin / .fullJoin / .crossJoin
@@ -182,13 +183,15 @@ Add support for:
 * .forUpdate() / .forShare()
 * querying directly off of a pseudo-view: `select().from(viewName)`
 
+Add more/clearer documentation for how abbreviations differ from aliases.
+
 Lower-priority TODOs:
 
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
-* allow binary data being passed to insert()/update()
-* allow custom expressions in `.join()`?
-* Support SQLite dialect (server-side and client-side examples)
-* legacy browsers (via polyfills)
+* Allow binary data being passed to insert()/update()
+* Allow custom expressions in `.join()`?
+* Support SQLite dialect
+* Support legacy browsers (via polyfills)
 
 ## Contributing
 
