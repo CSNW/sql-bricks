@@ -94,27 +94,11 @@ proto.join = proto.innerJoin = function join() {
 };
 
 proto.on = function on() {
-  var last_join = this._getLastJoin();
+  var last_join = this.joins[this.joins.length - 1];
   if (!last_join.on)
     last_join.on = {};
   _.extend(last_join.on, argsToObject(arguments));
   return this;
-};
-
-// the .on() doesn't apply to joins that are auto-injected (implied)
-// from a view, they apply to the most recent *explicit* .join()
-
-// TODO: remove this complexity by making views a single .join()
-// and overloading their .toString() to walk internal joins...
-// It would decouple & make pseudo-views an extension instead of part of the core
-// (perhaps a subclass of a Join() class? or From(), if we support that too...)
-// it would be best to pull pseudo-views into a separate, optional, file
-proto._getLastJoin = function _getLastJoin() {
-  var join_ix = this.joins.length - 1;
-  while (this.joins[join_ix].auto_injected)
-    join_ix--;
-
-  return this.joins[join_ix];
 };
 
 proto.and = proto.where = function where() {
@@ -312,7 +296,7 @@ Join.prototype.toString = function toString() {
 function ViewJoin(view, left_tbl, on) {
   var alias = getAlias(view);
   var view_name = getTable(view);
-  this.view = sql.views[view_name];
+  this.view = sql.views[view_name].clone();
 
   if (this.view.tbls.length != 1)
     throw new Error('Unsupported number of tables in pseudo-view: ' + this.view.tbl.length);
@@ -336,6 +320,7 @@ function ViewJoin(view, left_tbl, on) {
       join.new_aliases = new_aliases;
     });
   }
+
   this.new_aliases = new_aliases;
   this.addNamespace();
 }
@@ -358,6 +343,7 @@ ViewJoin.prototype.addNamespace = function addNamespace() {
   if (this.view._where) {
     var where = this.view._where.clone();
     this.convertExpr(where);
+    this.view._where = where;
   }
 };
 
@@ -370,10 +356,8 @@ ViewJoin.prototype.convertExpr = function convertExpr(expr) {
 
 ViewJoin.prototype.namespaceOn = function namespaceOn(on) {
   var namespaced_on = {};
-  for (var key in on) {
-    console.log(this.convert(key));
+  for (var key in on)
     namespaced_on[this.convert(key)] = this.convert(on[key]);
-  }
   return namespaced_on;
 };
 
