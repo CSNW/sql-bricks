@@ -5,7 +5,7 @@ The SQL language is a complicated, expressive DSL. SQL Bricks is not an abstract
 SQL Bricks provides:
 
 * Easy generation of parameterized (and non-parameterized) SQL statements
-* Support for the **Postgres** dialect (I intend to also add support for SQLite, but not for other dialects, see the *Contributing* section)
+* Support for the **Postgres** dialect (I intend to also add support for SQLite, but not for other dialects, see the related note in the *Contributing* section)
 * Automatic quoting of columns that collide with SQL keywords ("order", "desc", etc)
 * A simple, consistent API
 * High signal/noise ratio via user-supplied table abbreviations and join criteria functions
@@ -26,7 +26,7 @@ var local_users = active_users.clone().where({'local': true});
 
 SQL Bricks doesn't use or require a schema (though you can provide a set of table abbreviations for convenience, see below).
 
-### Matches the SQL Language
+### Transparent
 
 The SQL Bricks API mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are passed in as strings. The result is that one can write and read long, complex SQL statements easily, without needing to reference the documentation:
 
@@ -187,10 +187,9 @@ Add support for:
 Lower-priority TODOs:
 
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
-* allow literal values in select()
 * allow binary data being passed to insert()/update()
 * allow custom expressions in `.join()`?
-* SQLite dialect (server-side and client-side examples)
+* Support SQLite dialect (server-side and client-side examples)
 * legacy browsers (via polyfills)
 
 ## Contributing

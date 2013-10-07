@@ -1,4 +1,5 @@
 var _ = require('underscore');
+var util = require('util');
 
 // sql() wrapper to enable SQL (such as a column name) where a value is expected
 function sql(str) {
@@ -19,7 +20,7 @@ sql.select = function select() {
 
 sql.update = sql.update = function update(tbl, values) {
   var stmt = new Statement('update');
-  stmt.tbl = tbl;
+  stmt.tbls = [abbrCheck(tbl)];
   if (values)
     stmt.values(values);
   return stmt;
@@ -27,7 +28,7 @@ sql.update = sql.update = function update(tbl, values) {
 
 sql.insert = sql.insertInto = function insertInto(tbl, values) {
   var stmt = new Statement('insert');
-  stmt.tbl = tbl;
+  stmt.tbls = [abbrCheck(tbl)];
   if (values) {
     if (typeof values == 'object' && !_.isArray(values)) {
       stmt.values(values);
@@ -59,9 +60,9 @@ proto.select = function select() {
   return this.addColumnArgs(arguments, 'cols');
 };
 
-proto.from = function from(tbl) {
-  this.tbl = abbrCheck(tbl);
-  return this;
+proto.from = function from() {
+  var tbls = argsToArray(arguments).map(abbrCheck);
+  return this.add(tbls, 'tbls');
 };
 
 proto.join = proto.innerJoin = function join() {
@@ -79,50 +80,41 @@ proto.join = proto.innerJoin = function join() {
 
   tbls.forEach(function(tbl) {
     tbl = abbrCheck(tbl);
-    var tbl_name = getTable(tbl);
-    if (tbl_name in sql.views)
-      this.applyView(tbl_name, getAlias(tbl), on);
+    var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
+    var join;
+    if (getTable(tbl) in sql.views)
+      join = new ViewJoin(tbl, left_tbl, on);
     else
-      this._join(tbl, on, opts);
+      join = new Join(tbl, left_tbl, on);
+    this.joins.push(join);
   }.bind(this));
 
   this.last_join = tbls[tbls.length - 1];
   return this;
 };
 
-proto._join = function _join(tbl, on, opts) {
-  var left_tbl = this.last_join || this.tbl;
-  var auto_on;
-  if (!on && sql.joinCriteria)
-    auto_on = sql.joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
-  var join = {'tbl': tbl, 'on': quoteReservedObj(on || auto_on)};
-  if (opts && opts.auto_injected)
-    join.auto_injected = true;
-  this.joins.push(join);
+proto.on = function on() {
+  var last_join = this._getLastJoin();
+  if (!last_join.on)
+    last_join.on = {};
+  _.extend(last_join.on, argsToObject(arguments));
+  return this;
 };
 
-proto.on = function on(on_criteria) {
-  if (typeof on_criteria != 'object') {
-    var key = on_criteria.slice();
-    var value = arguments[1];
-    on_criteria = {};
-    on_criteria[key] = value;
-  }
+// the .on() doesn't apply to joins that are auto-injected (implied)
+// from a view, they apply to the most recent *explicit* .join()
 
-  // the .on() doesn't apply to joins that are auto-injected (implied)
-  // from a view, they apply to the most recent *explicit* .join()
-
-  // TODO: remove this complexity by making views a single .join()
-  // and overloading their .toString() to walk internal joins...
-  // It would decouple & make pseudo-views an extension instead of part of the core
-  // (perhaps a subclass of a Join() class? or From(), if we support that too...)
-  // it would be best to pull pseudo-views into a separate, optional, file
+// TODO: remove this complexity by making views a single .join()
+// and overloading their .toString() to walk internal joins...
+// It would decouple & make pseudo-views an extension instead of part of the core
+// (perhaps a subclass of a Join() class? or From(), if we support that too...)
+// it would be best to pull pseudo-views into a separate, optional, file
+proto._getLastJoin = function _getLastJoin() {
   var join_ix = this.joins.length - 1;
   while (this.joins[join_ix].auto_injected)
     join_ix--;
 
-  this.joins[join_ix].on = quoteReservedObj(on_criteria);
-  return this;
+  return this.joins[join_ix];
 };
 
 proto.and = proto.where = function where() {
@@ -155,59 +147,6 @@ proto.order = proto.orderBy = function orderBy(cols) {
 
 proto.group = proto.groupBy = function groupBy(cols) {
   return this.addColumnArgs(arguments, 'group_by');
-};
-
-proto.applyView = function(view_name, alias, on) {
-  var view = sql.views[view_name];
-  this._join(getTable(view.tbl) + ' ' + alias, on);
-  var new_aliases = {};
-  new_aliases[getAlias(view.tbl)] = alias;
-
-  if (view.joins) {
-    _.pluck(view.joins, 'tbl').map(getAlias).forEach(function(join_alias) {
-      new_aliases[join_alias] = alias + '_' + join_alias;
-    });
-
-    view.joins.forEach(function(join) {
-      var join_alias = getAlias(join.tbl);
-      var join_tbl = getTable(join.tbl);
-      var namespaced_on = {};
-      if (join.on) {
-        for (var key in join.on)
-          namespaced_on[convert(key)] = convert(join.on[key]);
-      }
-      this.join(join_tbl + ' ' + new_aliases[join_alias], namespaced_on, {'auto_injected': true});
-    }.bind(this));
-  }
-
-  if (view._where) {
-    var where = view._where.clone();
-    convertExpr(where);
-    this.where(where);
-  }
-
-  function convertExpr(expr) {
-    if (expr.col)
-      expr.col = convert(expr.col);
-    if (expr.expressions)
-      expr.expressions.forEach(convertExpr);
-  }
-
-  function convert(col) {
-    var col_parts = col.split('.');
-    if (col_parts.length == 1)
-      return col;
-    
-    var tbl_ix = col_parts.length - 2;
-    var tbl_alias = col_parts[tbl_ix];
-    if (tbl_alias in new_aliases) {
-      col_parts[tbl_ix] = new_aliases[tbl_alias];
-      return col_parts.join('.');
-    }
-    else {
-      return col;
-    }
-  }
 };
 
 // INSERT & UPDATE
@@ -265,28 +204,36 @@ proto.toString = function toString(opts) {
 
 proto.selectToString = function selectToString(opts) {
   var cols = this.cols.length ? this.cols : ['*'];
-  var sql = 'SELECT ' + cols.join(', ') + ' FROM ' + this.tbl + ' ';
-  if (this.joins) {
-    sql += this.joins.map(function(join) {
-      return 'INNER JOIN ' + join.tbl + ' ON ' + Object.keys(join.on).map(function(key) {
-        return key + ' = ' + join.on[key];
-      });
-    }).join(' ') + ' ';
-  }
+  var result = 'SELECT ' + cols.join(', ') + ' FROM ' + this.tbls.join(', ') + ' ';
+  if (this.joins)
+    result += this.joins.join(' ') + ' ';
 
   if (this._where)
-    sql += this.whereToString(opts);
+    result += this.whereToString(opts);
+
+  var view_joins = this.viewJoins();
+  if (view_joins.length) {
+    var view_wheres = _.compact(_.pluck(_.pluck(view_joins, 'view'), '_where'));
+    view_wheres.forEach(function(view_where, ix) {
+      view_where.parens = false;
+      if (!this._where && ix == 0)
+        result += 'WHERE ';
+      else
+        result += 'AND ';
+      result += view_where.toString(opts) + ' ';
+    }.bind(this));
+  }
 
   if (this.group_by)
-    sql += 'GROUP BY ' + this.group_by.join(', ') + ' ';
+    result += 'GROUP BY ' + this.group_by.join(', ') + ' ';
 
   if (this.order_by)
-    sql += 'ORDER BY ' + this.order_by.join(', ') + ' ';
-  return sql;
+    result += 'ORDER BY ' + this.order_by.join(', ') + ' ';
+  return result;
 };
 
 proto.updateToString = function updateToString(opts) {
-  var sql = 'UPDATE ' + this.tbl + ' SET ';
+  var sql = 'UPDATE ' + this.tbls.join(', ') + ' SET ';
   sql += _.map(this._values, function(value, key) {
     return key + ' = ' + quoteValue(value, opts);
   }).join(', ') + ' ';
@@ -301,7 +248,7 @@ proto.insertToString = function insertToString(opts) {
   var values = _.values(this._values).map(function(val) {
     return quoteValue(val, opts);
   }).join(', ');
-  return 'INSERT INTO ' + this.tbl + ' (' + keys + ') VALUES (' + values + ')';
+  return 'INSERT INTO ' + this.tbls.join(', ') + ' (' + keys + ') VALUES (' + values + ')';
 };
 
 proto.whereToString = function whereToString(opts) {
@@ -331,6 +278,133 @@ proto.addColumnArgs = function addColumnArgs(args, name) {
   var args = argsToArray(args).map(quoteReserved)
   return this.add(args, name);
 };
+
+proto.viewJoins = function viewJoins() {
+  return (this.joins || []).filter(function(join) {
+    return join instanceof ViewJoin;
+  });
+};
+
+
+function Join(tbl, left_tbl, on) {
+  this.tbl = tbl;
+  this.left_tbl = left_tbl;
+  this.on = on;
+}
+sql.Join = Join;
+Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
+  return sql.joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
+};
+Join.prototype.toString = function toString() {
+  var on = this.on, tbl = this.tbl, left_tbl = this.left_tbl;
+  if (!on || _.isEmpty(on)) {
+    if (sql.joinCriteria)
+      on = this.autoGenerateOn(tbl, left_tbl);
+    else
+      throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
+  }
+  on = quoteReservedObj(on);
+  return 'INNER JOIN ' + tbl + ' ON ' + Object.keys(on).map(function(key) {
+    return key + ' = ' + on[key];
+  }).join(', ');
+};
+
+function ViewJoin(view, left_tbl, on) {
+  var alias = getAlias(view);
+  var view_name = getTable(view);
+  this.view = sql.views[view_name];
+
+  if (this.view.tbls.length != 1)
+    throw new Error('Unsupported number of tables in pseudo-view: ' + this.view.tbl.length);
+  
+  var tbl = getTable(this.view.tbls[0]) + ' ' + alias;
+  ViewJoin.super_.call(this, tbl, left_tbl, on);
+
+  var new_aliases = {};
+  new_aliases[getAlias(this.view.tbls[0])] = alias;
+
+  if (this.view.joins) {
+    _.pluck(this.view.joins, 'tbl').map(getAlias).forEach(function(join_alias) {
+      new_aliases[join_alias] = alias + '_' + join_alias;
+    });
+
+    // TODO: instantiate ViewJoins or something...
+    this.view.joins.forEach(function(join) {
+      join.autoGenerateOn = ViewJoin.prototype.autoGenerateOn;
+      join.namespaceOn = ViewJoin.prototype.namespaceOn;
+      join.convert = ViewJoin.prototype.convert;
+      join.new_aliases = new_aliases;
+    });
+  }
+  this.new_aliases = new_aliases;
+  this.addNamespace();
+}
+
+util.inherits(ViewJoin, Join);
+sql.ViewJoin = ViewJoin;
+
+ViewJoin.prototype.addNamespace = function addNamespace() {
+  var new_aliases = this.new_aliases;
+  if (this.view.joins) {
+    this.view.joins.forEach(function(join) {
+      var join_alias = getAlias(join.tbl);
+      var join_tbl = getTable(join.tbl);
+      if (join.on)
+        join.on = this.namespaceOn(join.on);
+      join.tbl = join_tbl + ' ' + new_aliases[join_alias]
+    }.bind(this));
+  }
+
+  if (this.view._where) {
+    var where = this.view._where.clone();
+    this.convertExpr(where);
+  }
+};
+
+ViewJoin.prototype.convertExpr = function convertExpr(expr) {
+  if (expr.col)
+    expr.col = this.convert(expr.col);
+  if (expr.expressions)
+    expr.expressions.forEach(this.convertExpr.bind(this));
+};
+
+ViewJoin.prototype.namespaceOn = function namespaceOn(on) {
+  var namespaced_on = {};
+  for (var key in on) {
+    console.log(this.convert(key));
+    namespaced_on[this.convert(key)] = this.convert(on[key]);
+  }
+  return namespaced_on;
+};
+
+ViewJoin.prototype.convert = function convert(col) {
+  var col_parts = col.split('.');
+  if (col_parts.length == 1)
+    return col;
+  
+  var tbl_ix = col_parts.length - 2;
+  var tbl_alias = col_parts[tbl_ix];
+  if (tbl_alias in this.new_aliases) {
+    col_parts[tbl_ix] = this.new_aliases[tbl_alias];
+    return col_parts.join('.');
+  }
+  else {
+    return col;
+  }
+};
+
+ViewJoin.prototype.autoGenerateOn = function autoGenerateOn() {
+  var on = ViewJoin.super_.prototype.autoGenerateOn.apply(this, arguments);
+  return this.namespaceOn(on);
+};
+
+ViewJoin.prototype.toString = function toString() {
+  var sql = ViewJoin.super_.prototype.toString.call(this);
+  if (this.view.joins)
+    sql += ' '  + this.view.joins.join(' ');
+  return sql;
+};
+
 
 // handle an array, a comma-delimited str or separate args
 function argsToArray(args) {

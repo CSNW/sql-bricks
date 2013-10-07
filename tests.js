@@ -125,7 +125,26 @@ describe('SQL Bricks', function() {
       check(select('one, order').select(['two', 'desc']).select('three', 'four').from('user'),
         'SELECT one, "order", two, "desc", three, four FROM user');
     });
-  })
+  });
+
+  describe('.from()', function() {
+    it('should handle an array', function() {
+      check(select().from(['one', 'two', 'usr']),
+        'SELECT * FROM one, two, user usr');
+    });
+    it('should handle multiple args', function() {
+      check(select().from('one', 'two', 'usr'),
+        'SELECT * FROM one, two, user usr');
+    });
+    it('should handle a comma-delimited string', function() {
+      check(select().from('one, two, usr'),
+        'SELECT * FROM one, two, user usr');
+    });
+    it('should handle being called multiple times', function() {
+      check(select().from('one', 'usr').from(['two', 'psn']).from('three, addr'),
+        'SELECT * FROM one, user usr, two, person psn, three, address addr');
+    });
+  });
 
   describe('GROUP BY clause', function() {
     it('should support single group by', function() {
@@ -167,6 +186,31 @@ describe('SQL Bricks', function() {
         'SELECT * FROM user usr ' + 
         'INNER JOIN person psn ON usr.psn_fk = psn.pk ' +
         'INNER JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+  });
+
+  describe('on()', function() {
+    it('should accept an object literal', function() {
+      check(select().from('usr').join('addr').on({'usr.addr_id': 'addr.id'}),
+        'SELECT * FROM user usr ' + 
+        'INNER JOIN address addr ON usr.addr_id = addr.id');
+    });
+    it('should accept a (key, value) pair', function() {
+      check(select().from('usr').join('addr').on('usr.addr_id', 'addr.id'),
+        'SELECT * FROM user usr ' + 
+        'INNER JOIN address addr ON usr.addr_id = addr.id');
+    });
+    it('can be called multiple times', function() {
+      check(select().from('usr', 'psn').join('addr').on({'usr.addr_id': 'addr.id'})
+          .on('psn.addr_id', 'addr.id'),
+        'SELECT * FROM user usr, person psn ' + 
+        'INNER JOIN address addr ON usr.addr_id = addr.id, psn.addr_id = addr.id');
+    });
+    it('can be called multiple times w/ an object literal', function() {
+      check(select().from('usr', 'psn').join('addr').on({'usr.addr_id': 'addr.id'})
+          .on({'psn.addr_id': 'addr.id'}),
+        'SELECT * FROM user usr, person psn ' + 
+        'INNER JOIN address addr ON usr.addr_id = addr.id, psn.addr_id = addr.id');
     });
   });
 
