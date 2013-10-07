@@ -342,6 +342,29 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('deep Statement.clone()', function() {
+    it('should deep clone WHERE expressions', function() {
+      var sel = select().from('user').where({'first_name': 'Fred'});
+      sel.clone().where({'last_name': 'Flintstone'});
+      check(sel, "SELECT * FROM user WHERE first_name = 'Fred'");
+    });
+    it('should deep clone .order()', function() {
+      var sel = select().from('user').order('name');
+      sel.clone().order('last_name');
+      check(sel, 'SELECT * FROM user ORDER BY name');
+    });
+    it('should deep clone .join()', function() {
+      var sel = select().from('user').join('addr');
+      sel.clone().join('psn');
+      check(sel, 'SELECT * FROM user INNER JOIN address addr ON user.addr_fk = addr.pk');
+    });
+    it('should clone values', function() {
+      var ins = insert('user', {'first_name': 'Fred'});
+      ins.clone().values({'last_name': 'Flintstone'});
+      check(ins, "INSERT INTO user (first_name) VALUES ('Fred')");
+    });
+  });
+
   describe('documentation examples', function() {
     var comment = '// ';
 

@@ -137,7 +137,14 @@ proto.set = function set() {
 
 // GENERIC
 proto.clone = function clone() {
-  return _.extend(new Statement(), this);
+  var stmt = _.extend(new Statement(), this);
+  if (stmt._where)
+    stmt._where = stmt._where.clone();
+  if (stmt.joins)
+    stmt.joins = stmt.joins.slice();
+  if (stmt._values)
+    stmt._values = _.clone(stmt._values);
+  return stmt;
 };
 
 proto.toParams = function toParams() {
@@ -293,12 +300,14 @@ function ViewJoin(view, left_tbl, on) {
       new_aliases[join_alias] = alias + '_' + join_alias;
     });
 
-    // TODO: instantiate ViewJoins or something...
-    this.view.joins.forEach(function(join) {
-      join.autoGenerateOn = ViewJoin.prototype.autoGenerateOn;
-      join.namespaceOn = ViewJoin.prototype.namespaceOn;
-      join.convert = ViewJoin.prototype.convert;
-      join.new_aliases = new_aliases;
+    var parent = this;
+    this.view.joins = this.view.joins.map(function(join) {
+      join = new Join(join.tbl, join.left_tbl, join.on);
+      join.autoGenerateOn = _.wrap(join.autoGenerateOn, function(orig_fn) {
+        var on = orig_fn.apply(this, _.toArray(arguments).slice(1));
+        return parent.namespaceOn(on);
+      });
+      return join;
     });
   }
 
@@ -321,11 +330,8 @@ ViewJoin.prototype.addNamespace = function addNamespace() {
     }.bind(this));
   }
 
-  if (this.view._where) {
-    var where = this.view._where.clone();
-    this.convertExpr(where);
-    this.view._where = where;
-  }
+  if (this.view._where)
+    this.convertExpr(this.view._where);
 };
 
 ViewJoin.prototype.convertExpr = function convertExpr(expr) {
