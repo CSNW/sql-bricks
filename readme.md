@@ -1,10 +1,10 @@
 # SQL Bricks.js
 
-As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL statements.
+As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
 
-In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less annoying: pseudo-views, automatic alias expansion, user-supplied join criteria functions, automatic quoting of column names that collide with SQL keywords ("order", "desc", etc).
+In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: pseudo-views, automatic alias expansion, user-supplied join criteria functions and automatic quoting of column names that collide with SQL keywords ("order", "desc", etc).
 
-What makes SQL Bricks different from other similar libraries is that it does not require a schema or any other configuration. Also, it is not an abstraction layer and it makes no attempt to hide SQL syntax. On the contrary, it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
+SQL Bricks different from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
 SQL Bricks currently supports the **Postgres** dialect and plans are under way to add support for SQLite. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
 
