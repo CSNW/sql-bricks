@@ -81,12 +81,8 @@ proto.join = proto.innerJoin = function join() {
   tbls.forEach(function(tbl) {
     tbl = abbrCheck(tbl);
     var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
-    var join;
-    if (getTable(tbl) in sql.views)
-      join = new ViewJoin(tbl, left_tbl, on);
-    else
-      join = new Join(tbl, left_tbl, on);
-    this.joins.push(join);
+    var ctor = getTable(tbl) in sql.views ? ViewJoin : Join;
+    this.joins.push(new ctor(tbl, left_tbl, on));
   }.bind(this));
 
   this.last_join = tbls[tbls.length - 1];
@@ -101,27 +97,12 @@ proto.on = function on() {
   return this;
 };
 
+// .where(key, value) / .where({...}) / .where(expr)
 proto.and = proto.where = function where() {
   if (!this._where)
     this._where = sql.and();
-
-  // .where(key, value).and(key, value) syntax
-  if (typeof arguments[0] != 'object' && typeof arguments[1] != 'object') {
-    this._where.expressions.push(
-      sql.equal(arguments[0], arguments[1])
-    );
-  }
-  // .where(expr) and .where({...}) syntax
-  else {
-    var where = this._where;
-    _.each(arguments, function(expr) {
-      if (isExpr(expr))
-        where.expressions.push(expr);
-      else
-        where.expressions = where.expressions.concat(objToEquals(expr));
-    });
-  }
-
+  var exprs = argsToExpressions(arguments);
+  this._where.expressions = this._where.expressions.concat(exprs);
   return this;
 };
 
@@ -259,7 +240,7 @@ proto.addToObj = function addToObj(obj, name) {
 };
 
 proto.addColumnArgs = function addColumnArgs(args, name) {
-  var args = argsToArray(args).map(quoteReserved)
+  var args = argsToArray(args).map(quoteReserved);
   return this.add(args, name);
 };
 
@@ -407,6 +388,22 @@ function argsToObject(args) {
   var obj = {};
   obj[args[0]] = args[1];
   return obj;
+}
+
+function argsToExpressions(args) {
+  if (typeof args[0] != 'object' && typeof args[1] != 'object') {
+    return [sql.equal(args[0], args[1])];
+  }
+  else {
+    var exprs = [];
+    _.each(args, function(expr) {
+      if (isExpr(expr))
+        exprs.push(expr);
+      else
+        exprs = exprs.concat(objToEquals(expr));
+    });
+    return exprs;
+  }
 }
 
 sql._abbrs = {};
