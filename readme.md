@@ -10,7 +10,7 @@ SQL Bricks currently supports the **Postgres** dialect and plans are under way t
 
 ## API
 
-SQL Bricks mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are strings, reducing long SQL statements to terse, chainable javascript:
+SQL Bricks mirrors SQL as faithfully as possible. SQL keywords are chainable camelCase methods and non-keywords are strings:
 
 ```javascript
 update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
