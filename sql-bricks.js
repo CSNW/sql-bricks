@@ -20,7 +20,7 @@ sql.select = function select() {
 
 sql.update = sql.update = function update(tbl, values) {
   var stmt = new Statement('update');
-  stmt.tbls = [abbrCheck(tbl)];
+  stmt.tbls = [expandAlias(tbl)];
   if (values)
     stmt.values(values);
   return stmt;
@@ -28,7 +28,7 @@ sql.update = sql.update = function update(tbl, values) {
 
 sql.insert = sql.insertInto = function insertInto(tbl, values) {
   var stmt = new Statement('insert');
-  stmt.tbls = [abbrCheck(tbl)];
+  stmt.tbls = [expandAlias(tbl)];
   if (values) {
     if (typeof values == 'object' && !_.isArray(values)) {
       stmt.values(values);
@@ -61,7 +61,7 @@ proto.select = function select() {
 };
 
 proto.from = function from() {
-  var tbls = argsToArray(arguments).map(abbrCheck);
+  var tbls = argsToArray(arguments).map(expandAlias);
   return this.add(tbls, 'tbls');
 };
 
@@ -79,7 +79,7 @@ proto.join = proto.innerJoin = function join() {
   }
 
   tbls.forEach(function(tbl) {
-    tbl = abbrCheck(tbl);
+    tbl = expandAlias(tbl);
     var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
     var ctor = getTable(tbl) in sql.views ? ViewJoin : Join;
     this.joins.push(new ctor(tbl, left_tbl, on));
@@ -412,20 +412,12 @@ function argsToExpressions(args) {
   }
 }
 
-sql._abbrs = {};
-sql.tblToAbbr = {};
-sql.aliasExpansions = function aliasExpansions(abbrs) {
-  sql._abbrs = abbrs;
-  for (var abbr in sql._abbrs)
-    sql.tblToAbbr[sql._abbrs[abbr]] = abbr;
+sql._aliases = {};
+sql.aliasExpansions = function aliasExpansions(aliases) {
+  sql._aliases = aliases;
 }
-sql.getAbbr = function getAbbr(tbl) {
-  if (!(tbl in sql.tblToAbbr))
-    throw new Error('table "' + tbl + '" has no abbr, unable to auto-generate join criteria');
-  return sql.tblToAbbr[tbl];
-}
-function abbrCheck(tbl) {
-  return tbl in sql._abbrs ? sql._abbrs[tbl] + ' ' + tbl : tbl;
+function expandAlias(tbl) {
+  return tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
 }
 
 sql.defineView = function defineView(view_name, tbl) {

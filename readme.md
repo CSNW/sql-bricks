@@ -23,7 +23,7 @@ select('*').from('user').where('first_name', 'Fred');
 // SELECT * FROM user WHERE first_name = 'Fred'
 ```
 
-The SQL Bricks API also allows "javascript-friendly" object literals:
+The SQL Bricks API also allows object literals everywhere they make sense for a more idiomatic API:
 
 ```javascript
 update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone'});
@@ -36,7 +36,7 @@ select('*').from('user').where({'first_name': 'Fred'});
 // SELECT * FROM user WHERE first_name = 'Fred'
 ```
 
-For added convenience, `select()` defaults to `'*'`, shorter one-word method aliases are provided and in cases where a pair of keywords always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second can be omitted, with the key/value pairs passed to the first method:
+For added convenience, `select()` defaults to `'*'`, shorter one-word method aliases are provided and in cases where a pair of keywords always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second keyword can be omitted, with the object literal passed as an additional argument to the first keyword:
 
 ```javascript
 update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
@@ -104,9 +104,11 @@ select().from('usr').join('addr', {'usr.addr_id': 'addr.id'});
 The user can supply a function to automatically generate the `.on()` criteria for joins whenever it is not supplied explicitly, via a `joinCriteria()` function:
 
 ```javascript
+var alias_expansions = {'usr': 'user', 'addr': 'address', 'zip': 'zipcode', 'psn': 'person'};
+var table_to_alias = _.invert(alias_expansions);
 sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
-  criteria[left_alias + '.' + sql.getAbbr(right_tbl) + '_id'] = right_alias + '.id';
+  criteria[left_alias + '.' + table_to_alias[right_tbl] + '_id'] = right_alias + '.id';
   return criteria;
 };
 
@@ -177,8 +179,6 @@ Add support for:
 * .forUpdate() / .forShare()
 * querying directly off of a pseudo-view: `select().from(viewName)`
 
-Add more/clearer documentation for how abbreviations differ from aliases.
-
 Lower-priority TODOs:
 
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
@@ -191,9 +191,9 @@ Lower-priority TODOs:
 
 Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are run as tests, in addition to the tests in tests.js.
 
-Note that I will not accept pull requests for supporting dialects beyond Postgres and SQLite. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork. I have no interest in adding code, generalizations or hooks to support other dialects.
+Note that **pull requests for additional dialects** beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
 
-I will also not accept pull requests that add support for SQL statements beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and possibly `TRIGGER`. The other statements do not benefit nearly as much from re-use and composition, so the time and complexity of supporting them is not worth the value, IMO. My goal is to keep SQL Bricks small, sharp and low-maintenance.
+Also, **pull requests for additional SQL statements** beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and `TRIGGER` will not be accepted. Other SQL statements do not benefit as much from re-use and composition; our goal is to keep SQL Bricks small, sharp and low-maintenance.
 
 ## Acknowledgements
 

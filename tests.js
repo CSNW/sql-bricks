@@ -7,11 +7,13 @@ var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
 
-sql.aliasExpansions({'usr': 'user', 'psn': 'person', 'addr': 'address'});
+var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
+var table_to_alias = _.invert(alias_expansions);
+sql.aliasExpansions(alias_expansions);
 
 sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
-  criteria[left_alias + '.' + sql.getAbbr(right_tbl) + '_fk'] = right_alias + '.pk';
+  criteria[left_alias + '.' + table_to_alias[right_tbl] + '_fk'] = right_alias + '.pk';
   return criteria;
 };
 
