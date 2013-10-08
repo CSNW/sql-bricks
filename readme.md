@@ -186,12 +186,14 @@ select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHE
 
 ## To-Do
 
+* Browser support
 * `in(argsToArray)`
-* `exists(subquery)`,  `in(subquery)`
+* `in(subquery)`
+* `exists(subquery)`
 * `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
-* Subqueries (in select columns, in where, in update)
+* Subqueries in select columns, in where expressions, in update statements, etc
 * Querying directly from a pseudo-view: `select().from(viewName)`
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
 * Support legacy browsers (via polyfills)
