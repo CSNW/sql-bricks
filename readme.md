@@ -165,7 +165,6 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 Add support for:
 
-* .having()
 * .leftJoin / .rightJoin / .fullJoin / .crossJoin
 * .union() / .intersect() / .except()
 * .into()

@@ -106,12 +106,12 @@ proto.on = function on() {
 
 // .where(key, value) / .where({...}) / .where(expr)
 proto.and = proto.where = function where() {
-  if (!this._where)
-    this._where = sql.and();
-  var exprs = argsToExpressions(arguments);
-  this._where.expressions = this._where.expressions.concat(exprs);
-  return this;
+  return this.addExpression(arguments, '_where');
 };
+
+proto.having = function having() {
+  return this.addExpression(arguments, '_having');
+}
 
 proto.order = proto.orderBy = function orderBy(cols) {
   return this.addColumnArgs(arguments, 'order_by');
@@ -224,6 +224,9 @@ proto.selectToString = function selectToString(opts) {
   if (this.group_by)
     result += 'GROUP BY ' + this.group_by.join(', ') + ' ';
 
+  if (this._having)
+    result += 'HAVING ' + this.whereToString(opts, this._having);
+
   if (this.order_by)
     result += 'ORDER BY ' + this.order_by.join(', ') + ' ';
 
@@ -232,7 +235,7 @@ proto.selectToString = function selectToString(opts) {
 
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
-  
+
   return result;
 };
 
@@ -264,11 +267,13 @@ proto.deleteToString = function deleteToString(opts) {
   return sql;
 };
 
-proto.whereToString = function whereToString(opts) {
-  this._where.parens = false;
-  if (this._where.expressions && this._where.expressions.length == 1)
-    this._where.expressions[0].parens = false;
-  return 'WHERE ' + this._where.toString(opts) + ' ';
+proto.whereToString = function whereToString(opts, expr) {
+  if (!expr)
+    expr = this._where;
+  expr.parens = false;
+  if (expr.expressions && expr.expressions.length == 1)
+    expr.expressions[0].parens = false;
+  return 'WHERE ' + expr.toString(opts) + ' ';
 };
 
 proto.add = function add(arr, name) {
@@ -290,6 +295,14 @@ proto.addToObj = function addToObj(obj, name) {
 proto.addColumnArgs = function addColumnArgs(args, name) {
   var args = argsToArray(args).map(quoteReserved);
   return this.add(args, name);
+};
+
+proto.addExpression = function addExpression(args, name) {
+  if (!this[name])
+    this[name] = sql.and();
+  var exprs = argsToExpressions(args);
+  this[name].expressions = this[name].expressions.concat(exprs);
+  return this;
 };
 
 proto.viewJoins = function viewJoins() {
