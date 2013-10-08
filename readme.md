@@ -1,6 +1,6 @@
 # SQL Bricks.js
 
-As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
+As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
 
 In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords ("order", "desc", etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.
 
@@ -163,19 +163,12 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 ## To-Do
 
-Add support for:
-
-* .leftJoin / .rightJoin / .fullJoin / .crossJoin
-* .union() / .intersect() / .except()
-* .into()
-* querying directly off of a pseudo-view: `select().from(viewName)`
-
-Lower-priority TODOs:
-
-* Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` and the `USING` clause, respectively.
-* Allow binary data being passed to insert()/update()
-* Allow custom expressions in `.join()`?
-* Support SQLite dialect
+* Add SQLite dialect
+* `.leftJoin(), .rightJoin(), .fullJoin(), .crossJoin()`
+* `.union(), .intersect(), .except()`
+* `select().into(), insert().select()`
+* Querying directly from a pseudo-view: `select().from(viewName)`
+* Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
 * Support legacy browsers (via polyfills)
 
 ## Contributing
