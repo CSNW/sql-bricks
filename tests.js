@@ -280,7 +280,25 @@ describe('SQL Bricks', function() {
     });
     it('should handle gte()', function() {
       check(select().from('user').where(gte('order', 5)),
-        'SELECT * FROM user WHERE "order" >= 5')
+        'SELECT * FROM user WHERE "order" >= 5');
+    });
+  });
+
+  describe('.limit()', function() {
+    it('should add a LIMIT clause', function() {
+      check(select().from('user').limit(10),
+        'SELECT * FROM user LIMIT 10');
+    });
+  });
+
+  describe('.offset()', function() {
+    it('should add an OFFSET clause', function() {
+      check(select().from('user').offset(10),
+        'SELECT * FROM user OFFSET 10');
+    });
+    it('should place OFFSET after LIMIT if both are supplied', function() {
+      check(select().from('user').offset(5).limit(10),
+        'SELECT * FROM user LIMIT 10 OFFSET 5')
     });
   });
 

@@ -121,6 +121,16 @@ proto.group = proto.groupBy = function groupBy(cols) {
   return this.addColumnArgs(arguments, 'group_by');
 };
 
+proto.limit = function limit(count) {
+  this._limit = count;
+  return this;
+};
+
+proto.offset = function offset(count) {
+  this._offset = count;
+  return this;
+};
+
 // INSERT & UPDATE
 proto.values = function values() {
   if (this._split_keys_vals_mode) {
@@ -216,6 +226,13 @@ proto.selectToString = function selectToString(opts) {
 
   if (this.order_by)
     result += 'ORDER BY ' + this.order_by.join(', ') + ' ';
+
+  if (this._limit != null)
+    result += 'LIMIT ' + this._limit + ' ';
+
+  if (this._offset != null)
+    result += 'OFFSET ' + this._offset + ' ';
+  
   return result;
 };
 

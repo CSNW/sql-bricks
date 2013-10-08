@@ -60,7 +60,7 @@ select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'}
 
 ## Cloning
 
-The primary goal of SQL Bricks is to enable the elimination of DRY in SQL-heavy applications by allowing easy composition and modification of SQL statements, like building blocks. To enable this, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
+To facilitate composition and re-use, statements can be cloned and clauses can be added in any order (if a `WHERE` clause already exists, the new one will be `AND`ed to it):
 
 ```javascript
 var active_users = select('*').from('user').where({'active': true});
@@ -165,12 +165,10 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 Add support for:
 
-* .into()
+* .having()
 * .leftJoin / .rightJoin / .fullJoin / .crossJoin
 * .union() / .intersect() / .except()
-* .limit() / .offset()
-* .fetch()
-* .forUpdate() / .forShare()
+* .into()
 * querying directly off of a pseudo-view: `select().from(viewName)`
 
 Lower-priority TODOs:
