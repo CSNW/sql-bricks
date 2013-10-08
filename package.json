@@ -1,6 +1,6 @@
 {
   "name": "sql-bricks",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
   "scripts": {
