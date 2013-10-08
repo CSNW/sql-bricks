@@ -45,6 +45,13 @@ sql.insert = sql.insertInto = function insertInto(tbl, values) {
   return stmt;
 };
 
+sql.delete = function del(tbl) {
+  var stmt = new Statement('delete');
+  if (tbl)
+    stmt.tbls = [expandAlias(tbl)];
+  return stmt;
+};
+
 
 // all the statements share a single class to enable
 // cloning a statement and changing its type
@@ -134,6 +141,11 @@ proto.set = function set() {
   return this.addToObj(values, '_values');
 };
 
+// DELETE
+proto.using = function using() {
+  return this.add(argsToArray(arguments).map(expandAlias), '_using');
+};
+
 
 // GENERIC
 proto.clone = function clone() {
@@ -166,6 +178,9 @@ proto.toString = function toString(opts) {
       break;
     case 'insert':
       sql = this.insertToString(opts);
+      break;
+    case 'delete':
+      sql = this.deleteToString(opts);
       break;
     default:
       throw new Error('Unknown statement type: "' + this.type + '"');
@@ -221,6 +236,15 @@ proto.insertToString = function insertToString(opts) {
     return quoteValue(val, opts);
   }).join(', ');
   return 'INSERT INTO ' + this.tbls.join(', ') + ' (' + keys + ') VALUES (' + values + ')';
+};
+
+proto.deleteToString = function deleteToString(opts) {
+  var sql = 'DELETE FROM ' + this.tbls[0] + ' ';
+  if (this._using)
+    sql += 'USING ' + this._using.join(', ') + ' ';
+  if (this._where)
+    sql += this.whereToString(opts);
+  return sql;
 };
 
 proto.whereToString = function whereToString(opts) {
@@ -397,7 +421,7 @@ function argsToObject(args) {
 }
 
 function argsToExpressions(args) {
-  if (typeof args[0] != 'object' && typeof args[1] != 'object') {
+  if (typeof args[0] != 'object' && (typeof args[1] != 'object' || args[1] instanceof sql)) {
     return [sql.equal(args[0], args[1])];
   }
   else {

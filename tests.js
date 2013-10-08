@@ -2,7 +2,7 @@ var assert = require('assert');
 var fs = require('fs');
 var _ = require('underscore');
 var sql = require('./sql-bricks.js');
-var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update;
+var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update, del = sql.delete;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
@@ -371,6 +371,21 @@ describe('SQL Bricks', function() {
     it('should not generate invalid SQL', function() {
       check(select().from('user AS usr').join('addr'),
         'SELECT * FROM user AS usr INNER JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+  });
+
+  describe('delete()', function() {
+    it('should generate a DELETE statement', function() {
+      check(del().from('user'),
+        'DELETE FROM user');
+    });
+    it('should generate a DELETE statement with a WHERE clause', function() {
+      check(del().from('user').where('first_name', 'Fred'),
+        "DELETE FROM user WHERE first_name = 'Fred'")
+    });
+    it('should generate a DELETE with using', function() {
+      check(del().from('user').using('addr').where('user.addr_fk', sql('addr.pk')),
+        "DELETE FROM user USING address addr WHERE user.addr_fk = addr.pk");
     });
   });
 
