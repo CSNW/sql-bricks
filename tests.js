@@ -43,6 +43,12 @@ describe('SQL Bricks', function() {
         'UPDATE user SET name = $1',
         ["Muad'Dib"]);
     });
+    it('should generate node-sqlite3 style params', function() {
+      var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
+      var result = insert('user', values).toParams({'sqlite': true});
+      assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
+      assert.deepEqual(result.values, ['Fred', 'Flintstone']);
+    });
   });
 
   describe('value handling', function() {
@@ -104,6 +110,10 @@ describe('SQL Bricks', function() {
       check(update('user', {'name': 'Fred'}),
         "UPDATE user SET name = 'Fred'");
     });
+    it('SQLite: should handle OR REPLACE', function() {
+      check(update('user').orReplace().set({'name': 'Fred', 'id': 33}),
+        "UPDATE OR REPLACE user SET name = 'Fred', id = 33");
+    });
   });
 
   describe('INSERT statements', function() {
@@ -141,6 +151,10 @@ describe('SQL Bricks', function() {
     it('should handle being called multiple times', function() {
       check(select('one, order').select(['two', 'desc']).select('three', 'four').from('user'),
         'SELECT one, "order", two, "desc", three, four FROM user');
+    });
+    it('should support DISTINCT', function() {
+      check(select('one, order').distinct('two, desc').from('user'),
+        'SELECT DISTINCT one, "order", two, "desc" FROM user');
     });
   });
 

@@ -7,7 +7,6 @@ function sql(str) {
     return new sql(str);
   this.str = str;
 }
-sql.dialect = 'pg';
 sql.prototype.toString = function toString() {
   return this.str;
 };
@@ -53,6 +52,10 @@ sql.Statement = Statement;
 // SELECT
 var proto = Statement.prototype;
 proto.select = function select() {
+  return this.addColumnArgs(arguments, 'cols');
+};
+proto.distinct = function distinct() {
+  this._distinct = true;
   return this.addColumnArgs(arguments, 'cols');
 };
 
@@ -106,7 +109,6 @@ proto.limit = function limit(count) {
   this._limit = count;
   return this;
 };
-
 proto.offset = function offset(count) {
   this._offset = count;
   return this;
@@ -126,7 +128,6 @@ proto.values = function values() {
   return this;
 };
 
-// INSERT
 proto.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
 proto.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
 proto.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
@@ -135,6 +136,8 @@ proto.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
 proto.or = function or(cmd) {
   this._or = cmd;
 };
+
+// INSERT
 proto.into = function into(tbl, values) {
   if (tbl)
     this.tbls = [expandAlias(tbl)];
@@ -179,8 +182,10 @@ proto.clone = function clone() {
   return stmt;
 };
 
-proto.toParams = function toParams() {
-  var opts = {'parameterized': true, 'values': [], 'value_ix': 1};
+proto.toParams = function toParams(opts) {
+  if (!opts)
+    opts = {};
+  _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
   var sql = this.toString(opts);
   return {'text': sql, 'values': opts.values};
 };
@@ -211,7 +216,10 @@ proto.toString = function toString(opts) {
 
 proto.selectToString = function selectToString(opts) {
   var cols = this.cols.length ? this.cols : ['*'];
-  var result = 'SELECT ' + cols.join(', ') + ' FROM ' + this.tbls.join(', ') + ' ';
+  var result = 'SELECT ';
+  if (this._distinct)
+    result += 'DISTINCT ';
+  result += cols.join(', ') + ' FROM ' + this.tbls.join(', ') + ' ';
   if (this.joins)
     result += this.joins.join(' ') + ' ';
 
@@ -250,7 +258,10 @@ proto.selectToString = function selectToString(opts) {
 };
 
 proto.updateToString = function updateToString(opts) {
-  var sql = 'UPDATE ' + this.tbls.join(', ') + ' SET ';
+  var sql = 'UPDATE ';
+  if (this._or)
+    sql += 'OR ' + this._or + ' ';
+  sql += this.tbls[0] + ' SET ';
   sql += _.map(this._values, function(value, key) {
     return key + ' = ' + quoteValue(value, opts);
   }).join(', ') + ' ';
@@ -651,7 +662,8 @@ function quoteValue(val, opts) {
 
   if (opts.parameterized) {
     opts.values.push(val);
-    return '$' + opts.value_ix++;
+    var prefix = opts.sqlite ? '?' : '$';
+    return prefix + opts.value_ix++;
   }
   else {
     return (typeof val == 'string') ? "'" + val.replace(/'/g, "''") + "'" : val;

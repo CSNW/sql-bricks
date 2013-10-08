@@ -6,7 +6,7 @@ In addition, SQL Bricks contains a few conveniences to aid in re-use and to make
 
 SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks currently supports the **Postgres** dialect and plans are under way to add support for SQLite. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
+SQL Bricks currently supports **SQL-92** as well as the **Postgres** dialect and the **SQLite** dialect. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
 
 ## API
 
@@ -161,9 +161,15 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
 ```
 
+For [node-sqlite3](https://github.com/developmentseed/node-sqlite3) style params (`?1`, `?2`), simply pass `{sqlite: true}` into `.toParams()`:
+
+```javascript
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({sqlite: true});
+// {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
+```
+
 ## To-Do
 
-* SQLite dialect
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
 * Subquery support
