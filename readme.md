@@ -163,8 +163,8 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 ## To-Do
 
-* `.union(), .intersect(), .except()`
 * SQLite dialect
+* `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
 * Subquery support
 * Querying directly from a pseudo-view: `select().from(viewName)`

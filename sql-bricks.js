@@ -7,11 +7,10 @@ function sql(str) {
     return new sql(str);
   this.str = str;
 }
+sql.dialect = 'pg';
 sql.prototype.toString = function toString() {
   return this.str;
 };
-
-sql.views = {};
 
 sql.select = function select() {
   var stmt = new Statement('select');
@@ -28,21 +27,11 @@ sql.update = sql.update = function update(tbl, values) {
 
 sql.insert = sql.insertInto = function insertInto(tbl, values) {
   var stmt = new Statement('insert');
-  stmt.tbls = [expandAlias(tbl)];
-  if (values) {
-    if (typeof values == 'object' && !_.isArray(values)) {
-      stmt.values(values);
-    }
-    else {
-      stmt._split_keys_vals_mode = true;
-      stmt._values = {};
-      var val_arr = argsToArray(_.toArray(arguments).slice(1));
-      val_arr.forEach(function(key) {
-        stmt._values[quoteReserved(key)] = null;
-      });
-    }
-  }
-  return stmt;
+  return stmt.into.apply(stmt, arguments);
+};
+
+sql.replace = function replace(tbl, values) {
+  return sql.insert(tbl, values).orReplace();
 };
 
 sql.delete = function del(tbl) {
@@ -133,6 +122,35 @@ proto.values = function values() {
   }
   else {
     this.addToObj(quoteReservedKeys(argsToObject(arguments)), '_values');
+  }
+  return this;
+};
+
+// INSERT
+proto.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
+proto.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
+proto.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
+proto.orFail = function orFail() { this._or = 'FAIL'; return this; };
+proto.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
+proto.or = function or(cmd) {
+  this._or = cmd;
+};
+proto.into = function into(tbl, values) {
+  if (tbl)
+    this.tbls = [expandAlias(tbl)];
+
+  if (values) {
+    if (typeof values == 'object' && !_.isArray(values)) {
+      this.values(values);
+    }
+    else {
+      this._split_keys_vals_mode = true;
+      this._values = {};
+      var val_arr = argsToArray(_.toArray(arguments).slice(1));
+      val_arr.forEach(function(key) {
+        this._values[quoteReserved(key)] = null;
+      }.bind(this));
+    }
   }
   return this;
 };
@@ -247,7 +265,11 @@ proto.insertToString = function insertToString(opts) {
   var values = _.values(this._values).map(function(val) {
     return quoteValue(val, opts);
   }).join(', ');
-  return 'INSERT INTO ' + this.tbls.join(', ') + ' (' + keys + ') VALUES (' + values + ')';
+  var sql = 'INSERT ';
+  if (this._or)
+    sql += 'OR ' + this._or + ' '; 
+  sql += 'INTO ' + this.tbls.join(', ') + ' (' + keys + ') VALUES (' + values + ')';
+  return sql;
 };
 
 proto.deleteToString = function deleteToString(opts) {
@@ -491,6 +513,7 @@ function expandAlias(tbl) {
   return tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
 }
 
+sql.views = {};
 sql.defineView = function defineView(view_name, tbl) {
   return sql.views[view_name] = new Statement('select').from(tbl);
 };

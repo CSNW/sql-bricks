@@ -2,7 +2,7 @@ var assert = require('assert');
 var fs = require('fs');
 var _ = require('underscore');
 var sql = require('./sql-bricks.js');
-var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update, del = sql.delete;
+var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
@@ -103,6 +103,21 @@ describe('SQL Bricks', function() {
     it('should handle values argument', function() {
       check(update('user', {'name': 'Fred'}),
         "UPDATE user SET name = 'Fred'");
+    });
+  });
+
+  describe('INSERT statements', function() {
+    it('should handle .orReplace()', function() {
+      check(insert().orReplace().into('user').values({'id': 33, 'name': 'Fred'}),
+        "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
+    });
+    it('replace() should render INSERT OR REPLACE', function() {
+      check(replace().into('user').values({'id': 33, 'name': 'Fred'}),
+        "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
+    });
+    it('replace() should take a table name', function() {
+      check(replace('user').values({'id': 33, 'name': 'Fred'}),
+        "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
     });
   });
 
