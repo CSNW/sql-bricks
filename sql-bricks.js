@@ -114,6 +114,16 @@ proto.offset = function offset(count) {
   return this;
 };
 
+proto.forUpdate = proto.forUpdateOf = function forUpdate() {
+  this.for_update = true;
+  this.addColumnArgs(arguments, 'for_update_cols');
+  return this;
+};
+proto.noWait = function noWait() {
+  this.no_wait = true;
+  return this;
+};
+
 // INSERT & UPDATE
 proto.values = function values() {
   if (this._split_keys_vals_mode) {
@@ -254,6 +264,13 @@ proto.selectToString = function selectToString(opts) {
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
 
+  if (this.for_update) {
+    result += 'FOR UPDATE ';
+    if (this.for_update_cols)
+      result += this.for_update_cols.join(', ') + ' ';
+    if (this.no_wait)
+      result += 'NO WAIT ';
+  }
   return result;
 };
 

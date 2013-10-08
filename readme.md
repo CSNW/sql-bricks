@@ -172,7 +172,6 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 
 * `case()`, `coalesce()`, `nullif()`, `ifnull()`, `between()`, `in(argsToArray)`
 * `exists(subquery)`,  `in(subquery)`
-* `.forUpdate()` / `.noWait()`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
 * Subqueries (in select columns, in where, in update)

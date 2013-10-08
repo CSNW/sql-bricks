@@ -156,6 +156,14 @@ describe('SQL Bricks', function() {
       check(select('one, order').distinct('two, desc').from('user'),
         'SELECT DISTINCT one, "order", two, "desc" FROM user');
     });
+    it('should support FOR UPDATE', function() {
+      check(select().from('user').forUpdate('first_name', 'last_name'),
+        'SELECT * FROM user FOR UPDATE first_name, last_name');
+    });
+    it('should support FOR UPDATE ... NO WAIT', function() {
+      check(select().from('user').forUpdateOf('first_name').noWait(),
+        'SELECT * FROM user FOR UPDATE first_name NO WAIT');
+    });
   });
 
   describe('.from()', function() {
