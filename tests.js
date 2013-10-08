@@ -367,6 +367,13 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('the AS keyword', function() {
+    it('should not generate invalid SQL', function() {
+      check(select().from('user AS usr').join('addr'),
+        'SELECT * FROM user AS usr INNER JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+  });
+
   describe('documentation examples', function() {
     var comment = '// ';
 

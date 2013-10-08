@@ -163,10 +163,6 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 ## To-Do
 
-Fix bugs:
-
-* Using AS keyword (select().from('user AS usr').join('addr')) will generate invalid SQL
-
 Add support for:
 
 * delete()

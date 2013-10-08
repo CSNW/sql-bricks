@@ -517,9 +517,14 @@ In.prototype.toString = function toString(opts) {
 
 
 function getAlias(tbl) {
-  var space_ix = tbl.indexOf(' ');
-  if (space_ix > -1)
-    return tbl.slice(space_ix + 1);
+  var separator = ' AS ';
+  var sep_ix = tbl.indexOf(separator);
+  if (sep_ix == -1) {
+    separator = ' ';
+    sep_ix = tbl.indexOf(separator);
+  }
+  if (sep_ix > -1)
+    return tbl.slice(sep_ix + separator.length);
   return tbl;
 }
 function getTable(tbl) {
