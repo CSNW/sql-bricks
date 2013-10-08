@@ -6,7 +6,7 @@ In addition, SQL Bricks contains a few conveniences to aid in re-use and to make
 
 SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks currently supports **SQL-92** as well as the **Postgres** dialect and the **SQLite** dialect. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
+SQL Bricks supports the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`), as defined by [**SQL-92**](http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf), as well as some **Postgres** and **SQLite** extensions for these statements (see the *Contributing* section for more details).
 
 ## API
 
@@ -170,9 +170,13 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 
 ## To-Do
 
+* Add `escape_char` as optional 3rd arg to `like()`
+* `case()`, `coalesce()`, `nullif()`, `ifnull()`, `between()`, `in(argsToArray)`
+* `exists(subquery)`,  `in(subquery)`
+* `.forUpdate()` / `.noWait()`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
-* Subquery support
+* Subqueries (in select columns, in where, in update)
 * Querying directly from a pseudo-view: `select().from(viewName)`
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
 * Support legacy browsers (via polyfills)
@@ -181,7 +185,7 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 
 Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are run as tests, in addition to the tests in tests.js.
 
-Note that **pull requests for additional dialects** beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
+Note that **pull requests for additional SQL dialects** or extensions beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
 
 Also, **pull requests for additional SQL statements** beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and `TRIGGER` will not be accepted. Other SQL statements do not benefit as much from re-use and composition; my goal is to keep SQL Bricks small, sharp and low-maintenance.
 

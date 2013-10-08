@@ -391,6 +391,10 @@ describe('SQL Bricks', function() {
       check(select('db.usr.desc AS usr_desc').from('usr'),
         'SELECT db.usr."desc" AS usr_desc FROM user usr');
     });
+    it('should quote sqlite reserved words', function() {
+      check(select('action').from('user'),
+        'SELECT "action" FROM user');
+    });
   });
 
   describe('pseudo-views', function() {
