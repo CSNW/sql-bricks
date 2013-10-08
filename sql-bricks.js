@@ -14,7 +14,6 @@ sql.prototype.toString = function toString() {
 
 sql.select = function select() {
   var stmt = new Statement('select');
-  debugger;
   return stmt.select.apply(stmt, arguments);
 };
 
