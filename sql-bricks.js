@@ -572,7 +572,6 @@ Not.prototype.toString = function toString(opts) {
   return 'NOT ' + this.expressions[0].toString(opts);
 };
 
-sql.like = function like(col, val) { return new Binary('LIKE', col, val); };
 sql.eq = sql.equal = function equal(col, val) { return new Binary('=', col, val); };
 sql.lt = function lt(col, val) { return new Binary('<', col, val); };
 sql.lte = function lte(col, val) { return new Binary('<=', col, val); };
@@ -589,6 +588,22 @@ Binary.prototype.clone = function clone() {
 };
 Binary.prototype.toString = function toString(opts) {
   return quoteReserved(this.col) + ' ' + this.op + ' ' + quoteValue(this.val, opts);
+}
+
+sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };
+function Like(col, val, escape_char) {
+  this.col = col;
+  this.val = val;
+  this.escape_char = escape_char;
+};
+Like.prototype.clone = function clone() {
+  return new Like(this.col, this.val, this.escape_char);
+};
+Like.prototype.toString = function toString(opts) {
+  var sql = quoteReserved(this.col) + ' LIKE ' + quoteValue(this.val, opts);
+  if (this.escape_char)
+    sql += " ESCAPE '" + this.escape_char + "'";
+  return sql;
 }
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
@@ -640,7 +655,7 @@ function getTable(tbl) {
 }
 
 function isExpr(expr) {
-  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In;
+  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like;
 }
 
 // raw objects default to equals

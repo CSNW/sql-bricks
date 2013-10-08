@@ -170,7 +170,6 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 
 ## To-Do
 
-* Add `escape_char` as optional 3rd arg to `like()`
 * `case()`, `coalesce()`, `nullif()`, `ifnull()`, `between()`, `in(argsToArray)`
 * `exists(subquery)`,  `in(subquery)`
 * `.forUpdate()` / `.noWait()`

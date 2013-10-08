@@ -310,6 +310,10 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(like('last_name', 'Flint%')),
         "SELECT * FROM user WHERE last_name LIKE 'Flint%'");
     });
+    it('should accept a 3rd escape param to like()', function() {
+      check(select().from('user').where(like('percent', '100\\%', '\\')),
+        "SELECT * FROM user WHERE percent LIKE '100\\%' ESCAPE '\\'")
+    });
     it('should handle not()', function() {
       check(select().from('user').where(not({'first_name': 'Fred'})),
         "SELECT * FROM user WHERE NOT first_name = 'Fred'");
