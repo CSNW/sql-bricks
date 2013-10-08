@@ -12,7 +12,7 @@
     "url": "https://github.com/CSNW/sql-bricks.git"
   },
   "keywords": [
-    "sql", "generation", "generate", "query", "pg", "postgres", "sqlite", "builder", "select", "update"
+    "sql", "generation", "generate", "query", "pg", "postgres", "sqlite", "builder", "select", "insert", "update", "delete"
   ],
   "engines": {
     "node": "*"

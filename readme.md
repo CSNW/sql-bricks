@@ -187,11 +187,11 @@ Before sending a pull request, please verify that all the existing tests pass an
 
 Note that **pull requests for additional dialects** beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
 
-Also, **pull requests for additional SQL statements** beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and `TRIGGER` will not be accepted. Other SQL statements do not benefit as much from re-use and composition; our goal is to keep SQL Bricks small, sharp and low-maintenance.
+Also, **pull requests for additional SQL statements** beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and `TRIGGER` will not be accepted. Other SQL statements do not benefit as much from re-use and composition; my goal is to keep SQL Bricks small, sharp and low-maintenance.
 
 ## Acknowledgements
 
-Huge thanks to [Brian C](https://github.com/brianc) for his work on the [node-sql](https://github.com/brianc/node-sql) library, his patience with me as I hacked on it and his encouragement when we chatted about a way to generate arbitrary SQL without needing everything in a schema.
+Huge thanks to [Brian C](https://github.com/brianc) for his hard work supporting and maintaining [node-sql](https://github.com/brianc/node-sql) and [node-postgres](https://github.com/brianc/node-postgres) and especially for his patience with me and my pull requests.
 
 ## License
 
