@@ -2,10 +2,11 @@ var assert = require('assert');
 var fs = require('fs');
 var _ = require('underscore');
 var sql = require('./sql-bricks.js');
-var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update, del = sql.delete, replace = sql.replace;
+var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
+  update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, union = sql.union;
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between, union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -42,6 +43,12 @@ describe('SQL Bricks', function() {
       checkParams(update('user', {'name': "Muad'Dib"}),
         'UPDATE user SET name = $1',
         ["Muad'Dib"]);
+    });
+    it('should generate node-sqlite3 style params', function() {
+      var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
+      var result = insert('user', values).toParams({'sqlite': true});
+      assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
+      assert.deepEqual(result.values, ['Fred', 'Flintstone']);
     });
   });
 
@@ -109,6 +116,10 @@ describe('SQL Bricks', function() {
       check(update('user', {'name': 'Fred'}),
         "UPDATE user SET name = 'Fred'");
     });
+    it('SQLite: should handle OR REPLACE', function() {
+      check(update('user').orReplace().set({'name': 'Fred', 'id': 33}),
+        "UPDATE OR REPLACE user SET name = 'Fred', id = 33");
+    });
   });
 
   describe('INSERT statements', function() {
@@ -146,6 +157,18 @@ describe('SQL Bricks', function() {
     it('should handle being called multiple times', function() {
       check(select('one, order').select(['two', 'desc']).select('three', 'four').from('user'),
         'SELECT one, "order", two, "desc", three, four FROM user');
+    });
+    it('should support DISTINCT', function() {
+      check(select('one, order').distinct('two, desc').from('user'),
+        'SELECT DISTINCT one, "order", two, "desc" FROM user');
+    });
+    it('should support FOR UPDATE', function() {
+      check(select().from('user').forUpdate('first_name', 'last_name'),
+        'SELECT * FROM user FOR UPDATE first_name, last_name');
+    });
+    it('should support FOR UPDATE ... NO WAIT', function() {
+      check(select().from('user').forUpdateOf('first_name').noWait(),
+        'SELECT * FROM user FOR UPDATE first_name NO WAIT');
     });
   });
 
@@ -301,6 +324,10 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(like('last_name', 'Flint%')),
         "SELECT * FROM user WHERE last_name LIKE 'Flint%'");
     });
+    it('should accept a 3rd escape param to like()', function() {
+      check(select().from('user').where(like('percent', '100\\%', '\\')),
+        "SELECT * FROM user WHERE percent LIKE '100\\%' ESCAPE '\\'")
+    });
     it('should handle not()', function() {
       check(select().from('user').where(not({'first_name': 'Fred'})),
         "SELECT * FROM user WHERE NOT first_name = 'Fred'");
@@ -336,6 +363,10 @@ describe('SQL Bricks', function() {
     it('should handle gte()', function() {
       check(select().from('user').where(gte('order', 5)),
         'SELECT * FROM user WHERE "order" >= 5');
+    });
+    it('should handle between()', function() {
+      check(select().from('user').where(between('name', 'Frank', 'Fred')),
+        "SELECT * FROM user WHERE name BETWEEN 'Frank' AND 'Fred'")
     });
   });
 
@@ -381,6 +412,10 @@ describe('SQL Bricks', function() {
     it('with a db and table prefix and a suffix', function() {
       check(select('db.usr.desc AS usr_desc').from('usr'),
         'SELECT db.usr."desc" AS usr_desc FROM user usr');
+    });
+    it('should quote sqlite reserved words', function() {
+      check(select('action').from('user'),
+        'SELECT "action" FROM user');
     });
   });
 

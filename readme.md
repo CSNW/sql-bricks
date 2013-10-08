@@ -6,7 +6,7 @@ In addition, SQL Bricks contains a few conveniences to aid in re-use and to make
 
 SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks currently supports the **Postgres** dialect and plans are under way to add support for SQLite. Other dialects will not be supported by SQL Bricks (see the related note in the *Contributing* section).
+SQL Bricks supports the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and all of their clauses as defined by [**SQL-92**](http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf) as well as some **Postgres** and **SQLite** extensions (see the *Contributing* section for more details).
 
 ## API
 
@@ -161,12 +161,39 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
 ```
 
+For [node-sqlite3](https://github.com/developmentseed/node-sqlite3) style params (`?1`, `?2`), simply pass `{sqlite: true}` into `.toParams()`:
+
+```javascript
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({sqlite: true});
+// {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
+```
+
+## SQL Functions
+
+There are 95 SQL functions defined in SQL-92, including `AVG()`, `COUNT()`, `MIN()`, `MAX()`, `SUM()`, `COALESCE()`, `CASE()`, `LTRIM()`, `RTRIM()`, `UPPER()`, `LOWER()`. These can be easily used in SQL Bricks anywhere that a sql statement is expected, such as in a SELECT list, via a string:
+
+```javascript
+select('COUNT(*)').from('user').where({'access_level': 3});
+// SELECT COUNT(*) FROM user WHERE access_level = 3
+```
+
+These can also be accessed anywhere a value is expected (in the values for an `INSERT` or `UPDATE` statement or in the right-hand side of a `WHERE` expression) via wrapping a string in the `sql()` function:
+
+```javascript
+select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END")});
+// SELECT * FROM user WHERE level_text = CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END
+```
+
 ## To-Do
 
-* SQLite dialect
+* Browser support
+* `in(argsToArray)`
+* `in(subquery)`
+* `exists(subquery)`
+* `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
-* Subquery support
+* Subqueries in select columns, in where expressions, in update statements, etc
 * Querying directly from a pseudo-view: `select().from(viewName)`
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
 * Support legacy browsers (via polyfills)
@@ -175,7 +202,7 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are run as tests, in addition to the tests in tests.js.
 
-Note that **pull requests for additional dialects** beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
+Note that **pull requests for additional SQL dialects** or extensions beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
 
 Also, **pull requests for additional SQL statements** beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and `TRIGGER` will not be accepted. Other SQL statements do not benefit as much from re-use and composition; my goal is to keep SQL Bricks small, sharp and low-maintenance.
 

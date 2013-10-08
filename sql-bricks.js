@@ -7,7 +7,6 @@ function sql(str) {
     return new sql(str);
   this.str = str;
 }
-sql.dialect = 'pg';
 sql.prototype.toString = function toString() {
   return this.str;
 };
@@ -52,6 +51,10 @@ sql.Statement = Statement;
 // SELECT
 var proto = Statement.prototype;
 proto.select = function select() {
+  return this.addColumnArgs(arguments, 'cols');
+};
+proto.distinct = function distinct() {
+  this._distinct = true;
   return this.addColumnArgs(arguments, 'cols');
 };
 
@@ -105,7 +108,6 @@ proto.limit = function limit(count) {
   this._limit = count;
   return this;
 };
-
 proto.offset = function offset(count) {
   this._offset = count;
   return this;
@@ -113,6 +115,15 @@ proto.offset = function offset(count) {
 
 proto.union = function union(stmt) {
   this._union = stmt.toString();
+  return this;
+};
+proto.forUpdate = proto.forUpdateOf = function forUpdate() {
+  this.for_update = true;
+  this.addColumnArgs(arguments, 'for_update_cols');
+  return this;
+};
+proto.noWait = function noWait() {
+  this.no_wait = true;
   return this;
 };
 
@@ -130,7 +141,6 @@ proto.values = function values() {
   return this;
 };
 
-// INSERT
 proto.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
 proto.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
 proto.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
@@ -139,6 +149,8 @@ proto.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
 proto.or = function or(cmd) {
   this._or = cmd;
 };
+
+// INSERT
 proto.into = function into(tbl, values) {
   if (tbl)
     this.tbls = [expandAlias(tbl)];
@@ -183,8 +195,10 @@ proto.clone = function clone() {
   return stmt;
 };
 
-proto.toParams = function toParams() {
-  var opts = {'parameterized': true, 'values': [], 'value_ix': 1};
+proto.toParams = function toParams(opts) {
+  if (!opts)
+    opts = {};
+  _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
   var sql = this.toString(opts);
   return {'text': sql, 'values': opts.values};
 };
@@ -215,7 +229,10 @@ proto.toString = function toString(opts) {
 
 proto.selectToString = function selectToString(opts) {
   var cols = this.cols.length ? this.cols : ['*'];
-  var result = 'SELECT ' + cols.join(', ') + ' FROM ' + this.tbls.join(', ') + ' ';
+  var result = 'SELECT ';
+  if (this._distinct)
+    result += 'DISTINCT ';
+  result += cols.join(', ') + ' FROM ' + this.tbls.join(', ') + ' ';
   if (this.joins)
     result += this.joins.join(' ') + ' ';
 
@@ -253,11 +270,21 @@ proto.selectToString = function selectToString(opts) {
   if (this._union != null)
   	result += 'UNION ' + this._union;
 
+  if (this.for_update) {
+    result += 'FOR UPDATE ';
+    if (this.for_update_cols)
+      result += this.for_update_cols.join(', ') + ' ';
+    if (this.no_wait)
+      result += 'NO WAIT ';
+  }
   return result;
 };
 
 proto.updateToString = function updateToString(opts) {
-  var sql = 'UPDATE ' + this.tbls.join(', ') + ' SET ';
+  var sql = 'UPDATE ';
+  if (this._or)
+    sql += 'OR ' + this._or + ' ';
+  sql += this.tbls[0] + ' SET ';
   sql += _.map(this._values, function(value, key) {
     return key + ' = ' + quoteValue(value, opts);
   }).join(', ') + ' ';
@@ -568,7 +595,6 @@ Not.prototype.toString = function toString(opts) {
   return 'NOT ' + this.expressions[0].toString(opts);
 };
 
-sql.like = function like(col, val) { return new Binary('LIKE', col, val); };
 sql.eq = sql.equal = function equal(col, val) { return new Binary('=', col, val); };
 sql.lt = function lt(col, val) { return new Binary('<', col, val); };
 sql.lte = function lte(col, val) { return new Binary('<=', col, val); };
@@ -586,6 +612,35 @@ Binary.prototype.clone = function clone() {
 Binary.prototype.toString = function toString(opts) {
   return quoteReserved(this.col) + ' ' + this.op + ' ' + quoteValue(this.val, opts);
 }
+
+sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };
+function Like(col, val, escape_char) {
+  this.col = col;
+  this.val = val;
+  this.escape_char = escape_char;
+}
+Like.prototype.clone = function clone() {
+  return new Like(this.col, this.val, this.escape_char);
+};
+Like.prototype.toString = function toString(opts) {
+  var sql = quoteReserved(this.col) + ' LIKE ' + quoteValue(this.val, opts);
+  if (this.escape_char)
+    sql += " ESCAPE '" + this.escape_char + "'";
+  return sql;
+}
+
+sql.between = function between(col, val1, val2) { return new Between(col, val1, val2); };
+function Between(col, val1, val2) {
+  this.col = col;
+  this.val1 = val1;
+  this.val2 = val2;
+}
+Between.prototype.clone = function clone() {
+  return new Between(this.col, this.val1, this.val2);
+};
+Between.prototype.toString = function(opts) {
+  return quoteReserved(this.col) + ' BETWEEN ' + quoteValue(this.val1, opts) + ' AND ' + quoteValue(this.val2, opts);
+};
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
 sql.isNotNull = function isNotNull(col) { return new Unary('IS NOT NULL', col); };
@@ -636,7 +691,7 @@ function getTable(tbl) {
 }
 
 function isExpr(expr) {
-  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In;
+  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like || expr instanceof Between;
 }
 
 // raw objects default to equals
@@ -658,16 +713,20 @@ function quoteValue(val, opts) {
 
   if (opts.parameterized) {
     opts.values.push(val);
-    return '$' + opts.value_ix++;
+    var prefix = opts.sqlite ? '?' : '$';
+    return prefix + opts.value_ix++;
   }
   else {
     return (typeof val == 'string') ? "'" + val.replace(/'/g, "''") + "'" : val;
   }
 }
 
-// PostgreSQL reserved words from Table C-1 of http://www.postgresql.org/docs/9.3/static/sql-keywords-appendix.html
-var reserved = ['all', 'analyse', 'analyze', 'and', 'any', 'array', 'as', 'asc', 'asymmetric', 'authorization', 'both', 'case', 'cast', 'check', 'collate', 'collation', 'column', 'constraint', 'create', 'cross', 'current_catalog', 'current_date', 'current_role', 'current_time', 'current_timestamp', 'current_user', 'default', 'deferrable', 'desc', 'distinct', 'do', 'else', 'end', 'except', 'false', 'fetch', 'for', 'foreign', 'freeze', 'from', 'full', 'grant', 'group', 'having', 'ilike', 'in', 'initially', 'inner', 'intersect', 'into', 'is', 'isnull', 'join', 'lateral', 'leading', 'left', 'like', 'limit', 'localtime', 'localtimestamp', 'natural', 'not', 'notnull', 'null', 'offset', 'on', 'only', 'or', 'order', 'outer', 'over', 'overlaps', 'placing', 'primary', 'references', 'returning', 'right', 'select', 'session_user', 'similar', 'some', 'symmetric', 'table', 'then', 'to', 'trailing', 'true', 'union', 'unique', 'user', 'using', 'variadic', 'verbose', 'when', 'where', 'window', 'with', ]
-reserved = _.object(reserved, reserved);
+// Table C-1 of http://www.postgresql.org/docs/9.3/static/sql-keywords-appendix.html
+var pg_reserved = ['all', 'analyse', 'analyze', 'and', 'any', 'array', 'as', 'asc', 'asymmetric', 'authorization', 'both', 'case', 'cast', 'check', 'collate', 'collation', 'column', 'constraint', 'create', 'cross', 'current_catalog', 'current_date', 'current_role', 'current_time', 'current_timestamp', 'current_user', 'default', 'deferrable', 'desc', 'distinct', 'do', 'else', 'end', 'except', 'false', 'fetch', 'for', 'foreign', 'freeze', 'from', 'full', 'grant', 'group', 'having', 'ilike', 'in', 'initially', 'inner', 'intersect', 'into', 'is', 'isnull', 'join', 'lateral', 'leading', 'left', 'like', 'limit', 'localtime', 'localtimestamp', 'natural', 'not', 'notnull', 'null', 'offset', 'on', 'only', 'or', 'order', 'outer', 'over', 'overlaps', 'placing', 'primary', 'references', 'returning', 'right', 'select', 'session_user', 'similar', 'some', 'symmetric', 'table', 'then', 'to', 'trailing', 'true', 'union', 'unique', 'user', 'using', 'variadic', 'verbose', 'when', 'where', 'window', 'with'];
+// list in http://www.sqlite.org/lang_keywords.html
+var sqlite_keywords = ['abort', 'action', 'add', 'after', 'all', 'alter', 'analyze', 'and', 'as', 'asc', 'attach', 'autoincrement', 'before', 'begin', 'between', 'by', 'cascade', 'case', 'cast', 'check', 'collate', 'column', 'commit', 'conflict', 'constraint', 'create', 'cross', 'current_date', 'current_time', 'current_timestamp', 'database', 'default', 'deferrable', 'deferred', 'delete', 'desc', 'detach', 'distinct', 'drop', 'each', 'else', 'end', 'escape', 'except', 'exclusive', 'exists', 'explain', 'fail', 'for', 'foreign', 'from', 'full', 'glob', 'group', 'having', 'if', 'ignore', 'immediate', 'in', 'index', 'indexed', 'initially', 'inner', 'insert', 'instead', 'intersect', 'into', 'is', 'isnull', 'join', 'key', 'left', 'like', 'limit', 'match', 'natural', 'no', 'not', 'notnull', 'null', 'of', 'offset', 'on', 'or', 'order', 'outer', 'plan', 'pragma', 'primary', 'query', 'raise', 'references', 'regexp', 'reindex', 'release', 'rename', 'replace', 'restrict', 'right', 'rollback', 'row', 'savepoint', 'select', 'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger', 'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual', 'when', 'where'];
+var reserved = _.uniq(pg_reserved.concat(sqlite_keywords));
+var reserved = _.object(reserved, reserved);
 
 function quoteReservedObj(obj) {
   obj = quoteReservedKeys(obj);
