@@ -168,10 +168,27 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 // {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
 ```
 
+## SQL Functions
+
+There are 95 SQL functions defined in SQL-92, including `AVG()`, `COUNT()`, `MIN()`, `MAX()`, `SUM()`, `COALESCE()`, `CASE()`, `LTRIM()`, `RTRIM()`, `UPPER()`, `LOWER()`. These can be easily used in SQL Bricks anywhere that a sql statement is expected, such as in a SELECT list, via a string:
+
+```javascript
+select('COUNT(*)').from('user').where({'access_level': 3});
+// SELECT COUNT(*) FROM user WHERE access_level = 3
+```
+
+These can also be accessed anywhere a value is expected (in the values for an `INSERT` or `UPDATE` statement or in the right-hand side of a `WHERE` expression) via wrapping a string in the `sql()` function:
+
+```javascript
+select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END")});
+// SELECT * FROM user WHERE level_text = CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END
+```
+
 ## To-Do
 
-* `case()`, `coalesce()`, `nullif()`, `ifnull()`, `between()`, `in(argsToArray)`
+* `in(argsToArray)`
 * `exists(subquery)`,  `in(subquery)`
+* `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
 * Subqueries (in select columns, in where, in update)

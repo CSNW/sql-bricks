@@ -612,7 +612,7 @@ function Like(col, val, escape_char) {
   this.col = col;
   this.val = val;
   this.escape_char = escape_char;
-};
+}
 Like.prototype.clone = function clone() {
   return new Like(this.col, this.val, this.escape_char);
 };
@@ -622,6 +622,19 @@ Like.prototype.toString = function toString(opts) {
     sql += " ESCAPE '" + this.escape_char + "'";
   return sql;
 }
+
+sql.between = function between(col, val1, val2) { return new Between(col, val1, val2); };
+function Between(col, val1, val2) {
+  this.col = col;
+  this.val1 = val1;
+  this.val2 = val2;
+}
+Between.prototype.clone = function clone() {
+  return new Between(this.col, this.val1, this.val2);
+};
+Between.prototype.toString = function(opts) {
+  return quoteReserved(this.col) + ' BETWEEN ' + quoteValue(this.val1, opts) + ' AND ' + quoteValue(this.val2, opts);
+};
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
 sql.isNotNull = function isNotNull(col) { return new Unary('IS NOT NULL', col); };
@@ -672,7 +685,7 @@ function getTable(tbl) {
 }
 
 function isExpr(expr) {
-  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like;
+  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like || expr instanceof Between;
 }
 
 // raw objects default to equals

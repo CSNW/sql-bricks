@@ -2,10 +2,11 @@ var assert = require('assert');
 var fs = require('fs');
 var _ = require('underscore');
 var sql = require('./sql-bricks.js');
-var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update, del = sql.delete, replace = sql.replace;
+var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
+  update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -357,6 +358,10 @@ describe('SQL Bricks', function() {
     it('should handle gte()', function() {
       check(select().from('user').where(gte('order', 5)),
         'SELECT * FROM user WHERE "order" >= 5');
+    });
+    it('should handle between()', function() {
+      check(select().from('user').where(between('name', 'Frank', 'Fred')),
+        "SELECT * FROM user WHERE name BETWEEN 'Frank' AND 'Fred'")
     });
   });
 
