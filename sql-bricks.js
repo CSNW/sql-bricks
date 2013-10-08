@@ -14,6 +14,7 @@ sql.prototype.toString = function toString() {
 
 sql.select = function select() {
   var stmt = new Statement('select');
+  debugger;
   return stmt.select.apply(stmt, arguments);
 };
 
@@ -40,7 +41,6 @@ sql.delete = function del(tbl) {
     stmt.tbls = [expandAlias(tbl)];
   return stmt;
 };
-
 
 // all the statements share a single class to enable
 // cloning a statement and changing its type
@@ -109,6 +109,11 @@ proto.limit = function limit(count) {
 
 proto.offset = function offset(count) {
   this._offset = count;
+  return this;
+};
+
+proto.union = function union(stmt) {
+  this._union = stmt.toString();
   return this;
 };
 
@@ -245,6 +250,9 @@ proto.selectToString = function selectToString(opts) {
 
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
+
+  if (this._union != null)
+  	result += 'UNION ' + this._union;
 
   return result;
 };

@@ -5,7 +5,7 @@ var sql = require('./sql-bricks.js');
 var select = sql.select, insertInto = sql.insertInto, insert = sql.insert, update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte;
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -81,6 +81,11 @@ describe('SQL Bricks', function() {
       'SELECT * FROM user usr ' +
       'INNER JOIN person psn ON usr.psn_fk = psn.pk ' +
       'INNER JOIN address addr ON usr.addr_fk = addr.pk');
+  });
+  it('should handle unions', function() {
+  	check(select().from('usr').where({'name': 'Roy'})
+  		.union(select().from('usr').where({'name': 'Moss'})), 
+  		"SELECT * FROM user usr WHERE name = 'Roy' UNION SELECT * FROM user usr WHERE name = 'Moss'");
   });
 
   describe('UPDATE statements', function() {
