@@ -191,7 +191,7 @@ select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHE
 * `in(subquery)`
 * `exists(subquery)`
 * `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
-* `.union(), .intersect(), .except()`
+* `.intersect(), .except()`
 * `select().into(), insert().select()`
 * Subqueries in select columns, in where expressions, in update statements, etc
 * Querying directly from a pseudo-view: `select().from(viewName)`
