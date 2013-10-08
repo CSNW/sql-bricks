@@ -163,10 +163,10 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 
 ## To-Do
 
-* Add SQLite dialect
-* `.leftJoin(), .rightJoin(), .fullJoin(), .crossJoin()`
 * `.union(), .intersect(), .except()`
+* SQLite dialect
 * `select().into(), insert().select()`
+* Subquery support
 * Querying directly from a pseudo-view: `select().from(viewName)`
 * Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
 * Support legacy browsers (via polyfills)

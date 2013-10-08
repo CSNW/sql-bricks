@@ -73,27 +73,19 @@ proto.from = function from() {
 };
 
 proto.join = proto.innerJoin = function join() {
-  if (!this.joins)
-    this.joins = [];
-
-  if (typeof arguments[1] == 'object') {
-    var tbls = [arguments[0]];
-    var on = arguments[1];
-    var opts = arguments[2];
-  }
-  else {
-    tbls = argsToArray(arguments);
-  }
-
-  tbls.forEach(function(tbl) {
-    tbl = expandAlias(tbl);
-    var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
-    var ctor = getTable(tbl) in sql.views ? ViewJoin : Join;
-    this.joins.push(new ctor(tbl, left_tbl, on));
-  }.bind(this));
-
-  this.last_join = tbls[tbls.length - 1];
-  return this;
+  return this.addJoins(arguments, 'INNER');
+};
+proto.leftJoin = proto.leftOuterJoin = function join() {
+  return this.addJoins(arguments, 'LEFT');
+};
+proto.rightJoin = proto.rightOuterJoin = function join() {
+  return this.addJoins(arguments, 'RIGHT');
+};
+proto.fullJoin = proto.fullOuterJoin = function join() {
+  return this.addJoins(arguments, 'FULL');
+};
+proto.crossJoin = function join() {
+  return this.addJoins(arguments, 'CROSS');
 };
 
 proto.on = function on() {
@@ -305,6 +297,30 @@ proto.addExpression = function addExpression(args, name) {
   return this;
 };
 
+proto.addJoins = function addJoins(args, type) {
+  if (!this.joins)
+    this.joins = [];
+
+  if (typeof args[1] == 'object') {
+    var tbls = [args[0]];
+    var on = args[1];
+    var opts = args[2];
+  }
+  else {
+    tbls = argsToArray(args);
+  }
+
+  tbls.forEach(function(tbl) {
+    tbl = expandAlias(tbl);
+    var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
+    var ctor = getTable(tbl) in sql.views ? ViewJoin : Join;
+    this.joins.push(new ctor(tbl, left_tbl, on, type));
+  }.bind(this));
+
+  this.last_join = tbls[tbls.length - 1];
+  return this;
+};
+
 proto.viewJoins = function viewJoins() {
   return (this.joins || []).filter(function(join) {
     return join instanceof ViewJoin;
@@ -312,10 +328,11 @@ proto.viewJoins = function viewJoins() {
 };
 
 
-function Join(tbl, left_tbl, on) {
+function Join(tbl, left_tbl, on, type) {
   this.tbl = tbl;
   this.left_tbl = left_tbl;
   this.on = on;
+  this.type = type;
 }
 sql.Join = Join;
 Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
@@ -330,12 +347,12 @@ Join.prototype.toString = function toString() {
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
   on = quoteReservedObj(on);
-  return 'INNER JOIN ' + tbl + ' ON ' + Object.keys(on).map(function(key) {
+  return this.type + ' JOIN ' + tbl + ' ON ' + Object.keys(on).map(function(key) {
     return key + ' = ' + on[key];
   }).join(', ');
 };
 
-function ViewJoin(view, left_tbl, on) {
+function ViewJoin(view, left_tbl, on, type) {
   var alias = getAlias(view);
   var view_name = getTable(view);
   this.view = sql.views[view_name].clone();
@@ -344,7 +361,7 @@ function ViewJoin(view, left_tbl, on) {
     throw new Error('Unsupported number of tables in pseudo-view: ' + this.view.tbl.length);
   
   var tbl = getTable(this.view.tbls[0]) + ' ' + alias;
-  ViewJoin.super_.call(this, tbl, left_tbl, on);
+  ViewJoin.super_.call(this, tbl, left_tbl, on, type);
 
   var new_aliases = {};
   new_aliases[getAlias(this.view.tbls[0])] = alias;
@@ -356,7 +373,7 @@ function ViewJoin(view, left_tbl, on) {
 
     var parent = this;
     this.view.joins = this.view.joins.map(function(join) {
-      join = new Join(join.tbl, join.left_tbl, join.on);
+      join = new Join(join.tbl, join.left_tbl, join.on, join.type);
       join.autoGenerateOn = _.wrap(join.autoGenerateOn, function(orig_fn) {
         var on = orig_fn.apply(this, _.toArray(arguments).slice(1));
         return parent.namespaceOn(on);

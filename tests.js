@@ -182,12 +182,47 @@ describe('SQL Bricks', function() {
     });
   });
 
-  describe('join()', function() {
-    it('should accept a comma-delimited string', function() {
+  describe('joins', function() {
+    it('.join() should accept a comma-delimited string', function() {
       check(select().from('usr').join('psn, addr'),
         'SELECT * FROM user usr ' + 
         'INNER JOIN person psn ON usr.psn_fk = psn.pk ' +
         'INNER JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.leftJoin() should generate a left join', function() {
+      check(select().from('usr').leftJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'LEFT JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.leftOuterJoin() should generate a left join', function() {
+      check(select().from('usr').leftOuterJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'LEFT JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.rightJoin() should generate a right join', function() {
+      check(select().from('usr').rightJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'RIGHT JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.rightOuterJoin() should generate a right join', function() {
+      check(select().from('usr').rightOuterJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'RIGHT JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.fullJoin() should generate a full join', function() {
+      check(select().from('usr').fullJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'FULL JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.fullOuterJoin() should generate a full join', function() {
+      check(select().from('usr').fullOuterJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'FULL JOIN address addr ON usr.addr_fk = addr.pk');
+    });
+    it('.crossJoin() should generate a cross join', function() {
+      check(select().from('usr').crossJoin('addr'),
+        'SELECT * FROM user usr ' + 
+        'CROSS JOIN address addr ON usr.addr_fk = addr.pk');
     });
   });
 
