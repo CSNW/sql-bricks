@@ -1,15 +1,27 @@
 {
   "name": "sql-bricks",
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "author": "Peter Rust <peter@cornerstonenw.com>",
+  "description": "Transparent, Schemaless SQL Generation",
+  "scripts": {
+    "test": "mocha tests.js"
+  },
   "main": "sql-bricks.js",
-  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CSNW/sql-bricks.git"
+  },
+  "keywords": [
+    "sql", "generation", "generate", "query", "pg", "postgres", "sqlite", "builder", "select", "update"
+  ],
+  "engines": {
+    "node": "*"
+  },
   "dependencies": {
     "underscore": "1.4.x"
   },
   "devDependencies": {
     "mocha": "1.13.x"
   },
-  "scripts": {
-    "test": "mocha tests.js"
-  }
+  "license": "MIT"
 }
