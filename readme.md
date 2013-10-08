@@ -6,7 +6,7 @@ In addition, SQL Bricks contains a few conveniences to aid in re-use and to make
 
 SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks supports the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`), as defined by [**SQL-92**](http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf), as well as some **Postgres** and **SQLite** extensions for these statements (see the *Contributing* section for more details).
+SQL Bricks supports the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and all of their clauses as defined by [**SQL-92**](http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf) as well as some **Postgres** and **SQLite** extensions (see the *Contributing* section for more details).
 
 ## API
 
