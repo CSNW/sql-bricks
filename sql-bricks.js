@@ -62,7 +62,7 @@ proto.distinct = function distinct() {
 };
 
 proto.from = function from() {
-  var tbls = argsToArray(arguments).map(expandAlias);
+  var tbls = _.map(argsToArray(arguments), expandAlias);
   return this.add(tbls, 'tbls');
 };
 
@@ -130,7 +130,7 @@ proto.noWait = function noWait() {
 proto.values = function values() {
   if (this._split_keys_vals_mode) {
     var args = arguments;
-    Object.keys(this._values).forEach(function(key, ix) {
+    _.forEach(Object.keys(this._values), function(key, ix) {
       this._values[key] = args[ix];
     }.bind(this));
   }
@@ -162,7 +162,7 @@ proto.into = function into(tbl, values) {
       this._split_keys_vals_mode = true;
       this._values = {};
       var val_arr = argsToArray(_.toArray(arguments).slice(1));
-      val_arr.forEach(function(key) {
+      _.forEach(val_arr, function(key) {
         this._values[quoteReserved(key)] = null;
       }.bind(this));
     }
@@ -178,7 +178,7 @@ proto.set = function set() {
 
 // DELETE
 proto.using = function using() {
-  return this.add(argsToArray(arguments).map(expandAlias), '_using');
+  return this.add(_.map(argsToArray(arguments), expandAlias), '_using');
 };
 
 
@@ -241,7 +241,7 @@ proto.selectToString = function selectToString(opts) {
   var view_joins = this.viewJoins();
   if (view_joins.length) {
     var view_wheres = _.compact(_.pluck(_.pluck(view_joins, 'view'), '_where'));
-    view_wheres.forEach(function(view_where, ix) {
+    _.forEach(view_wheres, function(view_where, ix) {
       view_where.parens = false;
       if (!this._where && ix == 0)
         result += 'WHERE ';
@@ -292,7 +292,7 @@ proto.updateToString = function updateToString(opts) {
 
 proto.insertToString = function insertToString(opts) {
   var keys = Object.keys(this._values).join(', ');
-  var values = _.values(this._values).map(function(val) {
+  var values = _.map(_.values(this._values), function(val) {
     return quoteValue(val, opts);
   }).join(', ');
   var sql = 'INSERT ';
@@ -337,7 +337,7 @@ proto.addToObj = function addToObj(obj, name) {
 };
 
 proto.addColumnArgs = function addColumnArgs(args, name) {
-  var args = argsToArray(args).map(quoteReserved);
+  var args = _.map(argsToArray(args), quoteReserved);
   return this.add(args, name);
 };
 
@@ -362,7 +362,7 @@ proto.addJoins = function addJoins(args, type) {
     tbls = argsToArray(args);
   }
 
-  tbls.forEach(function(tbl) {
+  _.forEach(tbls, function(tbl) {
     tbl = expandAlias(tbl);
     var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
     var ctor = getTable(tbl) in sql.views ? ViewJoin : Join;
@@ -399,7 +399,7 @@ Join.prototype.toString = function toString() {
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
   on = quoteReservedObj(on);
-  return this.type + ' JOIN ' + tbl + ' ON ' + Object.keys(on).map(function(key) {
+  return this.type + ' JOIN ' + tbl + ' ON ' + _.map(Object.keys(on), function(key) {
     return key + ' = ' + on[key];
   }).join(', ');
 };
@@ -419,12 +419,12 @@ function ViewJoin(view, left_tbl, on, type) {
   new_aliases[getAlias(this.view.tbls[0])] = alias;
 
   if (this.view.joins) {
-    _.pluck(this.view.joins, 'tbl').map(getAlias).forEach(function(join_alias) {
+    _.forEach(_.map(_.pluck(this.view.joins, 'tbl'), getAlias), function(join_alias) {
       new_aliases[join_alias] = alias + '_' + join_alias;
     });
 
     var parent = this;
-    this.view.joins = this.view.joins.map(function(join) {
+    this.view.joins = _.map(this.view.joins, function(join) {
       join = new Join(join.tbl, join.left_tbl, join.on, join.type);
       join.autoGenerateOn = _.wrap(join.autoGenerateOn, function(orig_fn) {
         var on = orig_fn.apply(this, _.toArray(arguments).slice(1));
@@ -444,7 +444,7 @@ sql.ViewJoin = ViewJoin;
 ViewJoin.prototype.addNamespace = function addNamespace() {
   var new_aliases = this.new_aliases;
   if (this.view.joins) {
-    this.view.joins.forEach(function(join) {
+    _.forEach(this.view.joins, function(join) {
       var join_alias = getAlias(join.tbl);
       var join_tbl = getTable(join.tbl);
       if (join.on)
@@ -461,7 +461,7 @@ ViewJoin.prototype.convertExpr = function convertExpr(expr) {
   if (expr.col)
     expr.col = this.convert(expr.col);
   if (expr.expressions)
-    expr.expressions.forEach(this.convertExpr.bind(this));
+    _.forEach(expr.expressions, this.convertExpr.bind(this));
 };
 
 ViewJoin.prototype.namespaceOn = function namespaceOn(on) {
@@ -556,7 +556,7 @@ sql.or = function or() { return new Group('OR', _.toArray(arguments)); };
 function Group(op, expressions) {
   this.op = op;
   this.expressions = [];
-  expressions.forEach(function(expr) {
+  _.forEach(expressions, function(expr) {
     if (isExpr(expr))
       this.expressions.push(expr);
     else
@@ -567,7 +567,7 @@ Group.prototype.clone = function clone() {
   return new Group(this.op, _.invoke(this.expressions, 'clone'));
 };
 Group.prototype.toString = function toString(opts) {
-  var sql = this.expressions.map(function(expr) {
+  var sql = _.map(this.expressions, function(expr) {
     return expr.toString(opts);
   }).join(' ' + this.op + ' ');
   if (this.expressions.length > 1 && this.parens !== false)
@@ -662,7 +662,7 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
-  return quoteReserved(this.col) + ' IN (' + this.list.map(function(val) {
+  return quoteReserved(this.col) + ' IN (' + _.map(this.list, function(val) {
     return quoteValue(val, opts);
   }).join(', ') + ')';
 };
