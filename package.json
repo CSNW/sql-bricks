@@ -4,7 +4,7 @@
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
   "scripts": {
-    "test": "mocha tests.js"
+    "test": "mocha tests.js doctests.js"
   },
   "main": "sql-bricks.js",
   "repository": {
@@ -23,5 +23,16 @@
   "devDependencies": {
     "mocha": "1.13.x"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "testling": {
+    "scripts": [
+      "node_modules/underscore/underscore.js",
+      "sql-bricks.js",
+      "tests.js"
+    ],
+    "browsers": {
+      "chrome": [29.0]
+    },
+    "harness": "mocha"
+  }
 }

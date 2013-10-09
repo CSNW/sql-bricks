@@ -1,7 +1,23 @@
-var assert = require('assert');
-var fs = require('fs');
-var _ = require('underscore');
-var sql = require('./sql-bricks.js');
+(function() {
+
+var global = this;
+var _ = global._ || require('underscore');
+var sql = global.SqlBricks || require('./sql-bricks.js');
+var assert;
+if (typeof require != 'undefined') {
+  assert = require('assert');
+}
+else {
+  assert = {
+    'equal': function(actual, expected) {
+      if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    },
+    'deepEqual': function(actual, expected) {
+      if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    }
+  };
+}
+
 var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
   update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
@@ -491,58 +507,6 @@ describe('SQL Bricks', function() {
         "DELETE FROM user USING address addr WHERE user.addr_fk = addr.pk");
     });
   });
-
-  describe('documentation examples', function() {
-    var comment = '// ';
-
-    var readme = fs.readFileSync('readme.md', 'utf8');
-    readme.match(/```javascript[^`]+```/g).forEach(function(ex) {
-      ex = ex.slice('```javascript'.length, -'```'.length);
-      var lines = _.compact(ex.split('\n'));
-      lines.forEach(function(line, ix) {
-        line = line.trim();
-        var next_line = (lines[ix + 1] || '').trim();
-
-        if (isComment(line) && !isComment(next_line)) {
-          var expected = getExpected(lines, ix);
-          var code = lines.slice(0, ix);
-          
-          it(code.join('\n'), function(code, expected) {
-            var result = eval(wrap(code));
-            if (result instanceof sql.Statement)
-              assert.equal(result.toString(), expected);
-            else
-              assert.deepEqual(result, JSON.parse(expected));
-          }.bind(null, code, expected));
-        }
-      });
-    });
-
-    function wrap(lines) {
-      var last_line = lines[lines.length - 1];
-      var match = /var (\w+) =/.exec(last_line);
-      if (match)
-        lines.push(match[1] + ';');
-
-      return lines.join('\n');
-    }
-    function isComment(str) {
-      return str.slice(0, comment.length) == comment;
-    }
-    function trimComment(str) {
-      return str.slice(comment.length);
-    }
-    function getExpected(lines, ix) {
-      var comments = [];
-      while (isComment(lines[ix])) {
-        comments.push(trimComment(lines[ix]));
-        ix--;
-      }
-      comments.reverse();
-      comments = _.invoke(comments, 'trim');
-      return comments.join(' ');
-    }
-  });
 });
 
 function check(stmt, expected) {
@@ -554,3 +518,5 @@ function checkParams(stmt, expectedSQL, expectedValues) {
   assert.equal(result.text, expectedSQL);
   assert.deepEqual(result.values, expectedValues);
 }
+
+})();

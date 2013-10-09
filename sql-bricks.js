@@ -1,5 +1,7 @@
-var _ = require('underscore');
-var util = require('util');
+(function() {
+
+var global = this;
+var _ = global._ || require('underscore');
 
 // sql() wrapper to enable SQL (such as a column name) where a value is expected
 function sql(str) {
@@ -436,7 +438,7 @@ function ViewJoin(view, left_tbl, on, type) {
   this.addNamespace();
 }
 
-util.inherits(ViewJoin, Join);
+inherits(ViewJoin, Join);
 sql.ViewJoin = ViewJoin;
 
 ViewJoin.prototype.addNamespace = function addNamespace() {
@@ -759,4 +761,29 @@ function quoteReserved(expr) {
   return prefix + expr + suffix;
 }
 
-module.exports = sql;
+// provided for browser support (https://gist.github.com/prust/5936064)
+function inherits(ctor, superCtor) {
+  if (Object.create) {
+    ctor.super_ = superCtor;
+    ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+            value: ctor,
+            enumerable: false,
+            writable: true,
+            configurable: true
+        }
+    });
+  }
+  else {
+    noop.prototype = superCtor.prototype;
+    ctor.super_ = superCtor;
+    ctor.prototype = new noop;
+    ctor.prototype.constructor = superCtor;
+  }
+}
+
+if (typeof module != 'undefined')
+  module.exports = sql;
+else
+  global.SqlBricks = sql;
+})();
