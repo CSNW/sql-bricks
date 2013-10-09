@@ -21,18 +21,9 @@ readme.match(/```javascript[^`]+```/g).forEach(function(ex) {
       if (expected[0] != '{')
         expected = '"' + expected.replace(/"/g, '\\"') + '"';
       code[code.length - 1] = 'check(' + last_line + ', ' + expected + ');';
-      
-      
-      //it(code.join('\n'), function(code, expected) {
-        contents += 'it("' + desc.replace(/"/g, '\\"') + '", function() {';
-        contents += code.join('\n') + '\n';
-        contents += '});\n\n';
-        // var result = eval(wrap(code));
-        // if (result instanceof sql.Statement)
-        //   assert.equal(result.toString(), expected);
-        // else
-        //   assert.deepEqual(result, JSON.parse(expected));
-      //}.bind(null, code, expected));
+      contents += 'it("' + desc.replace(/"/g, '\\"') + '", function() {';
+      contents += code.join('\n') + '\n';
+      contents += '});\n\n';
     }
   });
 });
