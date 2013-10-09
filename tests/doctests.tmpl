@@ -1,0 +1,54 @@
+(function() {
+
+var global = this;
+var _ = global._ || require('underscore');
+var sql = global.SqlBricks || require('../sql-bricks.js');
+var assert;
+if (typeof require != 'undefined') {
+  assert = require('assert');
+}
+else {
+  assert = {
+    'equal': function(actual, expected) {
+      if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    },
+    'deepEqual': function(actual, expected) {
+      if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    }
+  };
+}
+
+var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
+  update = sql.update, del = sql.delete, replace = sql.replace;
+var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
+  isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between;
+
+var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
+var table_to_alias = _.invert(alias_expansions);
+sql.aliasExpansions(alias_expansions);
+
+sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
+  var criteria = {};
+  criteria[left_alias + '.' + table_to_alias[right_tbl] + '_fk'] = right_alias + '.pk';
+  return criteria;
+};
+
+describe('SQL Bricks', function() {
+  describe('documentation examples', function() {
+
+
+{{tests}}
+
+
+  });
+});
+
+function check(actual, expected) {
+  if (actual instanceof sql.Statement)
+    assert.equal(actual, expected);
+  else
+    assert.deepEqual(actual, expected);
+}
+
+})();

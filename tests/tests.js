@@ -2,7 +2,7 @@
 
 var global = this;
 var _ = global._ || require('underscore');
-var sql = global.SqlBricks || require('./sql-bricks.js');
+var sql = global.SqlBricks || require('../sql-bricks.js');
 var assert;
 if (typeof require != 'undefined') {
   assert = require('assert');

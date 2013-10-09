@@ -82,8 +82,7 @@ sql.defineView('localUser', 'user')
   .join('address').on({'user.addr_id': 'address.id'})
   .where({'address.local': true});
 
-select('*').from('person')
-  .join('localUser l_usr').on({'person.usr_id': 'l_usr.id'});
+select('*').from('person').join('localUser l_usr').on({'person.usr_id': 'l_usr.id'});
 // SELECT * FROM person
 // INNER JOIN user l_usr ON person.usr_id = l_usr.id
 // INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id

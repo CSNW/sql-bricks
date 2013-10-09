@@ -4,7 +4,8 @@
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
   "scripts": {
-    "test": "mocha tests.js doctests.js"
+    "pretest": "node tests/gen-doctests.js",
+    "test": "mocha tests/tests.js tests/doctests.js"
   },
   "main": "sql-bricks.js",
   "repository": {
@@ -25,7 +26,7 @@
   },
   "license": "MIT",
   "testling": {
-    "files": "tests.js",
+    "files": ["tests/tests.js", "tests/doctests.js"],
     "browsers": [
       "iexplore/8.0",
       "iexplore/9.0",
