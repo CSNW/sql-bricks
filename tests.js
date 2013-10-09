@@ -91,8 +91,20 @@ describe('SQL Bricks', function() {
   });
   it('should handle unions', function() {
   	check(select().from('usr').where({'name': 'Roy'})
-  		.union(select().from('usr').where({'name': 'Moss'})), 
-  		"SELECT * FROM user usr WHERE name = 'Roy' UNION SELECT * FROM user usr WHERE name = 'Moss'");
+  		.union(select().from('usr').where({'name': 'Moss'}))
+  		.union(select().from('usr').where({'name': 'The elders of the internet'})), 
+  		"SELECT * FROM user usr WHERE name = 'Roy'" + 
+  		" UNION SELECT * FROM user usr WHERE name = 'Moss'" + 
+  		" UNION SELECT * FROM user usr WHERE name = 'The elders of the internet'");
+  });
+  it('should handle unions with params', function() {
+  	checkParams(select().from('usr').where({'name': 'Roy'})
+	  .union(select().from('usr').where({'name': 'Moss'}))
+	  .union(select().from('usr').where({'name': 'The elders of the internet'})),
+	  'SELECT * FROM user usr WHERE name = $1' + 
+	  ' UNION SELECT * FROM user usr WHERE name = $2' + 
+	  ' UNION SELECT * FROM user usr WHERE name = $3',
+	  ['Roy', 'Moss', 'The elders of the internet']);
   });
 
   describe('UPDATE statements', function() {

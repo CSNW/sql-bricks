@@ -114,7 +114,8 @@ proto.offset = function offset(count) {
 };
 
 proto.union = function union(stmt) {
-  this._union = stmt.toString();
+  this._union = this._union || [];
+  this._union.push(stmt);
   return this;
 };
 proto.forUpdate = proto.forUpdateOf = function forUpdate() {
@@ -198,7 +199,7 @@ proto.clone = function clone() {
 proto.toParams = function toParams(opts) {
   if (!opts)
     opts = {};
-  _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
+  _.extend(opts, {'parameterized': true, 'values': opts.values || [], 'value_ix': opts.value_ix || 1});
   var sql = this.toString(opts);
   return {'text': sql, 'values': opts.values};
 };
@@ -267,8 +268,20 @@ proto.selectToString = function selectToString(opts) {
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
 
-  if (this._union != null)
-  	result += 'UNION ' + this._union;
+  if (this._union != null) {
+  	result += 'UNION ';
+  	if (opts.parameterized) {
+  		result += this._union.map(function(stmt) { 
+  			return stmt.toParams(opts).text; 
+  		}).join(' UNION ');
+  	}
+  	else {
+  		result += this._union.map(function(stmt) { 
+  			return stmt.toString(opts); 
+  		}).join(' UNION ');
+  	}
+  }
+  	
 
   if (this.for_update) {
     result += 'FOR UPDATE ';
