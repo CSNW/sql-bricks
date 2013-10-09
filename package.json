@@ -25,11 +25,7 @@
   },
   "license": "MIT",
   "testling": {
-    "scripts": [
-      "node_modules/underscore/underscore.js",
-      "sql-bricks.js",
-      "tests.js"
-    ],
+    "files": "tests.js",
     "browsers": {
       "chrome": [29.0]
     },
