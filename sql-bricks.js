@@ -652,7 +652,12 @@ Unary.prototype.toString = function toString(opts) {
   return quoteReserved(this.col) + ' ' + this.op;
 };
 
-sql['in'] = function(col, list) { return new In(col, list); };
+sql['in'] = function(col, list) {
+  if (_.isArray(list))
+    return new In(col, list);
+  else
+    return new In(col, _.toArray(arguments).slice(1));  
+};
 
 function In(col, list) {
   this.col = col;

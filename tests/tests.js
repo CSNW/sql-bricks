@@ -347,6 +347,10 @@ describe('SQL Bricks', function() {
       check(select().from('user').where($in('first_name', ['Fred', 'Wilma'])),
         "SELECT * FROM user WHERE first_name IN ('Fred', 'Wilma')");
     });
+    it('should handle .in() with multiple args', function() {
+      check(select().from('user').where($in('name', 'Jimmy', 'Owen')),
+        "SELECT * FROM user WHERE name IN ('Jimmy', 'Owen')");
+    });
     it('should handle isNull()', function() {
       check(select().from('user').where(isNull('first_name')),
         'SELECT * FROM user WHERE first_name IS NULL');
@@ -395,7 +399,7 @@ describe('SQL Bricks', function() {
     });
     it('should place OFFSET after LIMIT if both are supplied', function() {
       check(select().from('user').offset(5).limit(10),
-        'SELECT * FROM user LIMIT 10 OFFSET 5')
+        'SELECT * FROM user LIMIT 10 OFFSET 5');
     });
   });
 
