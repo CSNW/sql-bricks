@@ -194,7 +194,6 @@ select('COUNT("order")').from('user');
 
 ## To-Do
 
-* `exists(subquery)`
 * `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`

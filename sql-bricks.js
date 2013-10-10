@@ -679,6 +679,17 @@ In.prototype.toString = function toString(opts) {
   return quoteReserved(this.col) + ' IN (' + sql + ')';
 };
 
+sql.exists = function(subquery) { return new Exists(subquery); }
+function Exists(subquery) {
+  this.subquery = subquery;
+};
+Exists.prototype.clone = function clone() {
+  return new Exists(this.subquery.clone());
+};
+Exists.prototype.toString = function toString(opts) {
+  return 'EXISTS (' + this.subquery.toString(opts) + ')';
+};
+
 
 function getAlias(tbl) {
   var separator = ' AS ';
@@ -699,7 +710,7 @@ function getTable(tbl) {
 }
 
 function isExpr(expr) {
-  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like || expr instanceof Between;
+  return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like || expr instanceof Between || expr instanceof Exists;
 }
 
 // raw objects default to equals

@@ -22,7 +22,8 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
   update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between;
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
+  exists = sql.exists;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -354,6 +355,10 @@ describe('SQL Bricks', function() {
     it('should handle .in() with a subquery', function() {
       check(select().from('user').where($in('addr_id', select('id').from('address'))),
         'SELECT * FROM user WHERE addr_id IN (SELECT id FROM address)');
+    });
+    it('should handle exists() with a subquery', function() {
+      check(select().from('user').where(exists(select().from('address').where({'user.addr_id': sql('address.id')}))),
+        'SELECT * FROM user WHERE EXISTS (SELECT * FROM address WHERE user.addr_id = address.id)');
     });
     it('should handle isNull()', function() {
       check(select().from('user').where(isNull('first_name')),
