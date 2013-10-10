@@ -215,7 +215,7 @@ describe('SQL Bricks', function() {
     });
   });
 
-  describe('should insert into a table', function() {
+  describe('should insert into a new table', function() {
     it('.into()', function() {
       check(select().into('new_user').from('user'),
         'SELECT * INTO new_user FROM user');
@@ -231,6 +231,14 @@ describe('SQL Bricks', function() {
     it('intoTempTable()', function() {
       check(select().intoTempTable('new_user').from('user'),
         'SELECT * INTO TEMP new_user FROM user');
+    });
+  });
+
+  describe('should insert into a preexisting table', function() {
+    it('insert().into().select()', function() {
+      check(insert().into('new_user', 'id', 'addr_id')
+        .select('id', 'addr_id').from('user'),
+        'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM user');
     });
   });
 

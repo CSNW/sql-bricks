@@ -54,7 +54,14 @@ sql.Statement = Statement;
 // SELECT
 var proto = Statement.prototype;
 proto.select = function select() {
-  return this.addColumnArgs(arguments, 'cols');
+  if (this.type == 'insert') {
+    this._select = sql.select.apply(null, arguments);
+    this._select.prev_stmt = this;
+    return this._select;
+  }
+  else {
+    return this.addColumnArgs(arguments, 'cols');
+  }
 };
 proto.distinct = function distinct() {
   this._distinct = true;
@@ -209,6 +216,9 @@ proto.clone = function clone() {
 };
 
 proto.toParams = function toParams(opts) {
+  if (this.prev_stmt)
+    return this.prev_stmt.toParams(opts);
+
   if (!opts)
     opts = {};
   _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
@@ -218,7 +228,11 @@ proto.toParams = function toParams(opts) {
 
 proto.toString = function toString(opts) {
   var sql;
-  if (!opts) opts = {};
+  if (!opts) {
+    if (this.prev_stmt)
+      return this.prev_stmt.toString();
+    opts = {};
+  }
   
   switch(this.type) {
     case 'select':
@@ -324,7 +338,12 @@ proto.insertToString = function insertToString(opts) {
   var sql = 'INSERT ';
   if (this._or)
     sql += 'OR ' + this._or + ' '; 
-  sql += 'INTO ' + this.tbls.join(', ') + ' (' + keys + ') VALUES (' + values + ')';
+  sql += 'INTO ' + this.tbls.join(', ') + ' (' + keys + ') ';
+
+  if (this._select)
+    sql += this._select.toString(opts);
+  else
+    sql += 'VALUES (' + values + ')';
   return sql;
 };
 
