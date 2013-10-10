@@ -1,6 +1,6 @@
 # SQL Bricks.js
 
-[![Build Status](https://travis-ci.org/CSNW/sql-bricks.png?branch=master)](https://travis-ci.org/CSNW/sql-bricks) [![browser support](https://ci.testling.com/CSNW/sql-bricks.png)](https://ci.testling.com/CSNW/sql-bricks)
+[![Build Status](https://travis-ci.org/CSNW/sql-bricks.png?branch=master)](https://travis-ci.org/CSNW/sql-bricks)
 
 As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
 
@@ -194,13 +194,7 @@ select('COUNT("order")').from('user');
 
 ## To-Do
 
-* `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
-* `.intersect(), .except()`
-* `select().into(), insert().select()`
-* Subqueries in select columns, in where expressions, in update statements, etc
 * Querying directly from a pseudo-view: `select().from(viewName)`
-* Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
-* Support legacy browsers (via polyfills)
 
 ## Contributing
 

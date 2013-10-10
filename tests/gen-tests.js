@@ -30,18 +30,6 @@ readme.match(/```javascript[^`]+```/g).forEach(function(ex) {
 var tmpl = fs.readFileSync(__dirname + '/doctests.tmpl', 'utf8');
 fs.writeFileSync(__dirname + '/doctests.js', tmpl.replace('{{tests}}', contents));
 
-// write bundle for testling CI tests
-var testling_files = [
-  '../node_modules/underscore/underscore.js',
-  '../sql-bricks.js',
-  'tests.js',
-  'doctests.js'
-];
-var testling_files = testling_files.map(function(file) {
-  return fs.readFileSync(__dirname + '/' + file, 'utf8')
-});
-fs.writeFileSync(__dirname + '/testling-tests.js', testling_files.join('\n'));
-
 function wrap(lines) {
   var last_line = lines[lines.length - 1];
   var match = /var (\w+) =/.exec(last_line);

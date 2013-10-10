@@ -23,7 +23,7 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
-  exists = sql.exists, union = sql.union;
+  exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny, union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -66,6 +66,18 @@ describe('SQL Bricks', function() {
       var result = insert('user', values).toParams({'sqlite': true});
       assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
       assert.deepEqual(result.values, ['Fred', 'Flintstone']);
+    });
+    it('should properly parameterize subqueries', function() {
+      var values = {'first_name': 'Fred'};
+      checkParams(select(select('last_name').from('user').where(values)),
+        'SELECT (SELECT last_name FROM user WHERE first_name = $1)',
+        ['Fred']);
+    });
+    it('should properly parameterize subqueries in updates', function() {
+      var addr_id_for_usr = select('id').from('address').where('usr_id', sql('user.id')).and('active', true);
+      checkParams(update('user').set('addr_id', addr_id_for_usr),
+        'UPDATE user SET addr_id = (SELECT id FROM address WHERE usr_id = user.id AND active = $1)',
+        [true])
     });
   });
 
@@ -232,6 +244,33 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('should insert into a new table', function() {
+    it('.into()', function() {
+      check(select().into('new_user').from('user'),
+        'SELECT * INTO new_user FROM user');
+    });
+    it('.intoTable()', function() {
+      check(select().intoTable('new_user').from('user'),
+        'SELECT * INTO new_user FROM user');
+    });
+    it('intoTemp()', function() {
+      check(select().intoTemp('new_user').from('user'),
+        'SELECT * INTO TEMP new_user FROM user');
+    });
+    it('intoTempTable()', function() {
+      check(select().intoTempTable('new_user').from('user'),
+        'SELECT * INTO TEMP new_user FROM user');
+    });
+  });
+
+  describe('should insert into a preexisting table', function() {
+    it('insert().into().select()', function() {
+      check(insert().into('new_user', 'id', 'addr_id')
+        .select('id', 'addr_id').from('user'),
+        'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM user');
+    });
+  });
+
   describe('GROUP BY clause', function() {
     it('should support single group by', function() {
       check(select().from('user').groupBy('last_name'),
@@ -389,6 +428,11 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(exists(select().from('address').where({'user.addr_id': sql('address.id')}))),
         'SELECT * FROM user WHERE EXISTS (SELECT * FROM address WHERE user.addr_id = address.id)');
     });
+    it('should handle exists() with a subquery, parameterized', function() {
+      checkParams(select().from('user').where('active', true).where(exists(select().from('address').where({'user.addr_id': 37}))),
+        'SELECT * FROM user WHERE active = $1 AND EXISTS (SELECT * FROM address WHERE user.addr_id = $2)',
+        [true, 37]);
+    });
     it('should handle isNull()', function() {
       check(select().from('user').where(isNull('first_name')),
         'SELECT * FROM user WHERE first_name IS NULL');
@@ -469,6 +513,27 @@ describe('SQL Bricks', function() {
     it('should quote sqlite reserved words', function() {
       check(select('action').from('user'),
         'SELECT "action" FROM user');
+    });
+  });
+
+  describe('subqueries in <, >, etc', function() {
+    it('should support a subquery in >', function() {
+      var count_addrs_for_usr = select('count(*)').from('address').where({'user.addr_id': sql('address.id')});
+      check(select().from('user').where(gt(count_addrs_for_usr, 5)),
+        'SELECT * FROM user WHERE (SELECT count(*) FROM address WHERE user.addr_id = address.id) > 5');
+    });
+    it('should support a subquery in <=', function() {
+      var count_addrs_for_usr = select('count(*)').from('address').where({'user.addr_id': sql('address.id')});
+      check(select().from('user').where(lte(count_addrs_for_usr, 5)),
+        'SELECT * FROM user WHERE (SELECT count(*) FROM address WHERE user.addr_id = address.id) <= 5');
+    });
+    it('should support = ANY (subquery) quantifier', function() {
+      check(select().from('user').where(eqAny('user.id', select('user_id').from('address'))),
+        'SELECT * FROM user WHERE user.id = ANY (SELECT user_id FROM address)');
+    });
+    it('should support <> ANY (subquery) quantifier', function() {
+      check(select().from('user').where(notEqAny('user.id', select('user_id').from('address'))),
+        'SELECT * FROM user WHERE user.id <> ANY (SELECT user_id FROM address)');
     });
   });
 
