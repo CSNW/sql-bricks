@@ -23,7 +23,7 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
-  exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny;
+  exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny, union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -117,6 +117,35 @@ describe('SQL Bricks', function() {
       'SELECT * FROM user usr ' +
       'INNER JOIN person psn ON usr.psn_fk = psn.pk ' +
       'INNER JOIN address addr ON usr.addr_fk = addr.pk');
+  });
+  it('should handle unions', function() {
+  	check(select().from('usr').where({'name': 'Roy'})
+  		.union(select().from('usr').where({'name': 'Moss'}))
+  		.union(select().from('usr').where({'name': 'The elders of the internet'})), 
+  		"SELECT * FROM user usr WHERE name = 'Roy'" + 
+  		" UNION SELECT * FROM user usr WHERE name = 'Moss'" + 
+  		" UNION SELECT * FROM user usr WHERE name = 'The elders of the internet'");
+  });
+  it('should handle chained unions', function() {
+  	check(select().from('usr').where({'name': 'Roy'})
+  		.union().select().from('usr').where({'name': 'blurns'}), 
+  		"SELECT * FROM user usr WHERE name = 'Roy'" + 
+  		" UNION SELECT * FROM user usr WHERE name = 'blurns'");
+  });
+  it('should handle chained unions with params', function() {
+    checkParams(select().from('usr').where({'name': 'Roy'})
+      .union().select().from('usr').where({'name': 'Moss'}), 
+      "SELECT * FROM user usr WHERE name = $1" + 
+      " UNION SELECT * FROM user usr WHERE name = $2", ['Roy', 'Moss']);
+  });
+  it('should handle unions with params', function() {
+  	checkParams(select().from('usr').where({'name': 'Roy'})
+	  .union(select().from('usr').where({'name': 'Moss'}))
+	  .union(select().from('usr').where({'name': 'The elders of the internet'})),
+	  'SELECT * FROM user usr WHERE name = $1' + 
+	  ' UNION SELECT * FROM user usr WHERE name = $2' + 
+	  ' UNION SELECT * FROM user usr WHERE name = $3',
+	  ['Roy', 'Moss', 'The elders of the internet']);
   });
 
   describe('UPDATE statements', function() {
@@ -585,7 +614,7 @@ describe('SQL Bricks', function() {
         "DELETE FROM user USING address addr WHERE user.addr_fk = addr.pk");
     });
   });
-});
+    });
 
 function check(stmt, expected) {
   assert.equal(stmt.toString(), expected);

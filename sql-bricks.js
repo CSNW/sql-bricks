@@ -42,7 +42,6 @@ sql.delete = function del(tbl) {
   return stmt;
 };
 
-
 // all the statements share a single class to enable
 // cloning a statement and changing its type
 // this is useful if you want to re-use the same joins on an update and a select
@@ -130,6 +129,30 @@ proto.offset = function offset(count) {
   this._offset = count;
   return this;
 };
+
+var compounds = {
+  'union': 'UNION', 'unionAll': 'UNION ALL',
+  'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
+  'minus': 'MINUS', 'minusAll': 'MINUS ALL',
+  'except': 'EXCEPT', 'exceptAll': 'EXCEPT ALL'
+};
+_.forEach(compounds, function(value, key) {
+  proto[key] = function() {
+    var stmts = argsToArray(arguments);
+    if (!stmts.length) {
+      var stmt = new Statement('select');
+      stmt.prev_stmt = this;
+      stmts = [stmt];
+    }
+
+    this.add(stmts, '_' + key);
+    
+    if (stmt)
+      return stmt;
+    else
+      return this;
+  };
+});
 
 proto.forUpdate = proto.forUpdateOf = function forUpdate() {
   this.for_update = true;
@@ -228,6 +251,8 @@ proto.toParams = function toParams(opts) {
 
 proto.toString = function toString(opts) {
   var sql;
+  // this opts check is dirty; cleaner/clearer to separate public interface
+  // .toString() from private ._toString()
   if (!opts) {
     if (this.prev_stmt)
       return this.prev_stmt.toString();
@@ -301,6 +326,16 @@ proto.selectToString = function selectToString(opts) {
 
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
+
+  _.forEach(compounds, function(value, key) {
+    var arr = this['_' + key];
+    if (arr) {
+      result += value + ' ';
+      result += arr.map(function(stmt) {
+        return stmt.toString(opts);
+      }).join(' ' + value + ' ');
+    }
+  }.bind(this));
 
   if (this.for_update) {
     result += 'FOR UPDATE ';
