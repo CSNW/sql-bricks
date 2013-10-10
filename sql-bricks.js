@@ -115,18 +115,22 @@ proto.offset = function offset(count) {
   return this;
 };
 
-proto.union = function union(stmt) {
-  if (stmt) {
-  	this.next_union = this.next_union || [];
-  	this.next_union.push(stmt);
-	return this;
+proto.union = function union() {
+  var stmts = argsToArray(arguments);
+  if (!stmts.length) {
+    var stmt = new Statement('select');
+    stmt.prev_stmt = this;
+    stmts = [stmt];
   }
-  else {
-  	var stmt = new Statement('select');
-  	stmt.prev_union = this;
-  	return stmt;
-  }
+
+  this.add(stmts, '_union');
+  
+  if (stmt)
+    return stmt;
+  else
+    return this;
 };
+
 proto.forUpdate = proto.forUpdateOf = function forUpdate() {
   this.for_update = true;
   this.addColumnArgs(arguments, 'for_update_cols');
@@ -206,16 +210,25 @@ proto.clone = function clone() {
 };
 
 proto.toParams = function toParams(opts) {
+  if (this.prev_stmt)
+    return this.prev_stmt.toParams(opts);
+
   if (!opts)
     opts = {};
-  _.extend(opts, {'parameterized': true, 'values': opts.values || [], 'value_ix': opts.value_ix || 1});
+  _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
   var sql = this.toString(opts);
   return {'text': sql, 'values': opts.values};
 };
 
 proto.toString = function toString(opts) {
   var sql;
-  if (!opts) opts = {};
+  // this opts check is dirty; cleaner/clearer to separate public interface
+  // .toString() from private ._toString()
+  if (!opts) {
+    if (this.prev_stmt)
+      return this.prev_stmt.toString(opts);
+    opts = {};
+  }
   
   switch(this.type) {
     case 'select':
@@ -277,15 +290,11 @@ proto.selectToString = function selectToString(opts) {
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
 
-  if (this.prev_union != null) {
-  	result = this.prev_union.toString(opts) + ' UNION ' + result;
-  }
-
-  if (this.next_union != null) {
-  	result += 'UNION ';
-  	result += this.next_union.map(function(stmt) { 
-		return stmt.toString(opts); 
-	}).join(' UNION ');
+  if (this._union != null) {
+    result += 'UNION ';
+    result += this._union.map(function(stmt) { 
+      return stmt.toString(opts); 
+    }).join(' UNION ');
   }
 
   if (this.for_update) {
