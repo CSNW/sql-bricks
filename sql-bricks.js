@@ -653,7 +653,7 @@ Unary.prototype.toString = function toString(opts) {
 };
 
 sql['in'] = function(col, list) {
-  if (_.isArray(list))
+  if (_.isArray(list) || list instanceof Statement)
     return new In(col, list);
   else
     return new In(col, _.toArray(arguments).slice(1));  
@@ -667,9 +667,16 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
-  return quoteReserved(this.col) + ' IN (' + _.map(this.list, function(val) {
-    return quoteValue(val, opts);
-  }).join(', ') + ')';
+  var sql;
+  if (_.isArray(this.list)) {
+    sql = _.map(this.list, function(val) {
+      return quoteValue(val, opts);
+    }).join(', ');
+  }
+  else if (this.list instanceof Statement) {
+    sql = this.list.toString(opts);
+  }
+  return quoteReserved(this.col) + ' IN (' + sql + ')';
 };
 
 
