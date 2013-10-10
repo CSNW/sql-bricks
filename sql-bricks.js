@@ -115,21 +115,29 @@ proto.offset = function offset(count) {
   return this;
 };
 
-proto.union = function union() {
-  var stmts = argsToArray(arguments);
-  if (!stmts.length) {
-    var stmt = new Statement('select');
-    stmt.prev_stmt = this;
-    stmts = [stmt];
-  }
-
-  this.add(stmts, '_union');
-  
-  if (stmt)
-    return stmt;
-  else
-    return this;
+var compounds = {
+  'union': 'UNION', 'unionAll': 'UNION ALL',
+  'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
+  'minus': 'MINUS', 'minusAll': 'MINUS ALL',
+  'except': 'EXCEPT', 'exceptAll': 'EXCEPT ALL'
 };
+_.forEach(compounds, function(value, key) {
+  proto[key] = function() {
+    var stmts = argsToArray(arguments);
+    if (!stmts.length) {
+      var stmt = new Statement('select');
+      stmt.prev_stmt = this;
+      stmts = [stmt];
+    }
+
+    this.add(stmts, '_' + key);
+    
+    if (stmt)
+      return stmt;
+    else
+      return this;
+  };
+});
 
 proto.forUpdate = proto.forUpdateOf = function forUpdate() {
   this.for_update = true;
@@ -290,12 +298,15 @@ proto.selectToString = function selectToString(opts) {
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
 
-  if (this._union != null) {
-    result += 'UNION ';
-    result += this._union.map(function(stmt) { 
-      return stmt.toString(opts); 
-    }).join(' UNION ');
-  }
+  _.forEach(compounds, function(value, key) {
+    var arr = this['_' + key];
+    if (arr) {
+      result += value + ' ';
+      result += arr.map(function(stmt) {
+        return stmt.toString(opts);
+      }).join(' ' + value + ' ');
+    }
+  }.bind(this));
 
   if (this.for_update) {
     result += 'FOR UPDATE ';
