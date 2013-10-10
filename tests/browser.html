@@ -6,12 +6,9 @@
 </head>
 <body>
   <div id="mocha"></div>
-  <script src="../node_modules/underscore/underscore.js"></script>
   <script src="../node_modules/mocha/mocha.js"></script>
   <script>mocha.setup('bdd')</script>
-  <script src="../sql-bricks.js"></script>
-  <script src="tests.js"></script>
-  <script src="doctests.js"></script>
+  <script src="testling-tests.js"></script>
   <script>
     mocha.checkLeaks();
     mocha.run();
