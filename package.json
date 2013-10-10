@@ -39,7 +39,6 @@
       "iphone/6.0",
       "ipad/6.0",
       "android-browser/4.2"
-    ],
-    "harness": "mocha"
+    ]
   }
 }
