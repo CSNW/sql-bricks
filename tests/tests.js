@@ -1,12 +1,29 @@
-var assert = require('assert');
-var fs = require('fs');
-var _ = require('underscore');
-var sql = require('./sql-bricks.js');
+(function() {
+
+var global = this;
+var _ = global._ || require('underscore');
+var sql = global.SqlBricks || require('../sql-bricks.js');
+var assert;
+if (typeof require != 'undefined') {
+  assert = require('assert');
+}
+else {
+  assert = {
+    'equal': function(actual, expected) {
+      if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    },
+    'deepEqual': function(actual, expected) {
+      if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    }
+  };
+}
+
 var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
   update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between, union = sql.union;
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
+  exists = sql.exists, union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -354,6 +371,18 @@ describe('SQL Bricks', function() {
       check(select().from('user').where($in('first_name', ['Fred', 'Wilma'])),
         "SELECT * FROM user WHERE first_name IN ('Fred', 'Wilma')");
     });
+    it('should handle .in() with multiple args', function() {
+      check(select().from('user').where($in('name', 'Jimmy', 'Owen')),
+        "SELECT * FROM user WHERE name IN ('Jimmy', 'Owen')");
+    });
+    it('should handle .in() with a subquery', function() {
+      check(select().from('user').where($in('addr_id', select('id').from('address'))),
+        'SELECT * FROM user WHERE addr_id IN (SELECT id FROM address)');
+    });
+    it('should handle exists() with a subquery', function() {
+      check(select().from('user').where(exists(select().from('address').where({'user.addr_id': sql('address.id')}))),
+        'SELECT * FROM user WHERE EXISTS (SELECT * FROM address WHERE user.addr_id = address.id)');
+    });
     it('should handle isNull()', function() {
       check(select().from('user').where(isNull('first_name')),
         'SELECT * FROM user WHERE first_name IS NULL');
@@ -402,7 +431,7 @@ describe('SQL Bricks', function() {
     });
     it('should place OFFSET after LIMIT if both are supplied', function() {
       check(select().from('user').offset(5).limit(10),
-        'SELECT * FROM user LIMIT 10 OFFSET 5')
+        'SELECT * FROM user LIMIT 10 OFFSET 5');
     });
   });
 
@@ -514,59 +543,7 @@ describe('SQL Bricks', function() {
         "DELETE FROM user USING address addr WHERE user.addr_fk = addr.pk");
     });
   });
-
-  describe('documentation examples', function() {
-    var comment = '// ';
-
-    var readme = fs.readFileSync('readme.md', 'utf8');
-    readme.match(/```javascript[^`]+```/g).forEach(function(ex) {
-      ex = ex.slice('```javascript'.length, -'```'.length);
-      var lines = _.compact(ex.split('\n'));
-      lines.forEach(function(line, ix) {
-        line = line.trim();
-        var next_line = (lines[ix + 1] || '').trim();
-
-        if (isComment(line) && !isComment(next_line)) {
-          var expected = getExpected(lines, ix);
-          var code = lines.slice(0, ix);
-          
-          it(code.join('\n'), function(code, expected) {
-            var result = eval(wrap(code));
-            if (result instanceof sql.Statement)
-              assert.equal(result.toString(), expected);
-            else
-              assert.deepEqual(result, JSON.parse(expected));
-          }.bind(null, code, expected));
-        }
-      });
     });
-
-    function wrap(lines) {
-      var last_line = lines[lines.length - 1];
-      var match = /var (\w+) =/.exec(last_line);
-      if (match)
-        lines.push(match[1] + ';');
-
-      return lines.join('\n');
-    }
-    function isComment(str) {
-      return str.slice(0, comment.length) == comment;
-    }
-    function trimComment(str) {
-      return str.slice(comment.length);
-    }
-    function getExpected(lines, ix) {
-      var comments = [];
-      while (isComment(lines[ix])) {
-        comments.push(trimComment(lines[ix]));
-        ix--;
-      }
-      comments.reverse();
-      comments = _.invoke(comments, 'trim');
-      return comments.join(' ');
-    }
-  });
-});
 
 function check(stmt, expected) {
   assert.equal(stmt.toString(), expected);
@@ -577,3 +554,5 @@ function checkParams(stmt, expectedSQL, expectedValues) {
   assert.equal(result.text, expectedSQL);
   assert.deepEqual(result.values, expectedValues);
 }
+
+})();

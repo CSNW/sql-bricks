@@ -1,5 +1,7 @@
 # SQL Bricks.js
 
+[![Build Status](https://travis-ci.org/CSNW/sql-bricks.png?branch=master)](https://travis-ci.org/CSNW/sql-bricks) [![browser support](https://ci.testling.com/CSNW/sql-bricks.png)](https://ci.testling.com/CSNW/sql-bricks)
+
 As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
 
 In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords ("order", "desc", etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.
@@ -80,8 +82,7 @@ sql.defineView('localUser', 'user')
   .join('address').on({'user.addr_id': 'address.id'})
   .where({'address.local': true});
 
-select('*').from('person')
-  .join('localUser l_usr').on({'person.usr_id': 'l_usr.id'});
+select('*').from('person').join('localUser l_usr').on({'person.usr_id': 'l_usr.id'});
 // SELECT * FROM person
 // INNER JOIN user l_usr ON person.usr_id = l_usr.id
 // INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id
@@ -170,26 +171,29 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 
 ## SQL Functions
 
-There are 95 SQL functions defined in SQL-92, including `AVG()`, `COUNT()`, `MIN()`, `MAX()`, `SUM()`, `COALESCE()`, `CASE()`, `LTRIM()`, `RTRIM()`, `UPPER()`, `LOWER()`. These can be easily used in SQL Bricks anywhere that a sql statement is expected, such as in a SELECT list, via a string:
+There are 95 SQL functions defined in SQL-92, including `AVG()`, `COUNT()`, `MIN()`, `MAX()`, `SUM()`, `COALESCE()`, `CASE()`, `LTRIM()`, `RTRIM()`, `UPPER()`, `LOWER()`. These can be easily used in SQL Bricks anywhere that a sql string is expected, such as in a SELECT list:
 
 ```javascript
 select('COUNT(*)').from('user').where({'access_level': 3});
 // SELECT COUNT(*) FROM user WHERE access_level = 3
 ```
 
-These can also be accessed anywhere a value is expected (in the values for an `INSERT` or `UPDATE` statement or in the right-hand side of a `WHERE` expression) via wrapping a string in the `sql()` function:
+SQL functions can also be used anywhere a value is expected (in the values for an `INSERT` or `UPDATE` statement or in the right-hand side of a `WHERE` expression) via wrapping a string in the `sql()` function:
 
 ```javascript
 select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END")});
 // SELECT * FROM user WHERE level_text = CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END
 ```
 
+Note that column names inside SQL functions that collide with SQL keywords will not be automatically escaped -- you have to do it manually, like this:
+
+```javascript
+select('COUNT("order")').from('user');
+// SELECT COUNT("order") FROM user
+```
+
 ## To-Do
 
-* Browser support
-* `in(argsToArray)`
-* `in(subquery)`
-* `exists(subquery)`
 * `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
 * `.intersect(), .except()`
 * `select().into(), insert().select()`
