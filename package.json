@@ -26,7 +26,7 @@
   },
   "license": "MIT",
   "testling": {
-    "scripts": "tests/testling-tests.js",
+    "html": "browser-tests.html",
     "browsers": [
       "chrome/29.0",
       "iexplore/8.0",
