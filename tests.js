@@ -97,6 +97,12 @@ describe('SQL Bricks', function() {
   		" UNION SELECT * FROM user usr WHERE name = 'Moss'" + 
   		" UNION SELECT * FROM user usr WHERE name = 'The elders of the internet'");
   });
+  it('should handle chained unions', function() {
+  	check(select().from('usr').where({'name': 'Roy'})
+  		.union().select().from('usr').where({'name': 'blurns'}), 
+  		"SELECT * FROM user usr WHERE name = 'Roy'" + 
+  		" UNION SELECT * FROM user usr WHERE name = 'blurns'");
+  });
   it('should handle unions with params', function() {
   	checkParams(select().from('usr').where({'name': 'Roy'})
 	  .union(select().from('usr').where({'name': 'Moss'}))

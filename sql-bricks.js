@@ -114,9 +114,16 @@ proto.offset = function offset(count) {
 };
 
 proto.union = function union(stmt) {
-  this._union = this._union || [];
-  this._union.push(stmt);
-  return this;
+  if (stmt) {
+  	this.next_union = this.next_union || [];
+  	this.next_union.push(stmt);
+	return this;
+  }
+  else {
+  	var stmt = new Statement('select');
+  	stmt.prev_union = this;
+  	return stmt;
+  }
 };
 proto.forUpdate = proto.forUpdateOf = function forUpdate() {
   this.for_update = true;
@@ -268,20 +275,16 @@ proto.selectToString = function selectToString(opts) {
   if (this._offset != null)
     result += 'OFFSET ' + this._offset + ' ';
 
-  if (this._union != null) {
-  	result += 'UNION ';
-  	if (opts.parameterized) {
-  		result += this._union.map(function(stmt) { 
-  			return stmt.toParams(opts).text; 
-  		}).join(' UNION ');
-  	}
-  	else {
-  		result += this._union.map(function(stmt) { 
-  			return stmt.toString(opts); 
-  		}).join(' UNION ');
-  	}
+  if (this.prev_union != null) {
+  	result = this.prev_union.toString(opts) + ' UNION ' + result;
   }
-  	
+
+  if (this.next_union != null) {
+  	result += 'UNION ';
+  	result += this.next_union.map(function(stmt) { 
+		return stmt.toString(opts); 
+	}).join(' UNION ');
+  }
 
   if (this.for_update) {
     result += 'FOR UPDATE ';
