@@ -194,7 +194,6 @@ select('COUNT("order")').from('user');
 
 ## To-Do
 
-* `.union(), .intersect(), .except()`
 * Querying directly from a pseudo-view: `select().from(viewName)`
 
 ## Contributing
