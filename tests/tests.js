@@ -23,7 +23,7 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
-  exists = sql.exists;
+  exists = sql.exists, eqAny = sql.eqAny;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -458,6 +458,10 @@ describe('SQL Bricks', function() {
       var count_addrs_for_usr = select('count(*)').from('address').where({'user.addr_id': sql('address.id')});
       check(select().from('user').where(lte(count_addrs_for_usr, 5)),
         'SELECT * FROM user WHERE (SELECT count(*) FROM address WHERE user.addr_id = address.id) <= 5');
+    });
+    it('should support = ANY (subquery) quantifier', function() {
+      check(select().from('user').where(eqAny('user.id', select('user_id').from('address'))),
+        'SELECT * FROM user WHERE user.id = ANY (SELECT user_id FROM address)');
     });
   });
 
