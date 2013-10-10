@@ -13,33 +13,52 @@ sql.prototype.toString = function toString() {
   return this.str;
 };
 
-sql.select = function select() {
-  var stmt = new Statement('select');
-  return stmt.select.apply(stmt, arguments);
-};
+sql.select = inherits(Select, Statement);
+function Select() {
+  if (!(this instanceof Select))
+    return new Select(argsToArray(arguments));
+  
+  Select.super_.call(this, 'select');
+  return this.select.apply(this, arguments);
+}
 
-sql.update = sql.update = function update(tbl, values) {
-  var stmt = new Statement('update');
-  stmt.tbls = [expandAlias(tbl)];
+sql.update = inherits(Update, Statement);
+function Update(tbl, values) {
+  if (!(this instanceof Update))
+    return new Update(tbl, argsToObject(_.toArray(arguments).slice(1)));
+
+  Update.super_.call(this, 'update');
+  this.tbls = [expandAlias(tbl)];
   if (values)
-    stmt.values(values);
-  return stmt;
+    this.values(values);
+  return this;
 };
 
-sql.insert = sql.insertInto = function insertInto(tbl, values) {
-  var stmt = new Statement('insert');
-  return stmt.into.apply(stmt, arguments);
+sql.insert = sql.insertInto = inherits(Insert, Statement);
+function Insert(tbl, values) {
+  if (!(this instanceof Insert)) {
+    if (typeof values == 'object' && !_.isArray(values))
+      return new Insert(tbl, values);
+    else
+      return new Insert(tbl, argsToArray(_.toArray(arguments).slice(1)));
+  }
+
+  Insert.super_.call(this, 'insert');
+  return this.into.apply(this, arguments);
+};
+sql.replace = function replace() {
+  return sql.insert.apply(null, arguments).orReplace();
 };
 
-sql.replace = function replace(tbl, values) {
-  return sql.insert(tbl, values).orReplace();
-};
+sql.delete = inherits(Delete, Statement);
+function Delete(tbl) {
+  if (!(this instanceof Delete))
+    return new Delete(tbl);
 
-sql.delete = function del(tbl) {
-  var stmt = new Statement('delete');
+  Delete.super_.call(this, 'delete');
   if (tbl)
-    stmt.tbls = [expandAlias(tbl)];
-  return stmt;
+    this.tbls = [expandAlias(tbl)];
+  return this;
 };
 
 // all the statements share a single class to enable
@@ -202,7 +221,7 @@ proto.into = function into(tbl, values) {
     if (typeof values == 'object' && !_.isArray(values)) {
       this.values(values);
     }
-    else {
+    else if (values.length) {
       this._split_keys_vals_mode = true;
       this._values = {};
       var val_arr = argsToArray(_.toArray(arguments).slice(1));
@@ -483,6 +502,8 @@ Join.prototype.toString = function toString() {
   }).join(', ');
 };
 
+
+sql.ViewJoin = inherits(ViewJoin, Join);
 function ViewJoin(view, left_tbl, on, type) {
   var alias = getAlias(view);
   var view_name = getTable(view);
@@ -516,9 +537,6 @@ function ViewJoin(view, left_tbl, on, type) {
   this.new_aliases = new_aliases;
   this.addNamespace();
 }
-
-inherits(ViewJoin, Join);
-sql.ViewJoin = ViewJoin;
 
 ViewJoin.prototype.addNamespace = function addNamespace() {
   var new_aliases = this.new_aliases;
@@ -594,7 +612,8 @@ function argsToObject(args) {
     return args[0];
   
   var obj = {};
-  obj[args[0]] = args[1];
+  if (args[0] != null)
+    obj[args[0]] = args[1];
   return obj;
 }
 
@@ -911,6 +930,7 @@ function inherits(ctor, superCtor) {
     ctor.prototype = new noop;
     ctor.prototype.constructor = superCtor;
   }
+  return ctor;
 }
 
 if (typeof module != 'undefined')
