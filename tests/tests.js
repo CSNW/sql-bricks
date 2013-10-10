@@ -215,6 +215,25 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('should insert into a table', function() {
+    it('.into()', function() {
+      check(select().into('new_user').from('user'),
+        'SELECT * INTO new_user FROM user');
+    });
+    it('.intoTable()', function() {
+      check(select().intoTable('new_user').from('user'),
+        'SELECT * INTO new_user FROM user');
+    });
+    it('intoTemp()', function() {
+      check(select().intoTemp('new_user').from('user'),
+        'SELECT * INTO TEMP new_user FROM user');
+    });
+    it('intoTempTable()', function() {
+      check(select().intoTempTable('new_user').from('user'),
+        'SELECT * INTO TEMP new_user FROM user');
+    });
+  });
+
   describe('GROUP BY clause', function() {
     it('should support single group by', function() {
       check(select().from('user').groupBy('last_name'),

@@ -61,6 +61,14 @@ proto.distinct = function distinct() {
   return this.addColumnArgs(arguments, 'cols');
 };
 
+proto.intoTable = function intoTable(tbl) {
+  return this.into(tbl);
+};
+proto.intoTemp = proto.intoTempTable = function intoTemp(tbl) {
+  this._into_temp = true;
+  return this.into(tbl);
+};
+
 proto.from = function from() {
   var tbls = _.map(argsToArray(arguments), expandAlias);
   return this.add(tbls, 'tbls');
@@ -151,6 +159,12 @@ proto.or = function or(cmd) {
 
 // INSERT
 proto.into = function into(tbl, values) {
+  // TODO: split to subclasses
+  if (this.type == 'select') {
+    this._into = tbl;
+    return this;
+  }
+
   if (tbl)
     this.tbls = [expandAlias(tbl)];
 
@@ -232,6 +246,12 @@ proto.selectToString = function selectToString(opts) {
   if (this._distinct)
     result += 'DISTINCT ';
   result += _.map(cols, handleCol).join(', ') + ' ';
+  if (this._into) {
+    result += 'INTO ';
+    if (this._into_temp)
+      result += 'TEMP ';
+    result += this._into + ' ';
+  }
   if (this.tbls)
     result += 'FROM ' + this.tbls.join(', ') + ' ';
   if (this.joins)
