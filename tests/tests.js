@@ -360,6 +360,11 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(exists(select().from('address').where({'user.addr_id': sql('address.id')}))),
         'SELECT * FROM user WHERE EXISTS (SELECT * FROM address WHERE user.addr_id = address.id)');
     });
+    it('should handle exists() with a subquery, parameterized', function() {
+      checkParams(select().from('user').where('active', true).where(exists(select().from('address').where({'user.addr_id': 37}))),
+        'SELECT * FROM user WHERE active = $1 AND EXISTS (SELECT * FROM address WHERE user.addr_id = $2)',
+        [true, 37]);
+    });
     it('should handle isNull()', function() {
       check(select().from('user').where(isNull('first_name')),
         'SELECT * FROM user WHERE first_name IS NULL');
