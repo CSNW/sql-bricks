@@ -120,6 +120,12 @@ describe('SQL Bricks', function() {
   		"SELECT * FROM user usr WHERE name = 'Roy'" + 
   		" UNION SELECT * FROM user usr WHERE name = 'blurns'");
   });
+  it('should handle chained unions with params', function() {
+    checkParams(select().from('usr').where({'name': 'Roy'})
+      .union().select().from('usr').where({'name': 'Moss'}), 
+      "SELECT * FROM user usr WHERE name = $1" + 
+      " UNION SELECT * FROM user usr WHERE name = $2", ['Roy', 'Moss']);
+  });
   it('should handle unions with params', function() {
   	checkParams(select().from('usr').where({'name': 'Roy'})
 	  .union(select().from('usr').where({'name': 'Moss'}))
