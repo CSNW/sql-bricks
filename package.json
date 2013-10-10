@@ -28,10 +28,10 @@
   "testling": {
     "files": ["tests/tests.js", "tests/doctests.js"],
     "browsers": [
+      "chrome/29.0",
       "iexplore/8.0",
       "iexplore/9.0",
       "iexplore/10.0",
-      "chrome/29.0",
       "firefox/4.0",
       "firefox/6.0",
       "firefox/24.0",
