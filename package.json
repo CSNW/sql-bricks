@@ -4,7 +4,7 @@
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
   "scripts": {
-    "pretest": "node tests/gen-doctests.js",
+    "prepublish": "node tests/gen-doctests.js",
     "test": "mocha tests/tests.js tests/doctests.js"
   },
   "main": "sql-bricks.js",

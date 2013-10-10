@@ -130,7 +130,7 @@ proto.noWait = function noWait() {
 proto.values = function values() {
   if (this._split_keys_vals_mode) {
     var args = arguments;
-    _.forEach(Object.keys(this._values), function(key, ix) {
+    _.forEach(_.keys(this._values), function(key, ix) {
       this._values[key] = args[ix];
     }.bind(this));
   }
@@ -291,7 +291,7 @@ proto.updateToString = function updateToString(opts) {
 };
 
 proto.insertToString = function insertToString(opts) {
-  var keys = Object.keys(this._values).join(', ');
+  var keys = _.keys(this._values).join(', ');
   var values = _.map(_.values(this._values), function(val) {
     return quoteValue(val, opts);
   }).join(', ');
@@ -399,7 +399,7 @@ Join.prototype.toString = function toString() {
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
   on = quoteReservedObj(on);
-  return this.type + ' JOIN ' + tbl + ' ON ' + _.map(Object.keys(on), function(key) {
+  return this.type + ' JOIN ' + tbl + ' ON ' + _.map(_.keys(on), function(key) {
     return key + ' = ' + on[key];
   }).join(', ');
 };
@@ -502,7 +502,7 @@ ViewJoin.prototype.toString = function toString() {
 
 // handle an array, a comma-delimited str or separate args
 function argsToArray(args) {
-  if (Array.isArray(args[0]))
+  if (_.isArray(args[0]))
     return args[0];
   else if (typeof args[0] == 'string' && args[0].indexOf(',') > -1)
     return _.invoke(args[0].split(','), 'trim');
