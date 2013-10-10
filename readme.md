@@ -196,9 +196,7 @@ select('COUNT("order")').from('user');
 
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
-* Subqueries in select columns, in where expressions, in update statements, etc
 * Querying directly from a pseudo-view: `select().from(viewName)`
-* Allow more reuse by supporting .join()s for `UPDATE` and `DELETE` statements, implemented via `WHERE` criteria and placing the table name in the `FROM` or the `USING` clause, respectively.
 
 ## Contributing
 

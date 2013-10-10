@@ -231,7 +231,9 @@ proto.selectToString = function selectToString(opts) {
   var result = 'SELECT ';
   if (this._distinct)
     result += 'DISTINCT ';
-  result += cols.join(', ') + ' FROM ' + this.tbls.join(', ') + ' ';
+  result += _.map(cols, handleCol).join(', ') + ' ';
+  if (this.tbls)
+    result += 'FROM ' + this.tbls.join(', ') + ' ';
   if (this.joins)
     result += this.joins.join(' ') + ' ';
 
@@ -252,13 +254,13 @@ proto.selectToString = function selectToString(opts) {
   }
 
   if (this.group_by)
-    result += 'GROUP BY ' + this.group_by.join(', ') + ' ';
+    result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
 
   if (this._having)
     result += 'HAVING ' + this.whereToString(opts, this._having);
 
   if (this.order_by)
-    result += 'ORDER BY ' + this.order_by.join(', ') + ' ';
+    result += 'ORDER BY ' + _.map(this.order_by, handleCol).join(', ') + ' ';
 
   if (this._limit != null)
     result += 'LIMIT ' + this._limit + ' ';
@@ -269,11 +271,15 @@ proto.selectToString = function selectToString(opts) {
   if (this.for_update) {
     result += 'FOR UPDATE ';
     if (this.for_update_cols)
-      result += this.for_update_cols.join(', ') + ' ';
+      result += _.map(this.for_update_cols, handleCol).join(', ') + ' ';
     if (this.no_wait)
       result += 'NO WAIT ';
   }
   return result;
+
+  function handleCol(expr) {
+    return handleColumn(expr, opts);
+  }
 };
 
 proto.updateToString = function updateToString(opts) {
@@ -337,8 +343,7 @@ proto.addToObj = function addToObj(obj, name) {
 };
 
 proto.addColumnArgs = function addColumnArgs(args, name) {
-  var args = _.map(argsToArray(args), handleColumn);
-  return this.add(args, name);
+  return this.add(argsToArray(args), name);
 };
 
 proto.addExpression = function addExpression(args, name) {
@@ -594,18 +599,20 @@ Not.prototype.toString = function toString(opts) {
 var binary_ops = {
   'eq': '=',
   'equal': '=',
+  'notEq': '<>',
   'lt': '<',
   'lte': '<=',
   'gt': '>',
   'gte': '>='
 };
+var quantifiers = ['All', 'Any', 'Some'];
 
 for (var name in binary_ops) {
   sql[name] = function(name, col, val) {
     return new Binary(binary_ops[name], col, val);
   }.bind(null, name);
 
-  _.forEach(['All', 'Any', 'Some'], function(name, quantifier) {
+  _.forEach(quantifiers, function(name, quantifier) {
     sql[name + quantifier] = function(col, val) {
       return new Binary(binary_ops[name], col, val, quantifier.toUpperCase() + ' ');
     };
@@ -750,7 +757,7 @@ function objToEquals(obj) {
 function quoteValue(val, opts) {
   if (val instanceof Statement)
     return '(' + val.toString(opts) + ')';
-  
+
   if (val instanceof sql)
     return val.toString();
 
@@ -789,7 +796,7 @@ function quoteReservedKeys(obj) {
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 function handleColumn(expr, opts) {
   if (expr instanceof Statement)
-    return expr.toString(opts);
+    return '(' + expr.toString(opts) + ')';
 
   var prefix = '';
   var dot_ix = expr.lastIndexOf('.');

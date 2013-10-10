@@ -23,7 +23,7 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
-  exists = sql.exists, eqAny = sql.eqAny;
+  exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -66,6 +66,18 @@ describe('SQL Bricks', function() {
       var result = insert('user', values).toParams({'sqlite': true});
       assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
       assert.deepEqual(result.values, ['Fred', 'Flintstone']);
+    });
+    it('should properly parameterize subqueries', function() {
+      var values = {'first_name': 'Fred'};
+      checkParams(select(select('last_name').from('user').where(values)),
+        'SELECT (SELECT last_name FROM user WHERE first_name = $1)',
+        ['Fred']);
+    });
+    it('should properly parameterize subqueries in updates', function() {
+      var addr_id_for_usr = select('id').from('address').where('usr_id', sql('user.id')).and('active', true);
+      checkParams(update('user').set('addr_id', addr_id_for_usr),
+        'UPDATE user SET addr_id = (SELECT id FROM address WHERE usr_id = user.id AND active = $1)',
+        [true])
     });
   });
 
@@ -462,6 +474,10 @@ describe('SQL Bricks', function() {
     it('should support = ANY (subquery) quantifier', function() {
       check(select().from('user').where(eqAny('user.id', select('user_id').from('address'))),
         'SELECT * FROM user WHERE user.id = ANY (SELECT user_id FROM address)');
+    });
+    it('should support <> ANY (subquery) quantifier', function() {
+      check(select().from('user').where(notEqAny('user.id', select('user_id').from('address'))),
+        'SELECT * FROM user WHERE user.id <> ANY (SELECT user_id FROM address)');
     });
   });
 
