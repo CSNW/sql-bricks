@@ -448,6 +448,19 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('subqueries in <, >, etc', function() {
+    it('should support a subquery in >', function() {
+      var count_addrs_for_usr = select('count(*)').from('address').where({'user.addr_id': sql('address.id')});
+      check(select().from('user').where(gt(count_addrs_for_usr, 5)),
+        'SELECT * FROM user WHERE (SELECT count(*) FROM address WHERE user.addr_id = address.id) > 5');
+    });
+    it('should support a subquery in <=', function() {
+      var count_addrs_for_usr = select('count(*)').from('address').where({'user.addr_id': sql('address.id')});
+      check(select().from('user').where(lte(count_addrs_for_usr, 5)),
+        'SELECT * FROM user WHERE (SELECT count(*) FROM address WHERE user.addr_id = address.id) <= 5');
+    });
+  });
+
   describe('pseudo-views', function() {
     it('should namespace joined tables', function() {
       sql.defineView('activeUsers', 'usr').join('psn');

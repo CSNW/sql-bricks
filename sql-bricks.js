@@ -606,7 +606,12 @@ Binary.prototype.clone = function clone() {
   return new Binary(this.op, this.col, this.val);
 };
 Binary.prototype.toString = function toString(opts) {
-  return quoteReserved(this.col) + ' ' + this.op + ' ' + quoteValue(this.val, opts);
+  var sql;
+  if (this.col instanceof Statement)
+    sql = '(' + this.col.toString(opts) + ')';
+  else
+    sql = quoteReserved(this.col);
+  return sql + ' ' + this.op + ' ' + quoteValue(this.val, opts);
 }
 
 sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };

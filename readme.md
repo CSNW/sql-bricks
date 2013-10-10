@@ -194,7 +194,7 @@ select('COUNT("order")').from('user');
 
 ## To-Do
 
-* `(eq|lt|gt|gte|lte)(subquery)`, `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
+* `(eq|lt|gt|gte|lte)(Any|All|Some)(subquery)`
 * `.union(), .intersect(), .except()`
 * `select().into(), insert().select()`
 * Subqueries in select columns, in where expressions, in update statements, etc
