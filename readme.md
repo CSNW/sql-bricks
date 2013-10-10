@@ -1,6 +1,6 @@
 # SQL Bricks.js
 
-[![Build Status](https://travis-ci.org/CSNW/sql-bricks.png?branch=master)](https://travis-ci.org/CSNW/sql-bricks) [![browser support](https://ci.testling.com/CSNW/sql-bricks.png)](https://ci.testling.com/CSNW/sql-bricks)
+[![Build Status](https://travis-ci.org/CSNW/sql-bricks.png?branch=master)](https://travis-ci.org/CSNW/sql-bricks)
 
 As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
 
