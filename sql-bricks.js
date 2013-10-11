@@ -831,7 +831,7 @@ function handleValue(val, opts) {
 
   if (opts.parameterized) {
     opts.values.push(val);
-    var prefix = opts.sqlite ? '?' : '$';
+    var prefix = opts.placeholder || '$';
     return prefix + opts.value_ix++;
   }
   else {

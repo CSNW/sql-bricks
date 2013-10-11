@@ -63,7 +63,7 @@ describe('SQL Bricks', function() {
     });
     it('should generate node-sqlite3 style params', function() {
       var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
-      var result = insert('user', values).toParams({'sqlite': true});
+      var result = insert('user', values).toParams({'placeholder': '?'});
       assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
       assert.deepEqual(result.values, ['Fred', 'Flintstone']);
     });

@@ -162,10 +162,10 @@ select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
 ```
 
-For [node-sqlite3](https://github.com/developmentseed/node-sqlite3) style params (`?1`, `?2`), simply pass `{sqlite: true}` into `.toParams()`:
+For [node-sqlite3](https://github.com/developmentseed/node-sqlite3) style params (`?1`, `?2`), simply pass `{placeholder: '?'}` into `.toParams()`:
 
 ```javascript
-update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({sqlite: true});
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});
 // {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
 ```
 
