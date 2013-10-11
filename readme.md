@@ -4,11 +4,11 @@
 
 As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.
 
-In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords ("order", "desc", etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.
+In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (`order`, `desc`, etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.
 
 SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.
 
-SQL Bricks supports the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and all of their clauses as defined by [**SQL-92**](http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf) as well as some **Postgres** and **SQLite** extensions (see the *Contributing* section for more details).
+SQL Bricks supports the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and all of their clauses as defined by [**SQL-92**](http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf) as well as some additional clauses supported by **Postgres** and **SQLite**. Adding support for other SQL statements (`CREATE`, `ALTER TABLE`, etc) would add clutter to the library without providing much real benefit.
 
 ## API
 
@@ -49,7 +49,7 @@ select().from('user').join('address', {'user.addr_id': 'address.id'});
 // SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
 ```
 
-While it is possible to chain `WHERE` criteria at the top-level via repeated calls to `.where()` and `.and()`, method chaining cannot express nested `AND`, `OR` and `NOT` groupings. To handle this, SQL Bricks provides a set of nestable functions for building `WHERE` criteria: `and()`, `or()`, `not()`, `like()`, `in()`, `isNull()`, `isNotNull()`, `eq()`, `lt()`, `lte()`, `gt()` and `gte()`. Object literals can also be used: `{name: 'Fred'}` renders as `name = 'Fred'` and multiple key/value pairs in an object literal are `AND`ed together:
+While it is possible to chain `WHERE` criteria at the top-level via repeated calls to `.where()` and `.and()`, method chaining cannot express nested `AND`, `OR` and `NOT` groupings. To handle this, SQL Bricks provides a set of nestable functions for building `WHERE` criteria: `and()`, `or()`, `not()`, `like()`, `in()`, `isNull()`, `isNotNull()`, `exists()`, `between()`, `eq()`, `lt()`, `lte()`, `gt()` and `gte()`. Object literals can also be used: `{name: 'Fred'}` renders as `name = 'Fred'` and multiple key/value pairs in an object literal are `AND`ed together:
 
 ```javascript
 select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
@@ -194,17 +194,13 @@ select('COUNT("order")').from('user');
 // SELECT COUNT("order") FROM user
 ```
 
-## To-Do
-
-* Querying directly from a pseudo-view: `select().from(viewName)`
-
 ## Contributing
 
-Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in this documentation are run as tests, in addition to the tests in tests.js.
+Before sending a pull request, please verify that all the existing tests pass and add new tests for the changes you are making. The tests can be run via `npm test` (provided `npm install` has been run to install the dependencies). All of the examples in the documentation are run as tests, in addition to the tests in tests.js.
 
-Note that **pull requests for additional SQL dialects** or extensions beyond Postgres and SQLite will not be accepted. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
+Note that **pull requests for additional SQL dialects** or extensions beyond Postgres and SQLite will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.
 
-Also, **pull requests for additional SQL statements** beyond the four basic data manipulation statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) and `TRIGGER` will not be accepted. Other SQL statements do not benefit as much from re-use and composition; my goal is to keep SQL Bricks small, sharp and low-maintenance.
+Also, **pull requests for additional SQL statements** beyond the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; my goal is to keep SQL Bricks small, sharp and low-maintenance.
 
 ## Acknowledgements
 
