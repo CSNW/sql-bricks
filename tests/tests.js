@@ -90,6 +90,10 @@ describe('SQL Bricks', function() {
       check(update('address', {'city': "Liu'e, Hawai'i"}),
         "UPDATE address SET city = 'Liu''e, Hawai''i'");
     });
+    it('should support sql.val() to pass in values where columns are expected', function() {
+      check(select().from('user').where(sql.val('Fred'), sql('first_name')),
+        "SELECT * FROM user WHERE 'Fred' = first_name");
+    });
   });
 
   it('should expand abbreviations in FROM and JOINs', function() {

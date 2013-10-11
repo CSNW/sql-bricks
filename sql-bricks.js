@@ -12,6 +12,12 @@ function sql(str) {
 sql.prototype.toString = function toString() {
   return this.str;
 };
+sql.val = val;
+function val(_val) {
+  if (!(this instanceof val))
+    return new val(_val);
+  this.val = _val;
+}
 
 sql.select = inherits(Select, Statement);
 function Select() {
@@ -133,8 +139,11 @@ Select.prototype._toString = function _toString(opts) {
   }
   if (this.tbls)
     result += 'FROM ' + this.tbls.join(', ') + ' ';
-  if (this.joins)
-    result += this.joins.join(' ') + ' ';
+  if (this.joins) {
+    result += _.map(this.joins, function(join) {
+      return join.toString(opts);
+    }).join(' ') + ' ';
+  }
 
   if (this._where)
     result += this._whereToString(opts);
@@ -204,7 +213,7 @@ function Update(tbl, values) {
   return this;
 };
 Update.prototype.set = function set() {
-  var values = quoteReservedKeys(argsToObject(arguments));
+  var values = argsToObject(arguments);
   return this._addToObj(values, '_values');
 };
 Update.prototype._toString = function _toString(opts) {
@@ -213,7 +222,7 @@ Update.prototype._toString = function _toString(opts) {
     sql += 'OR ' + this._or + ' ';
   sql += this.tbls[0] + ' SET ';
   sql += _.map(this._values, function(value, key) {
-    return key + ' = ' + quoteValue(value, opts);
+    return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
   }).join(', ') + ' ';
 
   if (this._where)
@@ -255,16 +264,18 @@ Insert.prototype.into = function into(tbl, values) {
       this._values = {};
       var val_arr = argsToArray(_.toArray(arguments).slice(1));
       _.forEach(val_arr, function(key) {
-        this._values[handleColumn(key)] = null;
+        this._values[key] = null;
       }.bind(this));
     }
   }
   return this;
 };
 Insert.prototype._toString = function _toString(opts) {
-  var keys = _.keys(this._values).join(', ');
+  var keys = _.map(_.keys(this._values), function(col) {
+    return handleColumn(col, opts);
+  }).join(', ');
   var values = _.map(_.values(this._values), function(val) {
-    return quoteValue(val, opts);
+    return handleValue(val, opts);
   }).join(', ');
   var sql = 'INSERT ';
   if (this._or)
@@ -316,7 +327,7 @@ Statement.prototype.values = function values() {
     }.bind(this));
   }
   else {
-    this._addToObj(quoteReservedKeys(argsToObject(arguments)), '_values');
+    this._addToObj(argsToObject(arguments), '_values');
   }
   return this;
 };
@@ -454,7 +465,7 @@ sql.Join = Join;
 Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
   return sql.joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
 };
-Join.prototype.toString = function toString() {
+Join.prototype.toString = function toString(opts) {
   var on = this.on, tbl = this.tbl, left_tbl = this.left_tbl;
   if (!on || _.isEmpty(on)) {
     if (sql.joinCriteria)
@@ -462,9 +473,8 @@ Join.prototype.toString = function toString() {
     else
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
-  on = quoteReservedObj(on);
   return this.type + ' JOIN ' + tbl + ' ON ' + _.map(_.keys(on), function(key) {
-    return key + ' = ' + on[key];
+    return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
   }).join(', ');
 };
 
@@ -555,10 +565,12 @@ ViewJoin.prototype.autoGenerateOn = function autoGenerateOn() {
   return this.namespaceOn(on);
 };
 
-ViewJoin.prototype.toString = function toString() {
-  var sql = ViewJoin.super_.prototype.toString.call(this);
+ViewJoin.prototype.toString = function toString(opts) {
+  var sql = ViewJoin.super_.prototype.toString.call(this, opts);
   if (this.view.joins)
-    sql += ' '  + this.view.joins.join(' ');
+    sql += ' '  + _.map(this.view.joins, function(join) {
+      return join.toString(opts);
+    }).join(' ');
   return sql;
 };
 
@@ -584,7 +596,10 @@ function argsToObject(args) {
 }
 
 function argsToExpressions(args) {
-  if (typeof args[0] != 'object' && (typeof args[1] != 'object' || args[1] instanceof sql)) {
+  var flat_args = _.all(args, function(arg) {
+    return typeof arg != 'object' || arg instanceof val || arg instanceof sql;
+  });
+  if (flat_args) {
     return [sql.equal(args[0], args[1])];
   }
   else {
@@ -689,7 +704,7 @@ Binary.prototype.clone = function clone() {
 };
 Binary.prototype.toString = function toString(opts) {
   var sql = handleColumn(this.col, opts);
-  return sql + ' ' + this.op + ' ' + this.quantifier + quoteValue(this.val, opts);
+  return sql + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
 }
 
 sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };
@@ -702,7 +717,7 @@ Like.prototype.clone = function clone() {
   return new Like(this.col, this.val, this.escape_char);
 };
 Like.prototype.toString = function toString(opts) {
-  var sql = handleColumn(this.col, opts) + ' LIKE ' + quoteValue(this.val, opts);
+  var sql = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
   if (this.escape_char)
     sql += " ESCAPE '" + this.escape_char + "'";
   return sql;
@@ -718,7 +733,7 @@ Between.prototype.clone = function clone() {
   return new Between(this.col, this.val1, this.val2);
 };
 Between.prototype.toString = function(opts) {
-  return handleColumn(this.col, opts) + ' BETWEEN ' + quoteValue(this.val1, opts) + ' AND ' + quoteValue(this.val2, opts);
+  return handleColumn(this.col, opts) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
 };
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
@@ -753,7 +768,7 @@ In.prototype.toString = function toString(opts) {
   var sql;
   if (_.isArray(this.list)) {
     sql = _.map(this.list, function(val) {
-      return quoteValue(val, opts);
+      return handleValue(val, opts);
     }).join(', ');
   }
   else if (this.list instanceof Statement) {
@@ -807,9 +822,7 @@ function objToEquals(obj) {
   return expressions;
 }
 
-// quoteValue() must be called as the SQL is constructed
-// in the exact order it is constructed
-function quoteValue(val, opts) {
+function handleValue(val, opts) {
   if (val instanceof Statement)
     return '(' + val._toString(opts) + ')';
 
@@ -833,25 +846,13 @@ var sqlite_keywords = ['abort', 'action', 'add', 'after', 'all', 'alter', 'analy
 var reserved = _.uniq(pg_reserved.concat(sqlite_keywords));
 var reserved = _.object(reserved, reserved);
 
-function quoteReservedObj(obj) {
-  obj = quoteReservedKeys(obj);
-  for (var col in obj)
-    obj[col] = handleColumn(obj[col]);
-  return obj;
-}
-
-function quoteReservedKeys(obj) {
-  var quoted_obj = {};
-  for (var col in obj)
-    quoted_obj[handleColumn(col)] = obj[col];
-  return quoted_obj;
-}
-
 // handles prefixes before a '.' and suffixes after a ' '
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 function handleColumn(expr, opts) {
   if (expr instanceof Statement)
     return '(' + expr._toString(opts) + ')';
+  if (expr instanceof val)
+    return handleValue(expr.val, opts);
 
   var prefix = '';
   var dot_ix = expr.lastIndexOf('.');
