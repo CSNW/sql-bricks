@@ -21,6 +21,176 @@ function Select() {
   Select.super_.call(this, 'select');
   return this.select.apply(this, arguments);
 }
+Select.prototype.select = function select() {
+  return this._addColumnArgs(arguments, 'cols');
+};
+Select.prototype.into = function into(tbl) {
+  this._into = tbl;
+  return this;
+};
+Select.prototype.distinct = function distinct() {
+  this._distinct = true;
+  return this._addColumnArgs(arguments, 'cols');
+};
+
+Select.prototype.intoTable = function intoTable(tbl) {
+  return this.into(tbl);
+};
+Select.prototype.intoTemp = Select.prototype.intoTempTable = function intoTemp(tbl) {
+  this._into_temp = true;
+  return this.into(tbl);
+};
+
+Select.prototype.join = Select.prototype.innerJoin = function join() {
+  return this._addJoins(arguments, 'INNER');
+};
+Select.prototype.leftJoin = Select.prototype.leftOuterJoin = function join() {
+  return this._addJoins(arguments, 'LEFT');
+};
+Select.prototype.rightJoin = Select.prototype.rightOuterJoin = function join() {
+  return this._addJoins(arguments, 'RIGHT');
+};
+Select.prototype.fullJoin = Select.prototype.fullOuterJoin = function join() {
+  return this._addJoins(arguments, 'FULL');
+};
+Select.prototype.crossJoin = function join() {
+  return this._addJoins(arguments, 'CROSS');
+};
+
+Select.prototype.on = function on() {
+  var last_join = this.joins[this.joins.length - 1];
+  if (!last_join.on)
+    last_join.on = {};
+  _.extend(last_join.on, argsToObject(arguments));
+  return this;
+};
+
+Select.prototype.having = function having() {
+  return this._addExpression(arguments, '_having');
+}
+
+Select.prototype.order = Select.prototype.orderBy = function orderBy(cols) {
+  return this._addColumnArgs(arguments, 'order_by');
+};
+
+Select.prototype.group = Select.prototype.groupBy = function groupBy(cols) {
+  return this._addColumnArgs(arguments, 'group_by');
+};
+
+Select.prototype.limit = function limit(count) {
+  this._limit = count;
+  return this;
+};
+Select.prototype.offset = function offset(count) {
+  this._offset = count;
+  return this;
+};
+
+var compounds = {
+  'union': 'UNION', 'unionAll': 'UNION ALL',
+  'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
+  'minus': 'MINUS', 'minusAll': 'MINUS ALL',
+  'except': 'EXCEPT', 'exceptAll': 'EXCEPT ALL'
+};
+_.forEach(compounds, function(value, key) {
+  Select.prototype[key] = function() {
+    var stmts = argsToArray(arguments);
+    if (!stmts.length) {
+      var stmt = new Select();
+      stmt.prev_stmt = this;
+      stmts = [stmt];
+    }
+
+    this._add(stmts, '_' + key);
+    
+    if (stmt)
+      return stmt;
+    else
+      return this;
+  };
+});
+
+Select.prototype.forUpdate = Select.prototype.forUpdateOf = function forUpdate() {
+  this.for_update = true;
+  this._addColumnArgs(arguments, 'for_update_cols');
+  return this;
+};
+Select.prototype.noWait = function noWait() {
+  this.no_wait = true;
+  return this;
+};
+Select.prototype._toString = function _toString(opts) {
+  var cols = this.cols.length ? this.cols : ['*'];
+  result = 'SELECT ';
+  if (this._distinct)
+    result += 'DISTINCT ';
+  result += _.map(cols, handleCol).join(', ') + ' ';
+  if (this._into) {
+    result += 'INTO ';
+    if (this._into_temp)
+      result += 'TEMP ';
+    result += this._into + ' ';
+  }
+  if (this.tbls)
+    result += 'FROM ' + this.tbls.join(', ') + ' ';
+  if (this.joins)
+    result += this.joins.join(' ') + ' ';
+
+  if (this._where)
+    result += this._whereToString(opts);
+
+  var view_joins = this._viewJoins();
+  if (view_joins.length) {
+    var view_wheres = _.compact(_.pluck(_.pluck(view_joins, 'view'), '_where'));
+    _.forEach(view_wheres, function(view_where, ix) {
+      view_where.parens = false;
+      if (!this._where && ix == 0)
+        result += 'WHERE ';
+      else
+        result += 'AND ';
+      result += view_where.toString(opts) + ' ';
+    }.bind(this));
+  }
+
+  if (this.group_by)
+    result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
+
+  if (this._having)
+    result += 'HAVING ' + this._whereToString(opts, this._having);
+
+  if (this.order_by)
+    result += 'ORDER BY ' + _.map(this.order_by, handleCol).join(', ') + ' ';
+
+  if (this._limit != null)
+    result += 'LIMIT ' + this._limit + ' ';
+
+  if (this._offset != null)
+    result += 'OFFSET ' + this._offset + ' ';
+
+  _.forEach(compounds, function(value, key) {
+    var arr = this['_' + key];
+    if (arr) {
+      result += value + ' ';
+      result += arr.map(function(stmt) {
+        return stmt._toString(opts);
+      }).join(' ' + value + ' ');
+    }
+  }.bind(this));
+
+  if (this.for_update) {
+    result += 'FOR UPDATE ';
+    if (this.for_update_cols)
+      result += _.map(this.for_update_cols, handleCol).join(', ') + ' ';
+    if (this.no_wait)
+      result += 'NO WAIT ';
+  }
+  return result.trim();
+
+  function handleCol(expr) {
+    return handleColumn(expr, opts);
+  }
+};
+
 
 sql.update = inherits(Update, Statement);
 function Update(tbl, values) {
@@ -33,8 +203,29 @@ function Update(tbl, values) {
     this.values(values);
   return this;
 };
+Update.prototype.set = function set() {
+  var values = quoteReservedKeys(argsToObject(arguments));
+  return this._addToObj(values, '_values');
+};
+Update.prototype._toString = function _toString(opts) {
+  var sql = 'UPDATE ';
+  if (this._or)
+    sql += 'OR ' + this._or + ' ';
+  sql += this.tbls[0] + ' SET ';
+  sql += _.map(this._values, function(value, key) {
+    return key + ' = ' + quoteValue(value, opts);
+  }).join(', ') + ' ';
+
+  if (this._where)
+    sql += this._whereToString(opts);
+  return sql.trim();
+};
+
 
 sql.insert = sql.insertInto = inherits(Insert, Statement);
+sql.replace = function replace() {
+  return sql.insert.apply(null, arguments).orReplace();
+};
 function Insert(tbl, values) {
   if (!(this instanceof Insert)) {
     if (typeof values == 'object' && !_.isArray(values))
@@ -46,174 +237,12 @@ function Insert(tbl, values) {
   Insert.super_.call(this, 'insert');
   return this.into.apply(this, arguments);
 };
-sql.replace = function replace() {
-  return sql.insert.apply(null, arguments).orReplace();
+Insert.prototype.select = function select() {
+  this._select = sql.select.apply(null, arguments);
+  this._select.prev_stmt = this;
+  return this._select;
 };
-
-sql.delete = inherits(Delete, Statement);
-function Delete(tbl) {
-  if (!(this instanceof Delete))
-    return new Delete(tbl);
-
-  Delete.super_.call(this, 'delete');
-  if (tbl)
-    this.tbls = [expandAlias(tbl)];
-  return this;
-};
-
-// all the statements share a single class to enable
-// cloning a statement and changing its type
-// this is useful if you want to re-use the same joins on an update and a select
-function Statement(type) {
-  this.type = type;
-};
-sql.Statement = Statement;
-
-// SELECT
-var proto = Statement.prototype;
-proto.select = function select() {
-  if (this.type == 'insert') {
-    this._select = sql.select.apply(null, arguments);
-    this._select.prev_stmt = this;
-    return this._select;
-  }
-  else {
-    return this.addColumnArgs(arguments, 'cols');
-  }
-};
-proto.distinct = function distinct() {
-  this._distinct = true;
-  return this.addColumnArgs(arguments, 'cols');
-};
-
-proto.intoTable = function intoTable(tbl) {
-  return this.into(tbl);
-};
-proto.intoTemp = proto.intoTempTable = function intoTemp(tbl) {
-  this._into_temp = true;
-  return this.into(tbl);
-};
-
-proto.from = function from() {
-  var tbls = _.map(argsToArray(arguments), expandAlias);
-  return this.add(tbls, 'tbls');
-};
-
-proto.join = proto.innerJoin = function join() {
-  return this.addJoins(arguments, 'INNER');
-};
-proto.leftJoin = proto.leftOuterJoin = function join() {
-  return this.addJoins(arguments, 'LEFT');
-};
-proto.rightJoin = proto.rightOuterJoin = function join() {
-  return this.addJoins(arguments, 'RIGHT');
-};
-proto.fullJoin = proto.fullOuterJoin = function join() {
-  return this.addJoins(arguments, 'FULL');
-};
-proto.crossJoin = function join() {
-  return this.addJoins(arguments, 'CROSS');
-};
-
-proto.on = function on() {
-  var last_join = this.joins[this.joins.length - 1];
-  if (!last_join.on)
-    last_join.on = {};
-  _.extend(last_join.on, argsToObject(arguments));
-  return this;
-};
-
-// .where(key, value) / .where({...}) / .where(expr)
-proto.and = proto.where = function where() {
-  return this.addExpression(arguments, '_where');
-};
-
-proto.having = function having() {
-  return this.addExpression(arguments, '_having');
-}
-
-proto.order = proto.orderBy = function orderBy(cols) {
-  return this.addColumnArgs(arguments, 'order_by');
-};
-
-proto.group = proto.groupBy = function groupBy(cols) {
-  return this.addColumnArgs(arguments, 'group_by');
-};
-
-proto.limit = function limit(count) {
-  this._limit = count;
-  return this;
-};
-proto.offset = function offset(count) {
-  this._offset = count;
-  return this;
-};
-
-var compounds = {
-  'union': 'UNION', 'unionAll': 'UNION ALL',
-  'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
-  'minus': 'MINUS', 'minusAll': 'MINUS ALL',
-  'except': 'EXCEPT', 'exceptAll': 'EXCEPT ALL'
-};
-_.forEach(compounds, function(value, key) {
-  proto[key] = function() {
-    var stmts = argsToArray(arguments);
-    if (!stmts.length) {
-      var stmt = new Statement('select');
-      stmt.prev_stmt = this;
-      stmts = [stmt];
-    }
-
-    this.add(stmts, '_' + key);
-    
-    if (stmt)
-      return stmt;
-    else
-      return this;
-  };
-});
-
-proto.forUpdate = proto.forUpdateOf = function forUpdate() {
-  this.for_update = true;
-  this.addColumnArgs(arguments, 'for_update_cols');
-  return this;
-};
-proto.noWait = function noWait() {
-  this.no_wait = true;
-  return this;
-};
-
-// INSERT & UPDATE
-proto.values = function values() {
-  if (this._split_keys_vals_mode) {
-    var args = arguments;
-    _.forEach(_.keys(this._values), function(key, ix) {
-      this._values[key] = args[ix];
-    }.bind(this));
-  }
-  else {
-    this.addToObj(quoteReservedKeys(argsToObject(arguments)), '_values');
-  }
-  return this;
-};
-
-proto.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
-proto.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
-proto.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
-proto.orFail = function orFail() { this._or = 'FAIL'; return this; };
-proto.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
-proto.or = function or(cmd) {
-  this._or = cmd;
-};
-
-// INSERT
-proto.into = function into(tbl, values) {
-  // TODO: split to subclasses
-  if (this.type == 'select') {
-    this._into = tbl;
-    return this;
-  }
-
+Insert.prototype.into = function into(tbl, values) {
   if (tbl)
     this.tbls = [expandAlias(tbl)];
 
@@ -232,159 +261,7 @@ proto.into = function into(tbl, values) {
   }
   return this;
 };
-
-// UPDATE
-proto.set = function set() {
-  var values = quoteReservedKeys(argsToObject(arguments));
-  return this.addToObj(values, '_values');
-};
-
-// DELETE
-proto.using = function using() {
-  return this.add(_.map(argsToArray(arguments), expandAlias), '_using');
-};
-
-
-// GENERIC
-proto.clone = function clone() {
-  var stmt = _.extend(new Statement(), this);
-  if (stmt._where)
-    stmt._where = stmt._where.clone();
-  if (stmt.joins)
-    stmt.joins = stmt.joins.slice();
-  if (stmt._values)
-    stmt._values = _.clone(stmt._values);
-  return stmt;
-};
-
-proto.toParams = function toParams(opts) {
-  if (this.prev_stmt)
-    return this.prev_stmt.toParams(opts);
-
-  if (!opts)
-    opts = {};
-  _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
-  var sql = this.toString(opts);
-  return {'text': sql, 'values': opts.values};
-};
-
-proto.toString = function toString(opts) {
-  var sql;
-  // this opts check is dirty; cleaner/clearer to separate public interface
-  // .toString() from private ._toString()
-  if (!opts) {
-    if (this.prev_stmt)
-      return this.prev_stmt.toString();
-    opts = {};
-  }
-  
-  switch(this.type) {
-    case 'select':
-      sql = this.selectToString(opts);
-      break;
-    case 'update':
-      sql = this.updateToString(opts);
-      break;
-    case 'insert':
-      sql = this.insertToString(opts);
-      break;
-    case 'delete':
-      sql = this.deleteToString(opts);
-      break;
-    default:
-      throw new Error('Unknown statement type: "' + this.type + '"');
-  }
-
-  return sql.trim();
-};
-
-proto.selectToString = function selectToString(opts) {
-  var cols = this.cols.length ? this.cols : ['*'];
-  var result = 'SELECT ';
-  if (this._distinct)
-    result += 'DISTINCT ';
-  result += _.map(cols, handleCol).join(', ') + ' ';
-  if (this._into) {
-    result += 'INTO ';
-    if (this._into_temp)
-      result += 'TEMP ';
-    result += this._into + ' ';
-  }
-  if (this.tbls)
-    result += 'FROM ' + this.tbls.join(', ') + ' ';
-  if (this.joins)
-    result += this.joins.join(' ') + ' ';
-
-  if (this._where)
-    result += this.whereToString(opts);
-
-  var view_joins = this.viewJoins();
-  if (view_joins.length) {
-    var view_wheres = _.compact(_.pluck(_.pluck(view_joins, 'view'), '_where'));
-    _.forEach(view_wheres, function(view_where, ix) {
-      view_where.parens = false;
-      if (!this._where && ix == 0)
-        result += 'WHERE ';
-      else
-        result += 'AND ';
-      result += view_where.toString(opts) + ' ';
-    }.bind(this));
-  }
-
-  if (this.group_by)
-    result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
-
-  if (this._having)
-    result += 'HAVING ' + this.whereToString(opts, this._having);
-
-  if (this.order_by)
-    result += 'ORDER BY ' + _.map(this.order_by, handleCol).join(', ') + ' ';
-
-  if (this._limit != null)
-    result += 'LIMIT ' + this._limit + ' ';
-
-  if (this._offset != null)
-    result += 'OFFSET ' + this._offset + ' ';
-
-  _.forEach(compounds, function(value, key) {
-    var arr = this['_' + key];
-    if (arr) {
-      result += value + ' ';
-      result += arr.map(function(stmt) {
-        return stmt.toString(opts);
-      }).join(' ' + value + ' ');
-    }
-  }.bind(this));
-
-  if (this.for_update) {
-    result += 'FOR UPDATE ';
-    if (this.for_update_cols)
-      result += _.map(this.for_update_cols, handleCol).join(', ') + ' ';
-    if (this.no_wait)
-      result += 'NO WAIT ';
-  }
-  return result;
-
-  function handleCol(expr) {
-    return handleColumn(expr, opts);
-  }
-};
-
-proto.updateToString = function updateToString(opts) {
-  var sql = 'UPDATE ';
-  if (this._or)
-    sql += 'OR ' + this._or + ' ';
-  sql += this.tbls[0] + ' SET ';
-  sql += _.map(this._values, function(value, key) {
-    return key + ' = ' + quoteValue(value, opts);
-  }).join(', ') + ' ';
-
-  if (this._where)
-    sql += this.whereToString(opts);
-  return sql;
-};
-
-proto.insertToString = function insertToString(opts) {
+Insert.prototype._toString = function _toString(opts) {
   var keys = _.keys(this._values).join(', ');
   var values = _.map(_.values(this._values), function(val) {
     return quoteValue(val, opts);
@@ -395,22 +272,111 @@ proto.insertToString = function insertToString(opts) {
   sql += 'INTO ' + this.tbls.join(', ') + ' (' + keys + ') ';
 
   if (this._select)
-    sql += this._select.toString(opts);
+    sql += this._select._toString(opts);
   else
     sql += 'VALUES (' + values + ')';
-  return sql;
+  return sql.trim();
 };
 
-proto.deleteToString = function deleteToString(opts) {
+
+sql.delete = inherits(Delete, Statement);
+function Delete(tbl) {
+  if (!(this instanceof Delete))
+    return new Delete(tbl);
+
+  Delete.super_.call(this, 'delete');
+  if (tbl)
+    this.tbls = [expandAlias(tbl)];
+  return this;
+}
+Delete.prototype.using = function using() {
+  return this._add(_.map(argsToArray(arguments), expandAlias), '_using');
+};
+Delete.prototype._toString = function _toString(opts) {
   var sql = 'DELETE FROM ' + this.tbls[0] + ' ';
   if (this._using)
     sql += 'USING ' + this._using.join(', ') + ' ';
   if (this._where)
-    sql += this.whereToString(opts);
-  return sql;
+    sql += this._whereToString(opts);
+  return sql.trim();
 };
 
-proto.whereToString = function whereToString(opts, expr) {
+
+sql.Statement = Statement;
+function Statement(type) {
+  this.type = type;
+};
+
+// INSERT & UPDATE
+Statement.prototype.values = function values() {
+  if (this._split_keys_vals_mode) {
+    var args = arguments;
+    _.forEach(_.keys(this._values), function(key, ix) {
+      this._values[key] = args[ix];
+    }.bind(this));
+  }
+  else {
+    this._addToObj(quoteReservedKeys(argsToObject(arguments)), '_values');
+  }
+  return this;
+};
+Statement.prototype.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
+Statement.prototype.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
+Statement.prototype.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
+Statement.prototype.orFail = function orFail() { this._or = 'FAIL'; return this; };
+Statement.prototype.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
+Statement.prototype.or = function or(cmd) {
+  this._or = cmd;
+};
+
+// SELECT & DELETE
+Statement.prototype.from = function from() {
+  var tbls = _.map(argsToArray(arguments), expandAlias);
+  return this._add(tbls, 'tbls');
+};
+
+// SELECT & UPDATE & DELETE
+// .where(key, value) / .where({...}) / .where(expr)
+Statement.prototype.and = Statement.prototype.where = function where() {
+  return this._addExpression(arguments, '_where');
+};
+
+// GENERIC
+Statement.prototype.clone = function clone() {
+  var ctor = _.find([Select, Insert, Update, Delete], function(ctor) {
+    return this instanceof ctor;
+  }.bind(this));
+
+  var stmt = _.extend(new ctor(), this);
+  if (stmt._where)
+    stmt._where = stmt._where.clone();
+  if (stmt.joins)
+    stmt.joins = stmt.joins.slice();
+  if (stmt._values)
+    stmt._values = _.clone(stmt._values);
+  return stmt;
+};
+
+Statement.prototype.toParams = function toParams(opts) {
+  if (this.prev_stmt)
+    return this.prev_stmt.toParams(opts);
+
+  if (!opts)
+    opts = {};
+  _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
+  var sql = this._toString(opts);
+  return {'text': sql, 'values': opts.values};
+};
+
+Statement.prototype.toString = function toString() {
+  if (this.prev_stmt)
+    return this.prev_stmt.toString();
+  else
+    return this._toString({}).trim();
+};
+
+
+Statement.prototype._whereToString = function _whereToString(opts, expr) {
   if (!expr)
     expr = this._where;
   expr.parens = false;
@@ -419,7 +385,7 @@ proto.whereToString = function whereToString(opts, expr) {
   return 'WHERE ' + expr.toString(opts) + ' ';
 };
 
-proto.add = function add(arr, name) {
+Statement.prototype._add = function _add(arr, name) {
   if (!this[name])
     this[name] = [];
   
@@ -427,7 +393,7 @@ proto.add = function add(arr, name) {
   return this;
 };
 
-proto.addToObj = function addToObj(obj, name) {
+Statement.prototype._addToObj = function _addToObj(obj, name) {
   if (!this[name])
     this[name] = {};
 
@@ -435,11 +401,11 @@ proto.addToObj = function addToObj(obj, name) {
   return this;
 };
 
-proto.addColumnArgs = function addColumnArgs(args, name) {
-  return this.add(argsToArray(args), name);
+Statement.prototype._addColumnArgs = function _addColumnArgs(args, name) {
+  return this._add(argsToArray(args), name);
 };
 
-proto.addExpression = function addExpression(args, name) {
+Statement.prototype._addExpression = function _addExpression(args, name) {
   if (!this[name])
     this[name] = sql.and();
   var exprs = argsToExpressions(args);
@@ -447,7 +413,7 @@ proto.addExpression = function addExpression(args, name) {
   return this;
 };
 
-proto.addJoins = function addJoins(args, type) {
+Statement.prototype._addJoins = function _addJoins(args, type) {
   if (!this.joins)
     this.joins = [];
 
@@ -471,7 +437,7 @@ proto.addJoins = function addJoins(args, type) {
   return this;
 };
 
-proto.viewJoins = function viewJoins() {
+Statement.prototype._viewJoins = function _viewJoins() {
   return (this.joins || []).filter(function(join) {
     return join instanceof ViewJoin;
   });
@@ -643,7 +609,7 @@ function expandAlias(tbl) {
 
 sql.views = {};
 sql.defineView = function defineView(view_name, tbl) {
-  return sql.views[view_name] = new Statement('select').from(tbl);
+  return sql.views[view_name] = new Select().from(tbl);
 };
 
 // SQL Expression language
@@ -722,11 +688,7 @@ Binary.prototype.clone = function clone() {
   return new Binary(this.op, this.col, this.val);
 };
 Binary.prototype.toString = function toString(opts) {
-  var sql;
-  if (this.col instanceof Statement)
-    sql = '(' + this.col.toString(opts) + ')';
-  else
-    sql = handleColumn(this.col, opts);
+  var sql = handleColumn(this.col, opts);
   return sql + ' ' + this.op + ' ' + this.quantifier + quoteValue(this.val, opts);
 }
 
@@ -795,7 +757,7 @@ In.prototype.toString = function toString(opts) {
     }).join(', ');
   }
   else if (this.list instanceof Statement) {
-    sql = this.list.toString(opts);
+    sql = this.list._toString(opts);
   }
   return handleColumn(this.col, opts) + ' IN (' + sql + ')';
 };
@@ -808,7 +770,7 @@ Exists.prototype.clone = function clone() {
   return new Exists(this.subquery.clone());
 };
 Exists.prototype.toString = function toString(opts) {
-  return 'EXISTS (' + this.subquery.toString(opts) + ')';
+  return 'EXISTS (' + this.subquery._toString(opts) + ')';
 };
 
 
@@ -849,7 +811,7 @@ function objToEquals(obj) {
 // in the exact order it is constructed
 function quoteValue(val, opts) {
   if (val instanceof Statement)
-    return '(' + val.toString(opts) + ')';
+    return '(' + val._toString(opts) + ')';
 
   if (val instanceof sql)
     return val.toString();
@@ -889,7 +851,7 @@ function quoteReservedKeys(obj) {
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 function handleColumn(expr, opts) {
   if (expr instanceof Statement)
-    return '(' + expr.toString(opts) + ')';
+    return '(' + expr._toString(opts) + ')';
 
   var prefix = '';
   var dot_ix = expr.lastIndexOf('.');
