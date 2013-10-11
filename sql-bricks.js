@@ -148,19 +148,6 @@ Select.prototype._toString = function _toString(opts) {
   if (this._where)
     result += this._whereToString(opts);
 
-  var view_joins = this._viewJoins();
-  if (view_joins.length) {
-    var view_wheres = _.compact(_.pluck(_.pluck(view_joins, 'view'), '_where'));
-    _.forEach(view_wheres, function(view_where, ix) {
-      view_where.parens = false;
-      if (!this._where && ix == 0)
-        result += 'WHERE ';
-      else
-        result += 'AND ';
-      result += view_where.toString(opts) + ' ';
-    }.bind(this));
-  }
-
   if (this.group_by)
     result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
 
@@ -440,18 +427,11 @@ Statement.prototype._addJoins = function _addJoins(args, type) {
   _.forEach(tbls, function(tbl) {
     tbl = expandAlias(tbl);
     var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
-    var ctor = getTable(tbl) in sql.views ? ViewJoin : Join;
-    this.joins.push(new ctor(tbl, left_tbl, on, type));
+    this.joins.push(new Join(tbl, left_tbl, on, type));
   }.bind(this));
 
   this.last_join = tbls[tbls.length - 1];
   return this;
-};
-
-Statement.prototype._viewJoins = function _viewJoins() {
-  return (this.joins || []).filter(function(join) {
-    return join instanceof ViewJoin;
-  });
 };
 
 
@@ -476,102 +456,6 @@ Join.prototype.toString = function toString(opts) {
   return this.type + ' JOIN ' + tbl + ' ON ' + _.map(_.keys(on), function(key) {
     return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
   }).join(', ');
-};
-
-
-sql.ViewJoin = inherits(ViewJoin, Join);
-function ViewJoin(view, left_tbl, on, type) {
-  var alias = getAlias(view);
-  var view_name = getTable(view);
-  this.view = sql.views[view_name].clone();
-
-  if (this.view.tbls.length != 1)
-    throw new Error('Unsupported number of tables in pseudo-view: ' + this.view.tbl.length);
-  
-  var tbl = getTable(this.view.tbls[0]) + ' ' + alias;
-  ViewJoin.super_.call(this, tbl, left_tbl, on, type);
-
-  var new_aliases = {};
-  new_aliases[getAlias(this.view.tbls[0])] = alias;
-
-  if (this.view.joins) {
-    _.forEach(_.map(_.pluck(this.view.joins, 'tbl'), getAlias), function(join_alias) {
-      new_aliases[join_alias] = alias + '_' + join_alias;
-    });
-
-    var parent = this;
-    this.view.joins = _.map(this.view.joins, function(join) {
-      join = new Join(join.tbl, join.left_tbl, join.on, join.type);
-      join.autoGenerateOn = _.wrap(join.autoGenerateOn, function(orig_fn) {
-        var on = orig_fn.apply(this, _.toArray(arguments).slice(1));
-        return parent.namespaceOn(on);
-      });
-      return join;
-    });
-  }
-
-  this.new_aliases = new_aliases;
-  this.addNamespace();
-}
-
-ViewJoin.prototype.addNamespace = function addNamespace() {
-  var new_aliases = this.new_aliases;
-  if (this.view.joins) {
-    _.forEach(this.view.joins, function(join) {
-      var join_alias = getAlias(join.tbl);
-      var join_tbl = getTable(join.tbl);
-      if (join.on)
-        join.on = this.namespaceOn(join.on);
-      join.tbl = join_tbl + ' ' + new_aliases[join_alias]
-    }.bind(this));
-  }
-
-  if (this.view._where)
-    this.convertExpr(this.view._where);
-};
-
-ViewJoin.prototype.convertExpr = function convertExpr(expr) {
-  if (expr.col)
-    expr.col = this.convert(expr.col);
-  if (expr.expressions)
-    _.forEach(expr.expressions, this.convertExpr.bind(this));
-};
-
-ViewJoin.prototype.namespaceOn = function namespaceOn(on) {
-  var namespaced_on = {};
-  for (var key in on)
-    namespaced_on[this.convert(key)] = this.convert(on[key]);
-  return namespaced_on;
-};
-
-ViewJoin.prototype.convert = function convert(col) {
-  var col_parts = col.split('.');
-  if (col_parts.length == 1)
-    return col;
-  
-  var tbl_ix = col_parts.length - 2;
-  var tbl_alias = col_parts[tbl_ix];
-  if (tbl_alias in this.new_aliases) {
-    col_parts[tbl_ix] = this.new_aliases[tbl_alias];
-    return col_parts.join('.');
-  }
-  else {
-    return col;
-  }
-};
-
-ViewJoin.prototype.autoGenerateOn = function autoGenerateOn() {
-  var on = ViewJoin.super_.prototype.autoGenerateOn.apply(this, arguments);
-  return this.namespaceOn(on);
-};
-
-ViewJoin.prototype.toString = function toString(opts) {
-  var sql = ViewJoin.super_.prototype.toString.call(this, opts);
-  if (this.view.joins)
-    sql += ' '  + _.map(this.view.joins, function(join) {
-      return join.toString(opts);
-    }).join(' ');
-  return sql;
 };
 
 
@@ -613,19 +497,6 @@ function argsToExpressions(args) {
     return exprs;
   }
 }
-
-sql._aliases = {};
-sql.aliasExpansions = function aliasExpansions(aliases) {
-  sql._aliases = aliases;
-}
-function expandAlias(tbl) {
-  return tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
-}
-
-sql.views = {};
-sql.defineView = function defineView(view_name, tbl) {
-  return sql.views[view_name] = new Select().from(tbl);
-};
 
 // SQL Expression language
 
@@ -874,7 +745,93 @@ function handleColumn(expr, opts) {
   return prefix + expr + suffix;
 }
 
-// provided for browser support (https://gist.github.com/prust/5936064)
+// optional conveniences
+sql._aliases = {};
+sql.aliasExpansions = function aliasExpansions(aliases) {
+  sql._aliases = aliases;
+}
+function expandAlias(tbl) {
+  return tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
+}
+
+sql.views = {};
+sql.addView = function addView(view_name, sel) {
+  if (sel.tbls.length != 1)
+    throw new Error('Unsupported number of tables in pseudo-view: ' + sel.tbls.length);
+  sql.views[view_name] = sel;
+};
+
+Select.prototype.joinView = function joinView(view, on, type) {
+  var alias = getAlias(view);
+  var view_name = getTable(view);
+  var view = sql.views[view_name];
+
+  var tbl = getTable(view.tbls[0]) + ' ' + alias;
+  this._addJoins([tbl, on || {}], type ? type.toUpperCase() : 'INNER');
+
+  var new_aliases = {};
+  new_aliases[getAlias(view.tbls[0])] = alias;
+
+  if (view.joins) {
+    _.forEach(_.map(_.pluck(view.joins, 'tbl'), getAlias), function(join_alias) {
+      new_aliases[join_alias] = alias + '_' + join_alias;
+    });
+
+    _.forEach(view.joins, function(join) {
+      var join_alias = getAlias(join.tbl);
+      var join_tbl = getTable(join.tbl);
+      var tbl = join_tbl + ' ' + new_aliases[join_alias];
+      var join = new Join(tbl, join.left_tbl, join.on, join.type);
+      this.joins.push(join);
+      if (!join.on)
+        join.on = join.autoGenerateOn(tbl, join.left_tbl);
+      join.on = namespaceOn(join.on);
+    }.bind(this));
+  }
+
+  if (view._where) {
+    _.forEach(view._where.expressions, function(expr) {
+      expr = expr.clone();
+      convertExpr(expr);
+      this.where(expr);
+    }.bind(this));
+  }
+
+  return this;
+
+  function convertExpr(expr) {
+    if (expr.col)
+      expr.col = convert(expr.col);
+    if (expr.expressions)
+      _.forEach(expr.expressions, convertExpr);
+  }
+
+  function namespaceOn(on) {
+    var namespaced_on = {};
+    for (var key in on)
+      namespaced_on[convert(key)] = convert(on[key]);
+    return namespaced_on;
+  }
+
+  function convert(col) {
+    var col_parts = col.split('.');
+    if (col_parts.length == 1)
+      return col;
+    
+    var tbl_ix = col_parts.length - 2;
+    var tbl_alias = col_parts[tbl_ix];
+    if (tbl_alias in new_aliases) {
+      col_parts[tbl_ix] = new_aliases[tbl_alias];
+      return col_parts.join('.');
+    }
+    else {
+      return col;
+    }
+  }
+};
+
+
+// provided for browser support, based on https://gist.github.com/prust/5936064
 function inherits(ctor, superCtor) {
   if (Object.create) {
     ctor.super_ = superCtor;

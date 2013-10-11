@@ -543,34 +543,39 @@ describe('SQL Bricks', function() {
 
   describe('pseudo-views', function() {
     it('should namespace joined tables', function() {
-      sql.defineView('activeUsers', 'usr').join('psn');
-      check(select().from('accounts').join('activeUsers a_usr'),
+      sql.addView('activeUsers', select().from('usr').join('psn'));
+      check(select().from('accounts').joinView('activeUsers a_usr'),
         'SELECT * FROM accounts ' + 
         'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
         'INNER JOIN person a_usr_psn ON a_usr.psn_fk = a_usr_psn.pk');
     });
     it('should properly quote reserved words in join tables and allow custom ON criteria', function() {
-      sql.defineView('activeUsers', 'usr').join('psn', {'usr.psn_desc': 'psn.desc'});
-      check(select().from('accounts').join('activeUsers a_usr'),
+      sql.addView('activeUsers', select().from('usr').join('psn', {'usr.psn_desc': 'psn.desc'}));
+      check(select().from('accounts').joinView('activeUsers a_usr'),
         'SELECT * FROM accounts ' +
         'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
         'INNER JOIN person a_usr_psn ON a_usr.psn_desc = a_usr_psn."desc"');
     });
     it('should add namespaced WHERE criteria', function() {
-      sql.defineView('activeUsers', 'usr').join('psn').where({'usr.active': true, 'psn.active': true});
-      check(select().from('accounts').join('activeUsers a_usr'),
+      sql.addView('activeUsers', select().from('usr').join('psn').where({'usr.active': true, 'psn.active': true}));
+      check(select().from('accounts').joinView('activeUsers a_usr'),
         'SELECT * FROM accounts ' + 
         'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
         'INNER JOIN person a_usr_psn ON a_usr.psn_fk = a_usr_psn.pk ' +
         'WHERE a_usr.active = true AND a_usr_psn.active = true');
     });
     it('should re-alias when re-using a view w/ a diff alias', function() {
-      sql.defineView('activeUsers', 'usr').where({'usr.active': true});
-      check(select().from('accounts').join('activeUsers a_usr', 'activeUsers a_usr2'),
+      sql.addView('activeUsers', select().from('usr').where({'usr.active': true}));
+      check(select().from('accounts').joinView('activeUsers a_usr').joinView('activeUsers a_usr2'),
         'SELECT * FROM accounts ' +
         'INNER JOIN user a_usr ON accounts.usr_fk = a_usr.pk ' +
-        'INNER JOIN user a_usr2 ON accounts.usr_fk = a_usr2.pk ' +
+        'INNER JOIN user a_usr2 ON a_usr.usr_fk = a_usr2.pk ' +
         'WHERE a_usr.active = true AND a_usr2.active = true');
+    });
+    it('should be able to select from a pseudo-view', function() {
+      sql.addView('activeUsers', select().from('usr').where({'usr.active': true}));
+      check(sql.views.activeUsers,
+        'SELECT * FROM user usr WHERE usr.active = true');
     });
   });
 

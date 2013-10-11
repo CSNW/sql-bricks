@@ -75,14 +75,16 @@ var local_users = active_users.clone().where({'local': true});
 
 For those databases where native views have performance issues (like SQLite), sql-bricks provides pseudo-views (see the "Subquery Flattening" section of [the SQLite Query Planner](http://www.sqlite.org/optoverview.html)).
 
-The definition of a pseudo-view consists of a main table and, optionally, join tables and where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias):
+The definition of a pseudo-view consists of a main table and, optionally, join tables and where criteria. Queries can then join to (and alias) this pseudo-view (the pseudo-view's join tables are prefixed with the view's alias) via `.joinView(view_name[, on, join_type])`:
 
 ```javascript
-sql.defineView('localUser', 'user')
-  .join('address').on({'user.addr_id': 'address.id'})
-  .where({'address.local': true});
+sql.addView('localUser',
+  select().from('user')
+    .join('address').on({'user.addr_id': 'address.id'})
+    .where({'address.local': true})
+);
 
-select('*').from('person').join('localUser l_usr').on({'person.usr_id': 'l_usr.id'});
+select('*').from('person').joinView('localUser l_usr', {'person.usr_id': 'l_usr.id'});
 // SELECT * FROM person
 // INNER JOIN user l_usr ON person.usr_id = l_usr.id
 // INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id

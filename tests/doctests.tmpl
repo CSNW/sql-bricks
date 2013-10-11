@@ -46,7 +46,7 @@ describe('SQL Bricks', function() {
 
 function check(actual, expected) {
   if (actual instanceof sql.Statement)
-    assert.equal(actual, expected);
+    assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);
 }
