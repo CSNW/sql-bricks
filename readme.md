@@ -38,7 +38,7 @@ select('*').from('user').where({'first_name': 'Fred'});
 // SELECT * FROM user WHERE first_name = 'Fred'
 ```
 
-For added convenience, `select()` defaults to `'*'`, shorter one-word method aliases are provided and in cases where a pair of keywords always go together (`upset().set()`, `insert().values()`, `.join().on()`), the second keyword can be omitted, with the object literal passed as an additional argument to the first keyword:
+For added convenience, `select()` defaults to `'*'`, shorter one-word method aliases are provided and in cases where a pair of keywords always go together (`update().set()`, `insert().values()`, `.join().on()`), the second keyword can be omitted, with the object literal passed as an additional argument to the first keyword:
 
 ```javascript
 update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
