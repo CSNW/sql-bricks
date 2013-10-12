@@ -1,0 +1,193 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="target-densitydpi=device-dpi" />
+  <meta name="HandheldFriendly" content="true"/>
+  <link rel="canonical" href="http://csnw.github.io/sql-bricks" />
+  <title>SQL Bricks</title>
+  <style>
+    body {
+      font-size: 14px;
+      line-height: 22px;
+      background: #f4f4f4;
+      color: black;
+      font-family: Helvetica Neue, Helvetica, Arial;
+    }
+    .interface {
+      font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif !important;
+    }
+    code, pre, tt {
+      font-family: Monaco, Consolas, "Lucida Console", monospace;
+      font-size: 12px;
+      line-height: 18px;
+      font-style: normal;
+    }
+    tt {
+        padding: 0px 3px;
+        background: #fff;
+        border: 1px solid #ddd;
+        zoom: 1;
+      }
+      code {
+        margin-left: 20px;
+      }
+      pre {
+        font-size: 12px;
+        padding: 2px 0 2px 15px;
+        border-left: 5px solid #bbb;
+        margin: 0px 0 30px;
+      }
+      span.alias {
+        font-size: 14px;
+        font-style: italic;
+        margin-left: 20px;
+      }
+      b.header {
+        font-size: 16px;
+        line-height: 30px;
+      }
+      a.toc_title, a.toc_title:visited {
+      display: block;
+      color: black;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+      a.toc_title:hover {
+        text-decoration: underline;
+      }
+      ul.toc_section {
+      font-size: 11px;
+      line-height: 14px;
+      margin: 5px 0 0 0;
+      padding-left: 0px;
+      list-style-type: none;
+      font-family: Lucida Grande;
+    }
+      .toc_section li {
+        cursor: pointer;
+        margin: 0 0 3px 0;
+      }
+        .toc_section li a {
+          text-decoration: none;
+          color: black;
+        }
+          .toc_section li a:hover {
+            text-decoration: underline;
+          }
+    div#sidebar {
+      background: white;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 200px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 15px 0 30px 30px;
+      border-right: 1px solid #bbb;
+      box-shadow: 0 0 20px #ccc; -webkit-box-shadow: 0 0 20px #ccc; -moz-box-shadow: 0 0 20px #ccc;
+    }
+    div.container {
+      width: 550px;
+      margin: 40px 0 50px 260px;
+    }
+
+    @media only screen and (-webkit-min-device-pixel-ratio: 1.5) and (max-width: 640px),
+          only screen and (-o-min-device-pixel-ratio: 3/2) and (max-width: 640px),
+          only screen and (min-device-pixel-ratio: 1.5) and (max-width: 640px) {
+      img {
+        max-width: 100%;
+      }
+      div#sidebar {
+        -webkit-overflow-scrolling: initial;
+        position: relative;
+        width: 90%;
+        height: 120px;
+        left: 0;
+        top: -7px;
+        padding: 10px 0 10px 30px;
+        border: 0;
+      }
+      div.container {
+        margin: 0;
+        width: 100%;
+      }
+      p, div.container ul {
+        max-width: 98%;
+        overflow-x: scroll;
+      }
+      pre {
+        overflow: scroll;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar" class="interface">
+    SQL Bricks.js
+    
+    <a class="toc_title" href="#">
+      Introduction
+    </a>
+
+    <a class="toc_title" href="#select">
+      Select
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#sel_contructor">constructor</a></li>
+      <li>- <a href="#distinct">distinct</a></li>
+      <li>- <a href="#into">into</a></li>
+      <li>- <a href="#intoTemp">intoTemp</a></li>
+      <li>- <a href="#from">from</a></li>
+      <li>- <a href="#where">where</a></li>
+    </ul>
+  </div>
+
+  <div class="container">
+    <h1>SQL Bricks.js</h1>
+    <p><a href="https://travis-ci.org/CSNW/sql-bricks" title="Build Status"><img src="https://travis-ci.org/CSNW/sql-bricks.png?branch=master"></a></p>
+    <p id="introduction">As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.</p>
+    <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (`order`, `desc`, etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.</p>
+    <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.</p>
+    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would add clutter to the library without providing much real benefit.</p>
+    <p>Over <a href="browser-tests.html?html">a hundred tests</a> are available for your perusal.</p>
+
+    <div id="documentation">
+      <h2 id="select">Select</h2>
+      <p id="sel_constructor">
+        <b class="header">constructor</b><code>select(cols)</code>
+        Returns a new select statement, seeded with a set of columns. Columns can be passed in later (by calling .select() again) or can be provided here as separate string arguments, a single, comma-delimited string argument or an array of strings.
+      </p>
+      <p id="distinct">
+        <b class="header">distinct</b><code>sel.distinct(cols)</code>
+        <br />
+        Sets the distinct flag to true. For convenience, you can pass in columns here exactly as you can to select.
+      </p>
+      <p id="into">
+        <b class="header">into</b><code>sel.into(tbl)</code>
+        <span class="alias">Alias: <b>intoTable</b></span>
+        <br />
+      </p>
+      <p id="intoTemp">
+        <b class="header">intoTemp</b><code>sel.intoTemp(tbl)</code>
+        <span class="alias">Alias: <b>intoTempTable</b></span>
+        <br />
+      </p>
+      <p id="from">
+        <b class="header">from</b><code>sel.from(tbl)</code>
+        <br />
+      </p>
+      <p id="where">
+        <b class="header">where</b><code>sel.where(expr)</code>
+        <br />
+      </p>
+    </div>
+  </div>
+
+  <!-- include it so you can play in the console -->
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+  <script type="text/javascript" src="sql-bricks.js"></script>
+</body>
+</html>

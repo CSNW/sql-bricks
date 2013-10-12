@@ -30,22 +30,20 @@ function Select() {
 Select.prototype.select = function select() {
   return this._addColumnArgs(arguments, 'cols');
 };
-Select.prototype.into = function into(tbl) {
+Select.prototype.into = Select.prototype.intoTable = function into(tbl) {
   this._into = tbl;
   return this;
-};
-Select.prototype.distinct = function distinct() {
-  this._distinct = true;
-  return this._addColumnArgs(arguments, 'cols');
-};
-
-Select.prototype.intoTable = function intoTable(tbl) {
-  return this.into(tbl);
 };
 Select.prototype.intoTemp = Select.prototype.intoTempTable = function intoTemp(tbl) {
   this._into_temp = true;
   return this.into(tbl);
 };
+
+Select.prototype.distinct = function distinct() {
+  this._distinct = true;
+  return this._addColumnArgs(arguments, 'cols');
+};
+
 
 Select.prototype.join = Select.prototype.innerJoin = function join() {
   return this._addJoins(arguments, 'INNER');
@@ -127,7 +125,7 @@ Select.prototype.noWait = function noWait() {
 };
 Select.prototype._toString = function _toString(opts) {
   var cols = this.cols.length ? this.cols : ['*'];
-  result = 'SELECT ';
+  var result = 'SELECT ';
   if (this._distinct)
     result += 'DISTINCT ';
   result += _.map(cols, handleCol).join(', ') + ' ';
