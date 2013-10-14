@@ -243,7 +243,7 @@
       <h2 id="use">Use</h2>
       <p>
         <p>In <a href="http://nodejs.org">node</a>, SQL Bricks can be accessed with <tt>require('sql-bricks')</tt>. In the browser, it can be accessed with the <tt>SqlBricks</tt> global. SQL Bricks' only dependency is <a href="http://underscorejs.org">Underscore.js</a>. Throughout this documentation, it is assumed that SQL Bricks is set to a local <tt>sql</tt> variable and that top-level functions are also set to local variables (for example: <tt>var sql = SqlBricks, select = sql.select, or = sql.or, $in = sql.in;</tt>).</p>
-        <p>The API is designed to mirror SQL faithfully, with SQL keywords represented by chainable camelCase method and non-keywords passed in as string arguments. To make the API easier to use, objects can also be passed in wherever there are key/value pairs.</p>
+        <p>The API is designed to mirror SQL faithfully, with SQL keywords represented by chainable camelCase method and non-keywords passed as string arguments. To make the API easier to use, objects can also be passed in wherever there are key/value pairs.</p>
         <pre>
 select().from('user')
   .where(or({last_name: 'Rubble'}, $in('first_name', ['Fred', 'Wilma', 'Pebbles'])));
@@ -833,5 +833,16 @@ select('COUNT("order")').from('user');
   <!-- include it so you can play in the console -->
   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
   <script type="text/javascript" src="sql-bricks.js"></script>
+  <script>
+    sql = SqlBricks;
+    select = sql.select;
+    insert = sql.insert;
+    update = sql.update;
+    del = sql.delete;
+    and = sql.and;
+    or = sql.or;
+    $in = sql.in;
+    like = sql.like;
+  </script>
 </body>
 </html>
