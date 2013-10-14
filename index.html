@@ -237,7 +237,7 @@
     <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (`order`, `desc`, etc), automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions and <a href="#addView">pseudo-views</a>.</p>
     <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.</p>
     <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
-    <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html?html">a hundred and fifty tests</a> are available for your perusal.</p>
+    <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html">a hundred and fifty tests</a> are available for your perusal.</p>
 
     <div id="documentation">
       <h2 id="use">Use</h2>
@@ -816,7 +816,7 @@ select('COUNT("order")').from('user');
 </pre>
 
       <h2 id="contributing">Contributing</h2>
-      <p>Before sending a pull request, please verify that <a href="browser-tests.html?html">all the existing tests</a> pass and add new tests for the changes you are making. The tests can be run in node with <tt>npm test</tt> (provided <tt>npm install</tt> has been run to install the dependencies) or they can be run in the browser with <tt>browser-tests.html</tt>. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.</p>
+      <p>Before sending a pull request, please verify that <a href="browser-tests.html">all the existing tests</a> pass and add new tests for the changes you are making. The tests can be run in node with <tt>npm test</tt> (provided <tt>npm install</tt> has been run to install the dependencies) or they can be run in the browser with <tt>browser-tests.html</tt>. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.</p>
       <p>Note that <b>pull requests for additional SQL dialects</b> or extensions beyond Postgres and SQLite will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.</p>
       <p>Also, <b>pull requests for additional SQL statements</b> beyond the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.</p>
 
