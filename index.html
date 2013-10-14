@@ -701,7 +701,7 @@ select().from('user').where($in('addr_id', select('id').from('address')));
         <b class="header">eqAll, notEqAll, ltAll, lteAll, gtAll, gteAll</b><br />
         <code>eqAll(stmt), notEqAll(stmt), ltAll(stmt), lteAll(stmt), gtAll(stmt), gteAll(stmt)</code>
         <br />
-        <p>Pairs the relational operator with the <tt>ALL</tt> keyword.</p>
+        <p>Pairs the appropriate relational operator with the <tt>ALL</tt> keyword.</p>
       </p>
 
       <p id="eqAny">
