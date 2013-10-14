@@ -28,7 +28,7 @@ function Select() {
   return this.select.apply(this, arguments);
 }
 Select.prototype.select = function select() {
-  return this._addColumnArgs(arguments, 'cols');
+  return this._addListArgs(arguments, 'cols');
 };
 Select.prototype.into = Select.prototype.intoTable = function into(tbl) {
   this._into = tbl;
@@ -41,10 +41,13 @@ Select.prototype.intoTemp = Select.prototype.intoTempTable = function intoTemp(t
 
 Select.prototype.distinct = function distinct() {
   this._distinct = true;
-  return this._addColumnArgs(arguments, 'cols');
+  return this._addListArgs(arguments, 'cols');
 };
 
-
+Select.prototype.from = function from() {
+  var tbls = _.map(argsToArray(arguments), expandAlias);
+  return this._add(tbls, 'tbls');
+};
 Select.prototype.join = Select.prototype.innerJoin = function join() {
   return this._addJoins(arguments, 'INNER');
 };
@@ -60,7 +63,6 @@ Select.prototype.fullJoin = Select.prototype.fullOuterJoin = function join() {
 Select.prototype.crossJoin = function join() {
   return this._addJoins(arguments, 'CROSS');
 };
-
 Select.prototype.on = function on() {
   var last_join = this.joins[this.joins.length - 1];
   if (!last_join.on)
@@ -69,16 +71,20 @@ Select.prototype.on = function on() {
   return this;
 };
 
+Select.prototype.where = Select.prototype.and = function where() {
+  return this._addExpression(arguments, '_where');
+};
+
+Select.prototype.group = Select.prototype.groupBy = function groupBy(cols) {
+  return this._addListArgs(arguments, 'group_by');
+};
+
 Select.prototype.having = function having() {
   return this._addExpression(arguments, '_having');
 }
 
 Select.prototype.order = Select.prototype.orderBy = function orderBy(cols) {
-  return this._addColumnArgs(arguments, 'order_by');
-};
-
-Select.prototype.group = Select.prototype.groupBy = function groupBy(cols) {
-  return this._addColumnArgs(arguments, 'group_by');
+  return this._addListArgs(arguments, 'order_by');
 };
 
 Select.prototype.limit = function limit(count) {
@@ -116,7 +122,7 @@ _.forEach(compounds, function(value, key) {
 
 Select.prototype.forUpdate = Select.prototype.forUpdateOf = function forUpdate() {
   this.for_update = true;
-  this._addColumnArgs(arguments, 'for_update_cols');
+  this._addListArgs(arguments, 'for_update_tbls');
   return this;
 };
 Select.prototype.noWait = function noWait() {
@@ -144,13 +150,13 @@ Select.prototype._toString = function _toString(opts) {
   }
 
   if (this._where)
-    result += this._whereToString(opts);
+    result += 'WHERE ' + this._exprToString(opts);
 
   if (this.group_by)
     result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
 
   if (this._having)
-    result += 'HAVING ' + this._whereToString(opts, this._having);
+    result += 'HAVING ' + this._exprToString(opts, this._having);
 
   if (this.order_by)
     result += 'ORDER BY ' + _.map(this.order_by, handleCol).join(', ') + ' ';
@@ -173,8 +179,8 @@ Select.prototype._toString = function _toString(opts) {
 
   if (this.for_update) {
     result += 'FOR UPDATE ';
-    if (this.for_update_cols)
-      result += _.map(this.for_update_cols, handleCol).join(', ') + ' ';
+    if (this.for_update_tbls)
+      result += this.for_update_tbls.join(', ') + ' ';
     if (this.no_wait)
       result += 'NO WAIT ';
   }
@@ -186,40 +192,7 @@ Select.prototype._toString = function _toString(opts) {
 };
 
 
-sql.update = inherits(Update, Statement);
-function Update(tbl, values) {
-  if (!(this instanceof Update))
-    return new Update(tbl, argsToObject(_.toArray(arguments).slice(1)));
-
-  Update.super_.call(this, 'update');
-  this.tbls = [expandAlias(tbl)];
-  if (values)
-    this.values(values);
-  return this;
-};
-Update.prototype.set = function set() {
-  var values = argsToObject(arguments);
-  return this._addToObj(values, '_values');
-};
-Update.prototype._toString = function _toString(opts) {
-  var sql = 'UPDATE ';
-  if (this._or)
-    sql += 'OR ' + this._or + ' ';
-  sql += this.tbls[0] + ' SET ';
-  sql += _.map(this._values, function(value, key) {
-    return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
-  }).join(', ') + ' ';
-
-  if (this._where)
-    sql += this._whereToString(opts);
-  return sql.trim();
-};
-
-
 sql.insert = sql.insertInto = inherits(Insert, Statement);
-sql.replace = function replace() {
-  return sql.insert.apply(null, arguments).orReplace();
-};
 function Insert(tbl, values) {
   if (!(this instanceof Insert)) {
     if (typeof values == 'object' && !_.isArray(values))
@@ -231,11 +204,11 @@ function Insert(tbl, values) {
   Insert.super_.call(this, 'insert');
   return this.into.apply(this, arguments);
 };
-Insert.prototype.select = function select() {
-  this._select = sql.select.apply(null, arguments);
-  this._select.prev_stmt = this;
-  return this._select;
-};
+Insert.prototype.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
+Insert.prototype.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
+Insert.prototype.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
+Insert.prototype.orFail = function orFail() { this._or = 'FAIL'; return this; };
+Insert.prototype.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
 Insert.prototype.into = function into(tbl, values) {
   if (tbl)
     this.tbls = [expandAlias(tbl)];
@@ -254,6 +227,23 @@ Insert.prototype.into = function into(tbl, values) {
     }
   }
   return this;
+};
+Insert.prototype.values = function values() {
+  if (this._split_keys_vals_mode) {
+    var args = arguments;
+    _.forEach(_.keys(this._values), function(key, ix) {
+      this._values[key] = args[ix];
+    }.bind(this));
+  }
+  else {
+    this._addToObj(argsToObject(arguments), '_values');
+  }
+  return this;
+};
+Insert.prototype.select = function select() {
+  this._select = sql.select.apply(null, arguments);
+  this._select.prev_stmt = this;
+  return this._select;
 };
 Insert.prototype._toString = function _toString(opts) {
   var keys = _.map(_.keys(this._values), function(col) {
@@ -275,7 +265,42 @@ Insert.prototype._toString = function _toString(opts) {
 };
 
 
-sql.delete = inherits(Delete, Statement);
+sql.update = inherits(Update, Statement);
+function Update(tbl, values) {
+  if (!(this instanceof Update))
+    return new Update(tbl, argsToObject(_.toArray(arguments).slice(1)));
+
+  Update.super_.call(this, 'update');
+  this.tbls = [expandAlias(tbl)];
+  if (values)
+    this.values(values);
+  return this;
+};
+Update.prototype.orReplace = Insert.prototype.orReplace;
+Update.prototype.orRollback = Insert.prototype.orRollback;
+Update.prototype.orAbort = Insert.prototype.orAbort;
+Update.prototype.orFail = Insert.prototype.orFail;
+Update.prototype.orIgnore = Insert.prototype.orIgnore;
+Update.prototype.set = Update.prototype.values = function set() {
+  return this._addToObj(argsToObject(arguments), '_values');
+};
+Update.prototype.where = Update.prototype.and = Select.prototype.where;
+Update.prototype._toString = function _toString(opts) {
+  var sql = 'UPDATE ';
+  if (this._or)
+    sql += 'OR ' + this._or + ' ';
+  sql += this.tbls[0] + ' SET ';
+  sql += _.map(this._values, function(value, key) {
+    return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
+  }).join(', ') + ' ';
+
+  if (this._where)
+    sql += 'WHERE ' + this._exprToString(opts);
+  return sql.trim();
+};
+
+
+sql.delete = sql.deleteFrom = inherits(Delete, Statement);
 function Delete(tbl) {
   if (!(this instanceof Delete))
     return new Delete(tbl);
@@ -285,15 +310,17 @@ function Delete(tbl) {
     this.tbls = [expandAlias(tbl)];
   return this;
 }
+Delete.prototype.from = Select.prototype.from;
 Delete.prototype.using = function using() {
   return this._add(_.map(argsToArray(arguments), expandAlias), '_using');
 };
+Delete.prototype.where = Delete.prototype.and = Select.prototype.where;
 Delete.prototype._toString = function _toString(opts) {
   var sql = 'DELETE FROM ' + this.tbls[0] + ' ';
   if (this._using)
     sql += 'USING ' + this._using.join(', ') + ' ';
   if (this._where)
-    sql += this._whereToString(opts);
+    sql += 'WHERE ' + this._exprToString(opts);
   return sql.trim();
 };
 
@@ -303,41 +330,6 @@ function Statement(type) {
   this.type = type;
 };
 
-// INSERT & UPDATE
-Statement.prototype.values = function values() {
-  if (this._split_keys_vals_mode) {
-    var args = arguments;
-    _.forEach(_.keys(this._values), function(key, ix) {
-      this._values[key] = args[ix];
-    }.bind(this));
-  }
-  else {
-    this._addToObj(argsToObject(arguments), '_values');
-  }
-  return this;
-};
-Statement.prototype.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
-Statement.prototype.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
-Statement.prototype.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
-Statement.prototype.orFail = function orFail() { this._or = 'FAIL'; return this; };
-Statement.prototype.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
-Statement.prototype.or = function or(cmd) {
-  this._or = cmd;
-};
-
-// SELECT & DELETE
-Statement.prototype.from = function from() {
-  var tbls = _.map(argsToArray(arguments), expandAlias);
-  return this._add(tbls, 'tbls');
-};
-
-// SELECT & UPDATE & DELETE
-// .where(key, value) / .where({...}) / .where(expr)
-Statement.prototype.and = Statement.prototype.where = function where() {
-  return this._addExpression(arguments, '_where');
-};
-
-// GENERIC
 Statement.prototype.clone = function clone() {
   var ctor = _.find([Select, Insert, Update, Delete], function(ctor) {
     return this instanceof ctor;
@@ -372,13 +364,13 @@ Statement.prototype.toString = function toString() {
 };
 
 
-Statement.prototype._whereToString = function _whereToString(opts, expr) {
+Statement.prototype._exprToString = function _exprToString(opts, expr) {
   if (!expr)
     expr = this._where;
   expr.parens = false;
   if (expr.expressions && expr.expressions.length == 1)
     expr.expressions[0].parens = false;
-  return 'WHERE ' + expr.toString(opts) + ' ';
+  return expr.toString(opts) + ' ';
 };
 
 Statement.prototype._add = function _add(arr, name) {
@@ -397,7 +389,7 @@ Statement.prototype._addToObj = function _addToObj(obj, name) {
   return this;
 };
 
-Statement.prototype._addColumnArgs = function _addColumnArgs(args, name) {
+Statement.prototype._addListArgs = function _addListArgs(args, name) {
   return this._add(argsToArray(args), name);
 };
 
@@ -441,12 +433,12 @@ function Join(tbl, left_tbl, on, type) {
 }
 sql.Join = Join;
 Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
-  return sql.joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
+  return sql._joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
 };
 Join.prototype.toString = function toString(opts) {
   var on = this.on, tbl = this.tbl, left_tbl = this.left_tbl;
   if (!on || _.isEmpty(on)) {
-    if (sql.joinCriteria)
+    if (sql._joinCriteria)
       on = this.autoGenerateOn(tbl, left_tbl);
     else
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
@@ -548,7 +540,7 @@ var binary_ops = {
   'gt': '>',
   'gte': '>='
 };
-var quantifiers = ['All', 'Any', 'Some'];
+var quantifiers = ['All', 'Any'];
 
 for (var name in binary_ops) {
   sql[name] = function(name, col, val) {
@@ -560,6 +552,7 @@ for (var name in binary_ops) {
       return new Binary(binary_ops[name], col, val, quantifier.toUpperCase() + ' ');
     };
   }.bind(null, name));
+  sql[name + 'Some'] = sql[name + 'Any'];
 }
 
 function Binary(op, col, val, quantifier) {
@@ -752,17 +745,24 @@ function expandAlias(tbl) {
   return tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
 }
 
-sql.views = {};
+sql.joinCriteria = function joinCriteria(fn) {
+  this._joinCriteria = fn;
+};
+
+sql._views = {};
 sql.addView = function addView(view_name, sel) {
   if (sel.tbls.length != 1)
     throw new Error('Unsupported number of tables in pseudo-view: ' + sel.tbls.length);
-  sql.views[view_name] = sel;
+  sql._views[view_name] = sel;
+};
+sql.getView = function getView(view_name) {
+  return sql._views[view_name];
 };
 
 Select.prototype.joinView = function joinView(view, on, type) {
   var alias = getAlias(view);
   var view_name = getTable(view);
-  var view = sql.views[view_name];
+  var view = sql._views[view_name];
 
   var tbl = getTable(view.tbls[0]) + ' ' + alias;
   this._addJoins([tbl, on || {}], type ? type.toUpperCase() : 'INNER');

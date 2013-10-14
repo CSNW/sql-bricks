@@ -22,17 +22,8 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
   update = sql.update, del = sql.delete, replace = sql.replace;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between;
-
-var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
-var table_to_alias = _.invert(alias_expansions);
-sql.aliasExpansions(alias_expansions);
-
-sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
-  var criteria = {};
-  criteria[left_alias + '.' + table_to_alias[right_tbl] + '_fk'] = right_alias + '.pk';
-  return criteria;
-};
+  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
+  exists = sql.exists, eqAny = sql.eqAny;
 
 describe('SQL Bricks', function() {
   describe('documentation examples', function() {

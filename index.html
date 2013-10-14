@@ -128,61 +128,703 @@
   <div id="sidebar" class="interface">
     SQL Bricks.js
     
+    <ul class="toc_section">
+      <li>&raquo; <a href="http://github.com/CSNW/sql-bricks">GitHub Repository</a></li>
+    </ul>
     <a class="toc_title" href="#">
       Introduction
     </a>
-
-    <a class="toc_title" href="#select">
-      Select
+    <a class="toc_title" href="#use">
+      Use
     </a>
     <ul class="toc_section">
-      <li>- <a href="#sel_contructor">constructor</a></li>
+      <li>- <a href="#sql">sql</a></li>
+      <li>- <a href="#val">val</a></li>
+    </ul>
+    <a class="toc_title" href="#statement">
+      Statement
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#clone">clone</a></li>
+      <li>- <a href="#toString">toString</a></li>
+      <li>- <a href="#toParams">toParams</a></li>
+    </ul>
+    <a class="toc_title" href="#select">
+      select
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#selconstructor">constructor</a></li>
+      <li>- <a href="#selselect">select</a></li>
       <li>- <a href="#distinct">distinct</a></li>
       <li>- <a href="#into">into</a></li>
       <li>- <a href="#intoTemp">intoTemp</a></li>
-      <li>- <a href="#from">from</a></li>
-      <li>- <a href="#where">where</a></li>
+      <li>- <a href="#selfrom">from</a></li>
+      <li>- <a href="#join">join, leftJoin, rightJoin, fullJoin, crossJoin</a></li>
+      <li>- <a href="#on">on</a></li>
+      <li>- <a href="#selwhere">where</a></li>
+      <li>- <a href="#groupBy">groupBy</a></li>
+      <li>- <a href="#having">having</a></li>
+      <li>- <a href="#union">(union, intersect, minus, except)[All]</a></li>
+      <li>- <a href="#orderBy">orderBy</a></li>
+      <li>- <a href="#limit">limit</a></li>
+      <li>- <a href="#offset">offset</a></li>
+      <li>- <a href="#forUpdate">forUpdate, noWait</a></li>
+      <li>- <a href="#joinView">joinView</a></li>
     </ul>
+    <a class="toc_title" href="#insert">
+      insert
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#insconstructor">constructor</a></li>
+      <li>- <a href="#insorReplace">orReplace, orRollback, orAbort, orFail, orIgnore</a></li>
+      <li>- <a href="#into">into</a></li>
+      <li>- <a href="#values">values</a></li>
+      <li>- <a href="#select">select</a></li>
+    </ul>
+    <a class="toc_title" href="#update">
+      update
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#updconstructor">constructor</a></li>
+      <li>- <a href="#updorReplace">orReplace, orRollback, orAbort, orFail, orIgnore</a></li>
+      <li>- <a href="#set">set</a></li>
+      <li>- <a href="#updwhere">where</a></li>
+    </ul>
+    <a class="toc_title" href="#delete">
+      delete
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#delconstructor">constructor</a></li>
+      <li>- <a href="#delfrom">from</a></li>
+      <li>- <a href="#using">using</a></li>
+      <li>- <a href="#delwhere">where</a></li>
+    </ul>
+    <a class="toc_title" href="#whereexpr">
+      Where Expressions
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#and">and</a></li>
+      <li>- <a href="#or">or</a></li>
+      <li>- <a href="#not">not</a></li>
+      <li>- <a href="#eq">eq, notEq, lt, lte, gt, gte</a></li>
+      <li>- <a href="#between">between</a></li>
+      <li>- <a href="#isNull">isNull, isNotNull</a></li>
+      <li>- <a href="#like">like</a></li>
+      <li>- <a href="#exists">exists</a></li>
+      <li>- <a href="#in">in</a></li>
+      <li>- <a href="#eqAll">eqAll, notEqAll, ltAll, lteAll, gtAll, gteAll</a></li>
+      <li>- <a href="#eqAny">eqAny, notEqAny, ltAny, lteAny, gtAny, gteAny</a></li>
+    </ul>
+    <a class="toc_title" href="#conveniences">
+      Conveniences
+    </a>
+    <ul class="toc_section">
+      <li>- <a href="#aliasExpansions">aliasExpansions</a></li>
+      <li>- <a href="#joinCriteria">joinCriteria</a></li>
+      <li>- <a href="#addView">addView</a></li>
+      <li>- <a href="#getView">getView</a></li>
+    </ul>
+    <a class="toc_title" href="#sqlfunctions">SQL Functions</a>
+    <a class="toc_title" href="#contributing">Contributing</a>
+    <a class="toc_title" href="#acknowledgments">Acknowledgments</a>
+    <a class="toc_title" href="#license">License</a>
   </div>
 
   <div class="container">
     <h1>SQL Bricks.js</h1>
     <p><a href="https://travis-ci.org/CSNW/sql-bricks" title="Build Status"><img src="https://travis-ci.org/CSNW/sql-bricks.png?branch=master"></a></p>
     <p id="introduction">As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.</p>
-    <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (`order`, `desc`, etc), automatic alias expansion, user-supplied join criteria functions and pseudo-views.</p>
+    <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (`order`, `desc`, etc), automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions and <a href="#addView">pseudo-views</a>.</p>
     <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.</p>
-    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would add clutter to the library without providing much real benefit.</p>
-    <p>Over <a href="browser-tests.html?html">a hundred tests</a> are available for your perusal.</p>
+    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
+    <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is available on GitHub and over <a href="browser-tests.html?html">a hundred tests</a> are available for your perusal.</p>
 
     <div id="documentation">
-      <h2 id="select">Select</h2>
-      <p id="sel_constructor">
-        <b class="header">constructor</b><code>select(cols)</code>
-        Returns a new select statement, seeded with a set of columns. Columns can be passed in later (by calling .select() again) or can be provided here as separate string arguments, a single, comma-delimited string argument or an array of strings.
+      <h2 id="use">Use</h2>
+      <p>
+        <p>In <a href="http://nodejs.org">node</a>, SQL Bricks can be accessed with <tt>require('sql-bricks')</tt>. In the browser, it can be accessed with the <tt>SqlBricks</tt> global. SQL Bricks' only dependency is <a href="http://underscorejs.org">Underscore.js</a>. Throughout this documentation, it is assumed that SQL Bricks is set to a local <tt>sql</tt> variable and that top-level functions are also set to local variables (for example: <tt>var sql = SqlBricks, select = sql.select, or = sql.or, $in = sql.in;</tt>).</p>
+        <p>The API is designed to mirror SQL faithfully, with SQL keywords represented by chainable camelCase method and non-keywords passed in as string arguments. To make the API easier to use, objects can also be passed in wherever there are key/value pairs.</p>
+        <pre>
+select().from('user')
+  .where(or({last_name: 'Rubble'}, $in('first_name', ['Fred', 'Wilma', 'Pebbles'])));
+// SELECT * FROM user
+// WHERE last_name = 'Rubble' OR first_name IN ('Fred', 'Wilma', 'Pebbles')
+</pre>
+      </p>
+      
+      <p id="sql">
+        <b class="header">sql</b><code>sql(str)</code>
+        <br />
+        <p>The SQL Bricks namespace (saved to the local variable <tt>sql</tt> in these docs) can be called as a function to insert SQL into SQL Bricks somewhere that a value is expected (the right-hand side of <tt>WHERE</tt> criteria, or <tt>insert()</tt>/<tt>update()</tt> values):
+
+        <pre>
+select('*').from('user').where({'billing_addr_id': sql('mailing_addr_id')})
+// SELECT * FROM user WHERE billing_addr_id = mailing_addr_id
+</pre>
+      </p>
+
+      <p id="val">
+        <b class="header">val</b><code>sql.val(value)</code>
+        <br />
+        <p>Wraps a <b>value</b> (user-supplied string, number, boolean, etc) so that it can be passed into SQL Bricks anywhere that a column is expected (the left-hand side of <tt>WHERE</tt> criteria and many other SQL Bricks APIs):</p>
+        <pre>
+select().from('user').where(sql.val('Fred'), sql('first_name'));
+// SELECT * FROM user WHERE 'Fred' = first_name
+</pre>
+      </p>
+
+      <h2 id="statement">Statement</h2>
+      <p>
+        <tt>Statement</tt> is an abstract base class for all statements (<tt>SELECT, INSERT, UPDATE, DELETE</tt>) and should never be instantiated directly. It is exposed because it can be used with the <tt>instanceof</tt> operator to easily determine whether something is a SQL Bricks statement: <tt>my_var instanceof Statement</tt>.
+      </p>
+      <p id="clone">
+        <b class="header">clone</b><code>stmt.clone()</code>
+        <br />
+        Clones a statement so that subsequent modifications do not affect the original statement.
+        <pre>
+var active_users = select('*').from('user').where({'active': true});
+// SELECT * FROM user WHERE active = true
+var local_users = active_users.clone().where({'local': true});
+// SELECT * FROM user WHERE active = true AND local = true
+</pre>
+      </p>
+      <p id="toString">
+        <b class="header">toString</b><code>stmt.toString()</code>
+        <br />
+        Returns the non-parameterized SQL for the statement. This is called implicitly by Javascript when using a Statement anywhere that a string is expected (concatenation, <tt>Array.join()</tt>, etc).
+      </p>
+
+      <p id="toParams">
+        <b class="header">toParams</b><code>stmt.toParams(options)</code>
+        <br />
+        <p>Returns an object with two properties: a parameterized <tt>text</tt> string and a <tt>values</tt> array. The values are populated with anything on the right-hand side of a <tt>WHERE</tt> criteria, as well as any values passed into an <tt>insert()</tt> or <tt>update()</tt> (they can be passed explicitly with <tt>val()</tt> or opted out of with <tt>sql()</tt>):</p>
+
+        <pre>
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
+// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
+</pre>
+
+<p>A <tt>placeholder</tt> <b>option</b> of <tt>'?'</tt> can be passed to generate placeholders compatible with <a href="https://github.com/developmentseed/node-sqlite3">node-sqlite3</a>:</p>
+
+        <pre>
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});
+// {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
+</pre>
+      </p>
+      <h2 id="select">select</h2>
+      <p id="selconstructor">
+        <b class="header">constructor</b><code>select(columns)</code>
+        <br />
+        <p><tt>sql.select()</tt> returns a new select statement, seeded with a set of <b>columns</b>. It can be used with or without the <tt>new</tt> keyword. Columns can be passed in here (or appended later via <tt>sel.select()</tt> or <tt>sel.distinct()</tt>) via multiple arguments or a comma-delimited string or an array.</p>
+        <p>If no <b>columns</b> are specified, <tt>toString()</tt> will default to <tt>SELECT *</tt>.</p>
+      </p>
+      <p id="selselect">
+        <b class="header">select</b><code>sel.select(columns)</code>
+        <br />
+        Appends additional <b>columns</b> to an existing query. Columns can be passed as multiple arguments, a comma-delimited string or an array.
       </p>
       <p id="distinct">
-        <b class="header">distinct</b><code>sel.distinct(cols)</code>
+        <b class="header">distinct</b><code>sel.distinct(columns)</code>
         <br />
-        Sets the distinct flag to true. For convenience, you can pass in columns here exactly as you can to select.
+        Makes the query a <tt>SELECT DISTINCT</tt> query. For convenience, any <b>columns</b> passed will be appended to the query (they can be passed in the same ways as to <tt>select()</tt>).
       </p>
       <p id="into">
         <b class="header">into</b><code>sel.into(tbl)</code>
         <span class="alias">Alias: <b>intoTable</b></span>
         <br />
+        <p>Makes the query a <tt>SELECT ... INTO</tt> query (which creates a new table with the results of the query).</p>
       </p>
       <p id="intoTemp">
         <b class="header">intoTemp</b><code>sel.intoTemp(tbl)</code>
         <span class="alias">Alias: <b>intoTempTable</b></span>
         <br />
+        <p>Does the same as <tt>.into()</tt>, but with the addition of the <tt>TEMP</tt> keyword, making it a temporary table.</p>
       </p>
-      <p id="from">
-        <b class="header">from</b><code>sel.from(tbl)</code>
+      <p id="selfrom">
+        <b class="header">from</b><code>sel.from(tbls)</code>
         <br />
+        Table names can be passed in as multiple string arguments, a comma-delimited string or an array.
       </p>
-      <p id="where">
-        <b class="header">where</b><code>sel.where(expr)</code>
+      <p id="join">
+        <b class="header">join, leftJoin, rightJoin, fullJoin, crossJoin</b><br />
+        <code>sel.join(tbl[, onCriteria])</code><br />
+        <span class="alias">Aliases: <b>innerJoin, leftOuterJoin, rightOuterJoin, fullOuterJoin</b></span>
         <br />
+        <p>Adds the specified join to the query. <b>tbl</b> can include an alias after a space or after the <tt>'AS'</tt> keyword (<tt>'my_table my_alias'</tt>). <b>onCriteria</b> is optional if a <a href="#joinCriteria">joinCriteria</a> function has been supplied.</p>
+        <pre>
+select().from('user').join('address', {'user.addr_id': 'address.id'});
+// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+</pre>
       </p>
+      <p id="on">
+        <b class="header">on</b><code>sel.on(onCriteria)</code>
+        <br />
+        <p><i>Note: <b>onCriteria</b> can also be passed as the second argument to <tt>join</tt>.</i></p>
+        <pre>
+select('*').from('user').innerJoin('address').on('user.addr_id', 'address.id');
+// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+
+select('*').from('user').join('address').on({'user.addr_id': 'address.id'});
+// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+</pre>
+      </p>
+      <p id="selwhere">
+        <b class="header">where</b><span class="alias">Alias: <b>and</b></span><br />
+        <code>sel.where(column, value)</code><br />
+        <code>sel.where(criteria)</code><br />
+        <code>sel.where(whereExpr)</code>
+        <p>Sets or extends the <tt>WHERE</tt> clause. If there already is a <tt>WHERE</tt> clause, the new criteria will be added to a top-level <tt>AND</tt> group.
+        <pre>
+select('*').from('user').where('first_name', 'Fred');
+// SELECT * FROM user WHERE first_name = 'Fred'
+
+select('*').from('user').where('last_name', 'Flintstone').and('first_name', 'Fred');
+// SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
+</pre>
+        <p>Multiple key/value pairs in a <b>criteria</b> object are <tt>AND</tt>ed together:</p>
+        <pre>
+select('*').from('user').where({'last_name': 'Flintstone', 'first_name': 'Fred'});
+// SELECT * FROM user WHERE last_name = 'Flintstone' AND first_name = 'Fred'
+</pre>
+        <p>For nested groupings and for relational operators beyond <tt>=</tt>, a <a href="#whereexpr"><b>whereExpr</b></a> can be passed in:</p>
+        <pre>
+select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
+// SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+</pre>
+      </p>
+      <p id="groupBy">
+        <b class="header">groupBy</b><code>sel.groupBy(columns)</code>
+        <span class="alias">Alias: <b>group</b></span>
+        <br />
+        Sets or extends the <tt>GROUP BY</tt> columns. Can take multiple arguments, a single comma-delimited string or an array.
+      </p>
+      <p id="having">
+        <b class="header">having</b><br />
+        <code>sel.having(column, value)</code><br />
+        <code>sel.having(criteria)</code><br />
+        <code>sel.having(whereExpr)</code>
+        <p>Sets or extends the <tt>HAVING</tt> criteria. Like <tt>where()</tt>, it takes a <b>column</b> / <b>value</b> pair, a <b>criteria</b> object or a <a href="#whereexpr"><b>whereExpr</b></a>:</p>
+        <pre>
+select('city', 'max(temp_lo)').from('weather')
+  .groupBy('city').having(lt('max(temp_lo)', 40))
+// SELECT city, max(temp_lo) FROM weather
+// GROUP BY city HAVING max(temp_lo) &lt; 40
+</pre>
+      </p>
+      <p id="union">
+        <b class="header">(union, intersect, minus, except)[All]</b><code>sel.union([stmt, ...])</code>
+        <br />
+        <p>Creates a compound statement by fusing together two or more queries, returns the last statement. If no <b>stmt</b> is passed, a new <tt>select()</tt> will be created and returned:</p>
+        <pre>
+select().from('user').where({'last_name': 'Flintstone'}).union()
+  .select().from('user').where({'last_name': 'Rubble'});
+// SELECT * FROM user WHERE last_name = 'Flintstone' UNION
+// SELECT * FROM user WHERE last_name = 'Rubble'
+</pre>
+      </p>
+      <p id="orderBy">
+        <b class="header">orderBy</b><code>sel.orderBy(columns)</code>
+        <span class="alias">Alias: <b>order</b></span>
+        <br />
+        <p>Sets or extends the list of columns in the <tt>ORDER BY</tt> clause. Columns can be passed as multiple arguments, a single comma-delimited string or an array.</p>
+      </p>
+      <p id="limit">
+        <b class="header">limit</b><code>sel.limit(count)</code>
+        <br />
+        <p>Adds a <tt>LIMIT</tt> clause.</p>
+      </p>
+      <p id="offset">
+        <b class="header">offset</b><code>sel.offset(position)</code>
+        <br />
+        <p>Adds an <tt>OFFSET</tt> clause.</p>
+      </p>
+      <p id="forUpdate">
+        <b class="header">forUpdate, noWait</b><code>sel.forUpdate([tbl, ...]) / sel.noWait()</code>
+        <br />
+        <p>Add the <tt>FOR UPDATE</tt> clause to lock all selected records from all tables in the select (or just the tables specified), along with an optional <tt>NO WAIT</tt> at the end:</p>
+        <pre>
+select('addr_id').from('user').forUpdate('addr_id').noWait();
+// SELECT addr_id FROM user FOR UPDATE addr_id NO WAIT
+</pre>
+      </p>
+      <p id="joinView">
+        <b class="header">joinView</b><code>sel.joinView(view_name[, onCriteria, join_type])</code>
+        <br />
+        <p>Joins to the main tables of the <a href="#addView">pseudo-view</a> and merges into the query all of the view's joins and where clauses (with joined tables prefixed by the view's alias).</p> 
+        <p><b>view_name</b> can include an alias after a space or after the <tt>AS</tt> keyword (<tt>'my_view my_alias'</tt> or <tt>'my_view AS my_alias'</tt>). <b>onCriteria</b> is optional if a <a href="#joinCriteria">joinCriteria</a> function has been supplied. <b>join_type</b> defaults to <tt>'inner'</tt> and must be supplied for other types of joins.</p>
+        <pre>
+sql.addView('localUser',
+  select().from('user')
+    .join('address').on({'user.addr_id': 'address.id'})
+    .where({'address.local': true})
+);
+
+select('*').from('person').joinView('localUser l_usr', {'person.usr_id': 'l_usr.id'});
+// SELECT * FROM person
+// INNER JOIN user l_usr ON person.usr_id = l_usr.id
+// INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id
+// WHERE l_usr_address.local = true
+</pre>
+      </p>
+      
+      <h2 id="insert">insert</h2>
+      <p id="insconstructor">
+        <b class="header">constructor</b><span class="alias">Alias: <b>insertInto</b></span>
+        <code>insert(tbl[, values])</code><br />
+        <code>insert(tbl[, columns])</code>
+        <br />
+        <p><tt>sql.insert()</tt> returns a new <tt>INSERT</tt> statement. It can be used with or without the <tt>new</tt> operator.</p>
+        <pre>
+insert('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
+// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+</pre>
+        <p>It can take a <b>values</b> object or a <b>columns</b> list. Passing a set of columns (as multiple arguments, a comma-delimited string or an array) will put the statement into <tt>split keys/values</tt> mode, where a matching array of values is expected in <tt>values()</tt>:</p>
+        <pre>
+insertInto('user', 'first_name', 'last_name').values('Fred', 'Flintstone');
+// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+</pre>
+      </p>
+      <p id="insorReplace">
+        <b class="header">orReplace, orRollback, orAbort, orFail, orIgnore</b>
+        <code>ins.orReplace(), ins.orRollback(), ins.orAbort(), ins.orFail(), ins.orIgnore()</code>
+        <br />
+        <p>Adds appropriate SQLite/MySQL clause to the <tt>INSERT</tt> statement:</p>
+        <pre>
+insert().orReplace().into('user').values({'first_name': 'Fred', 'id': 33});
+// INSERT OR REPLACE INTO user (first_name, id) VALUES ('Fred', 33)
+</pre>
+      </p>
+      <p id="into">
+        <b class="header">into</b><code>ins.into(tbl)</code>
+        <br />
+        <p><tt>insertInto()</tt> (or the shorter alias <tt>insert()</tt>) is preferred over <tt>insert().into()</tt>. <tt>.into()</tt> is kept as a way to match the SQLite dialect <tt>INSERT OR REPLACE INTO</tt>:</p>
+        <pre>
+insert().orReplace().into('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
+// INSERT OR REPLACE INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+</pre>
+      </p>
+      <p id="values">
+        <b class="header">values</b><code>ins.values(values)</code>
+        <br />
+        <p><b>values</b> can be an object of key/value pairs or a set of values matching a set of keys passed into <tt>insert()</tt>:
+        <pre>
+insertInto('user', 'first_name', 'last_name').values('Fred', 'Flintstone');
+// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+
+insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
+// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+</pre>
+        <p><i>Note: <b>values</b> can also be passed as the second argument to <tt>insert()</tt>.</i></p>
+      </p>
+
+      <p id="select">
+        <b class="header">select</b><code>ins.select(columns)</code>
+        <br />
+        <p>Returns a new <tt>SELECT</tt> statement that is connected to the <tt>INSERT</tt> statement, allowing chaining of select methods. When <tt>toString() / toParams()</tt> is called, it will render them both statements together as an <tt>INSERT INTO ... SELECT</tt> statement.</p>
+      </p>
+
+      <h2 id="update">update</h2>
+      <p id="updconstructor">
+        <b class="header">constructor</b><code>update(tbl[, values])</code>
+        <br />
+        <p><tt>sql.update()</tt> returns a new <tt>UPDATE</tt> statement. It can be used with or without the <tt>new</tt> operator.</p>
+        <pre>
+update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
+// UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
+</pre>
+      <p id="updorReplace">
+        <b class="header">orReplace, orRollback, orAbort, orFail, orIgnore</b>
+        <code>upd.orReplace(), upd.orRollback(), upd.orAbort(), upd.orFail(), upd.orIgnore()</code>
+        <br />
+        <p>Adds appropriate SQLite/MySQL clause to the <tt>UPDATE</tt> statement:</p>
+        <pre>
+update('user').orReplace().set({'first_name': 'Fred', 'id': 33});
+// UPDATE OR REPLACE user SET first_name = 'Fred', id = 33
+</pre>
+      </p>
+
+      <p id="set">
+        <b class="header">set</b><span class="alias">Alias: <b>values</b></span><br />
+        <code>upd.set(column, value)</code><br />
+        <code>upd.set(values)</code>
+        <br />
+        <p>Sets or extends the values of the <tt>UPDATE</tt> statement with a <b>column, value</b> pair or a <b>values</b> object.</p>
+        <pre>
+update('user').set('first_name', 'Fred').set('last_name', 'Flintstone');
+// UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
+
+update('user').set({'first_name': 'Fred', 'last_name': 'Flintstone'});
+// UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
+</pre>
+        <p><i>Note: <b>values</b> can also be passed as the second argument to <tt>update()</tt>.</i></p>
+      </p>
+      <p id="updwhere">
+        <b class="header">where</b><span class="alias">Alias: <b>and</b></span><br />
+        <code>upd.where(column, value)</code><br />
+        <code>upd.where(criteria)</code><br />
+        <code>upd.where(whereExpr)</code>
+        <br />
+        <p>Sets or extends the <tt>WHERE</tt> clause. See <a href="#selwhere">select.where()</a> for more details.</p>
+      </p>
+
+      <h2 id="delete">delete</h2>
+      <p id="delconstructor">
+        <b class="header">constructor</b><code>delete(tbl)</code><span class="alias">Alias: <b>deleteFrom</b></span>
+        <br />
+        <p><tt>sql.delete()</tt> returns a new <tt>DELETE</tt> statement. It can be used with or without the <tt>new</tt> operator.</p>
+      </p>
+      <p id="delfrom">
+        <b class="header">from</b><code>del.from(tbl)</code>
+        <br />
+        <p>Convenience method to make the delete API match the select API more closely.</p>
+      </p>
+      <p id="using">
+        <b class="header">using</b><code>del.using(tbl[, ...])</code>
+        <br />
+        <p>Sets or extends the list of tables in the <tt>USING</tt> clause. This is <tt>DELETE</tt>'s equivalent of <tt>SELECT</tt>'s multi-table <tt>FROM</tt> clause.
+      </p>
+      <p id="delwhere">
+        <b class="header">where</b><span class="alias">Alias: <b>and</b></span><br />
+        <code>del.where(column, value)</code><br />
+        <code>del.where(criteria)</code><br />
+        <code>del.where(whereExpr)</code>
+        <br />
+        <p>Sets or extends the <tt>WHERE</tt> clause. See <a href="#selwhere">select.where()</a> for more details.</p>
+      </p>
+
+      <h2 id="whereexpr">Where Expressions</h2>
+      <p id="object">
+        <b class="header">Object</b><code>{ ... }</code>
+        <br />
+        <p>When a non-expression object is passed somewhere a <tt>whereExpression</tt> is expected, each key/value pair will be <tt>AND</tt>ed together:</p>
+        <pre>
+select().from('user').where({'first_name': 'Fred', 'last_name': 'Flintstone'});
+// SELECT * FROM user WHERE first_name = 'Fred' AND last_name = 'Flintstone'
+</pre>
+      </p>
+      <p id="and">
+        <b class="header">and</b><code>and(whereExpr[, ...])</code>
+        <br />
+        <p>Joins the passed expressions with <tt>AND</tt></p>
+      </p>
+      <p id="or">
+        <b class="header">or</b><code>or(whereExpr[, ...])</code>
+        <br />
+        <p>Joins the passed expressions with <tt>OR</tt>:</p>
+        <pre>
+select().from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
+// SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+</pre>
+        <p>An object with multiple key/value pairs will generate an <tt>OR</tt>:</p>
+        <pre>
+select().from('user').where(or({'first_name': 'Fred', 'last_name': 'Rubble'}));
+// SELECT * FROM user WHERE first_name = 'Fred' OR last_name = 'Rubble'
+</pre>
+      </p>
+      <p id="not">
+        <b class="header">not</b><code>not(whereExpr)</code>
+        <br />
+        <p>Negates the expression by wrapping it in <tt>NOT (...)</tt> (if it is at the top level, the parentheses are unnecessary and will be omitted):</p>
+        <pre>
+select().from('user').where(not($in('name', ['Fred', 'Barney', 'Wilma', 'Pebbles'])));
+// SELECT * FROM user WHERE NOT name IN ('Fred', 'Barney', 'Wilma', 'Pebbles')
+</pre>
+      </p>
+
+      <p id="eq">
+        <b class="header">eq, notEq, lt, lte, gt, gte</b><br />
+        <code>eq(column, value)</code><br />
+        <code>notEq(column, value)</code><br />
+        <code>lt(column, value)</code><br />
+        <code>lte(column, value)</code><br />
+        <code>gt(column, value)</code><br />
+        <code>gte(column, value)</code>
+        <br />
+        <p>Generates the appropriate relational operator (<tt>=</tt>, <tt>&lt;&gt;</tt>, <tt>&lt;</tt>, <tt>&lt;=</tt>, <tt>&gt;</tt> or <tt>&gt;=</tt>).</p>
+        <pre>
+select().from('user').where(gt('access', 5));
+// SELECT * FROM user WHERE access > 5
+</pre>
+      </p>
+      <p id="between">
+        <b class="header">between</b><code>between(column, value1, value2)</code>
+        <br />
+        <p>Generates a <tt>BETWEEN</tt>:</p>
+        <pre>
+select().from('user').where(between('access', 1, 5));
+// SELECT * FROM user WHERE access BETWEEN 1 AND 5
+</pre>
+      </p>
+      <p id="isNull">
+        <b class="header">isNull, isNotNull</b><code>isNull(column), isNotNull(column)</code>
+        <br />
+        <p>Generates <tt>IS NULL</tt> and <tt>IS NOT NULL</tt> expressions:</p>
+        <pre>
+select().from('user').where(isNull('name'));
+// SELECT * FROM user WHERE name IS NULL
+</pre>
+      </p>
+      <p id="like">
+        <b class="header">like</b><code>like(column, value)</code>
+        <br />
+        <p>Generates a <tt>LIKE</tt> expression.</p>
+        <pre>
+select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
+// SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+</pre>
+      </p>
+      <p id="exists">
+        <b class="header">exists</b><code>exists(stmt)</code>
+        <br />
+        <p>Takes a <b>stmt</b> subquery and generates an <tt>EXISTS</tt> expression:</p>
+        <pre>
+select().from('user').where(exists(
+  select().from('address').where({'address.id': sql('user.addr_id')})));
+// SELECT * FROM user WHERE EXISTS
+// (SELECT * FROM address WHERE address.id = user.addr_id)
+</pre>
+      </p>
+      <p id="in">
+        <b class="header">in</b><br />
+        <code>in(column, values)</code><br />
+        <code>in(column, stmt)</code>
+        <br />
+        <p>Generates an <tt>IN</tt> expression based on a set of <b>values</b> (can be an array or multiple arguments) or a <b>stmt</b> subquery:</p>
+        <pre>
+select().from('user').where($in('first_name', 'Fred', 'Barney', 'Wilma'));
+// SELECT * FROM user WHERE first_name IN ('Fred', 'Barney', 'Wilma')
+select().from('user').where($in('addr_id', select('id').from('address')));
+// SELECT * FROM user WHERE addr_id IN (SELECT id FROM address)
+</pre>
+      </p>
+      <p id="eqAll">
+        <b class="header">eqAll, notEqAll, ltAll, lteAll, gtAll, gteAll</b><br />
+        <code>eqAll(stmt), notEqAll(stmt), ltAll(stmt), lteAll(stmt), gtAll(stmt), gteAll(stmt)</code>
+        <br />
+        <p>Pairs the relational operator with the <tt>ALL</tt> keyword.</p>
+      </p>
+
+      <p id="eqAny">
+        <b class="header">eqAny, notEqAny, ltAny, lteAny, gtAny, gteAny</b><br />
+        <code>eqAny(stmt), notEqAny(stmt), ltAny(stmt), lteAny(stmt), gtAny(stmt), gteAll(stmt)</code><br />
+        <span class="alias">Alias: <b>eqSome, notEqSome, ltSome, lteSome, gtSome, gteSome</b></span>
+        <br />
+        <p>Pairs the appropriate relational operator with the <tt>ANY</tt> keyword:</p>
+        <pre>
+select().from('user').where(eqAny('user.id', select('user_id').from('address')));
+// SELECT * FROM user WHERE user.id = ANY (SELECT user_id FROM address)
+</pre>
+      </p>
+      
+
+      <h2 id="conveniences">Conveniences</h2>
+      <p id="aliasExpansions">
+        <b class="header">aliasExpansions</b><code>sql.aliasExpansions(expansions)</code>
+        <br />
+        Registers a set of frequently-used table aliases with SQL Bricks. These table aliases can then be used by themselves in <tt>from()</tt>, <tt>join()</tt>, etc and SQL Bricks will automatically expand them to include the table name as well as the alias:
+
+        <pre>
+sql.aliasExpansions({'usr': 'user', 'addr': 'address', 'zip': 'zipcode', 'psn': 'person'});
+
+select().from('usr').join('addr', {'usr.addr_id': 'addr.id'});
+// SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id
+</pre>
+      </p>
+
+      <p id="joinCriteria">
+        <b class="header">joinCriteria</b><code>sql.joinCriteria(func)</code>
+        <br />
+        <p>Sets a user-supplied function to automatically generate the <tt>.on()</tt> criteria for joins whenever it is not supplied explicitly:</p>
+
+        <pre>
+var alias_expansions = {'usr': 'user', 'addr': 'address', 'zip': 'zipcode', 'psn': 'person'};
+var table_to_alias = _.invert(alias_expansions);
+sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
+  var criteria = {};
+  criteria[left_alias + '.' + table_to_alias[right_tbl] + '_id'] = right_alias + '.id';
+  return criteria;
+});
+
+select().from('user').join('address');
+// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+</pre>
+
+        <p>The <b>left_tbl</b> passed to the join criteria generator function will always be the most recently used table -- either the most recently joined table or, if there is none, the main table in the statement. If you want to perform a "chain" of joins, where each table joins from the previous one, you can call <tt>.join()</tt> multiple times, but if you want to join from one table directly to a number of related tables, you can call <tt>.join()</tt> once and pass the table names in as separate arguments:</p>
+
+        <pre>
+select().from('usr').join('addr').join('zip');
+// SELECT * FROM user usr
+// INNER JOIN address addr ON usr.addr_id = addr.id
+// INNER JOIN zipcode zip ON addr.zip_id = zip.id
+
+select().from('usr').join('addr', 'psn');
+// SELECT * FROM user usr
+// INNER JOIN address addr ON usr.addr_id = addr.id
+// INNER JOIN person psn ON usr.psn_id = psn.id
+</pre>
+
+        <p>If multiple tables are passed to <tt>.join()</tt>, the last one is the most recently used one and it will be used as the basis for the next <tt>.join()</tt>:</p>
+
+        <pre>
+select().from('usr').join('psn', 'addr').join('zip');
+// SELECT * FROM user usr
+// INNER JOIN person psn ON usr.psn_id = psn.id
+// INNER JOIN address addr ON usr.addr_id = addr.id
+// INNER JOIN zipcode zip ON addr.zip_id = zip.id
+</pre>
+
+        <p>Note that this scheme doesn't support complex JOIN table layouts: if you do something like <tt>.join('psn', 'addr').join('zip')</tt> above, it is impossible to also join something to the <tt>'psn'</tt> table. This <i>could</i> be achieved by adding a way to explicitly specify the table you're joining from: <tt>.join('psn', 'addr').join('zip').join('psn->employer')</tt>, but this hasn't been implemented.</p>
+      </p>
+
+      <p id="addView">
+        <b class="header">addView</b><code>sql.addView(stmt)</code>
+        <br />
+        <p>For those databases where native views have performance issues (SQLite and MySQL, for instance), sql-bricks provides pseudo-views. (Native views are treated as subqueries in SQLite; see the "Subquery Flattening" section of <a href="http://www.sqlite.org/optoverview.html">the SQLite Query Planner</a> for an idea of the performance problems.)</p>
+
+        <p>The <b>stmt</b> that will be saved as a pseudo-view must consists of a main table and, optionally, join tables and where criteria. Queries can then join to this pseudo-view via <a href="#joinView">joinView()</a>.</p>
+      </p>
+
+      <p id="getView">
+        <b class="header">getView</b><code>sql.getView()</code>
+        <br />
+        <p>Returns a view that has been previously registered with <tt>addView()</tt> so that it can be used directly or cloned and modified:</p>
+        <pre>
+sql.addView('activeUsers', select().from('usr').where({'usr.active': true}));
+
+sql.getView('activeUsers').clone().where({'usr.local': true})
+// SELECT * FROM user usr WHERE usr.active = true AND usr.local = true
+</pre>
+      </p>
+
+      <h2 id="sqlfunctions">SQL Functions</h2>
+      <p>There are 95 SQL functions defined in SQL-92, including <tt>AVG()</tt>, <tt>COUNT()</tt>, <tt>MIN()</tt>, <tt>MAX()</tt>, <tt>SUM()</tt>, <tt>COALESCE()</tt>, <tt>CASE()</tt>, <tt>LTRIM()</tt>, <tt>RTRIM()</tt>, <tt>UPPER()</tt> and <tt>LOWER()</tt>, among others. These can be easily used in SQL Bricks anywhere that a sql string is expected, such as in a SELECT list:</p>
+      <pre>
+select('COUNT(*)').from('user').where({'access_level': 3});
+// SELECT COUNT(*) FROM user WHERE access_level = 3
+</pre>
+      <p>SQL functions can also be used anywhere a value is expected (in the values for an <tt>INSERT</tt> or <tt>UPDATE</tt> or in the right-hand side of a <tt>WHERE</tt> expression) via wrapping a string in the <tt>sql()</tt> function:</p>
+      <pre>
+select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END")});
+// SELECT * FROM user WHERE level_text = CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END
+</pre>
+      <p>Note that column names inside SQL functions that collide with SQL keywords will not be automatically escaped -- you have to do it manually, like this:</p>
+      <pre>
+select('COUNT("order")').from('user');
+// SELECT COUNT("order") FROM user
+</pre>
+
+      <h2 id="contributing">Contributing</h2>
+      <p>Before sending a pull request, please verify that <a href="browser-tests.html?html">all the existing tests</a> pass and add new tests for the changes you are making. The tests can be run in node with <tt>npm test</tt> (provided <tt>npm install</tt> has been run to install the dependencies) or they can be run in the browser with <tt>browser-tests.html</tt>. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.</p>
+      <p>Note that <b>pull requests for additional SQL dialects</b> or extensions beyond Postgres and SQLite will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.</p>
+      <p>Also, <b>pull requests for additional SQL statements</b> beyond the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.</p>
+
+      <h2 id="acknowledgments">Acknowledgments</h2>
+      <p>Huge thanks to <a href="https://github.com/brianc">Brian C</a> for his hard work supporting and maintaining <a href="https://github.com/brianc/node-sql">node-sql</a> and <a href="https://github.com/brianc/node-postgres">node-postgres</a> and especially for his patience with me and my pull requests.</p>
+      <p>Also, thanks to <a href="https://github.com/jashkenas">jashkenas</a> for <a href="https://github.com/jashkenas/underscore">underscore</a>, which SQL Bricks depends on -- and for its documentation, which served as a model and template for these docs.</p>
+
+      <h2 id="license">License</h2>
+      <p>SQL Bricks is <a href="https://github.com/CSNW/sql-bricks/raw/master/LICENSE.md">MIT licensed</a>.</p>
+
     </div>
   </div>
 

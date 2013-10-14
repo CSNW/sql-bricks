@@ -19,7 +19,7 @@ else {
 }
 
 var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
-  update = sql.update, del = sql.delete, replace = sql.replace;
+  update = sql.update, del = sql.delete;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
@@ -29,11 +29,11 @@ var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
 sql.aliasExpansions(alias_expansions);
 
-sql.joinCriteria = function(left_tbl, left_alias, right_tbl, right_alias) {
+sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
   criteria[left_alias + '.' + table_to_alias[right_tbl] + '_fk'] = right_alias + '.pk';
   return criteria;
-};
+});
 
 describe('SQL Bricks', function() {
   describe('parameterized sql', function() {
@@ -184,14 +184,6 @@ describe('SQL Bricks', function() {
       check(insert().orReplace().into('user').values({'id': 33, 'name': 'Fred'}),
         "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
     });
-    it('replace() should render INSERT OR REPLACE', function() {
-      check(replace().into('user').values({'id': 33, 'name': 'Fred'}),
-        "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
-    });
-    it('replace() should take a table name', function() {
-      check(replace('user').values({'id': 33, 'name': 'Fred'}),
-        "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
-    });
   });
 
   describe('SELECT clause', function() {
@@ -220,12 +212,12 @@ describe('SQL Bricks', function() {
         'SELECT DISTINCT one, "order", two, "desc" FROM user');
     });
     it('should support FOR UPDATE', function() {
-      check(select().from('user').forUpdate('first_name', 'last_name'),
-        'SELECT * FROM user FOR UPDATE first_name, last_name');
+      check(select().from('user').forUpdate('user'),
+        'SELECT * FROM user FOR UPDATE user');
     });
     it('should support FOR UPDATE ... NO WAIT', function() {
-      check(select().from('user').forUpdateOf('first_name').noWait(),
-        'SELECT * FROM user FOR UPDATE first_name NO WAIT');
+      check(select().from('user').forUpdateOf('user').noWait(),
+        'SELECT * FROM user FOR UPDATE user NO WAIT');
     });
   });
 
@@ -574,7 +566,7 @@ describe('SQL Bricks', function() {
     });
     it('should be able to select from a pseudo-view', function() {
       sql.addView('activeUsers', select().from('usr').where({'usr.active': true}));
-      check(sql.views.activeUsers,
+      check(sql.getView('activeUsers'),
         'SELECT * FROM user usr WHERE usr.active = true');
     });
   });
@@ -611,15 +603,19 @@ describe('SQL Bricks', function() {
 
   describe('delete()', function() {
     it('should generate a DELETE statement', function() {
+      check(del('user'),
+        'DELETE FROM user');
+    });
+    it('should support .from()', function() {
       check(del().from('user'),
         'DELETE FROM user');
     });
     it('should generate a DELETE statement with a WHERE clause', function() {
-      check(del().from('user').where('first_name', 'Fred'),
+      check(del('user').where('first_name', 'Fred'),
         "DELETE FROM user WHERE first_name = 'Fred'")
     });
     it('should generate a DELETE with using', function() {
-      check(del().from('user').using('addr').where('user.addr_fk', sql('addr.pk')),
+      check(del('user').using('addr').where('user.addr_fk', sql('addr.pk')),
         "DELETE FROM user USING address addr WHERE user.addr_fk = addr.pk");
     });
   });

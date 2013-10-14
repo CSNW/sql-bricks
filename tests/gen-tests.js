@@ -2,10 +2,10 @@ var fs = require('fs');
 var _ = require('underscore');
 
 var comment = '// ';
-var readme = fs.readFileSync(__dirname + '/../readme.md', 'utf8');
+var readme = fs.readFileSync(__dirname + '/../index.html', 'utf8');
 var contents = '';
-readme.match(/```javascript[^`]+```/g).forEach(function(ex) {
-  ex = ex.slice('```javascript'.length, -'```'.length);
+readme.match(/<pre>[^<]+<\/pre>/g).forEach(function(ex) {
+  ex = ex.slice('<pre>'.length, -'</pre>'.length);
   var lines = _.compact(ex.split('\n'));
   lines.forEach(function(line, ix) {
     line = line.trim();
@@ -14,14 +14,20 @@ readme.match(/```javascript[^`]+```/g).forEach(function(ex) {
     if (isComment(line) && !isComment(next_line)) {
       var expected = getExpected(lines, ix);
       var code = wrap(lines.slice(0, ix));
-      var last_line = desc = code[code.length - 1].trim();
+      var last_line = desc = code[code.length - 1].replace(/\r/g, '');
       if (last_line.slice(-1) == ';')
         last_line = last_line.slice(0, -1);
 
       if (expected[0] != '{')
         expected = '"' + expected.replace(/"/g, '\\"') + '"';
+      expected = expected.replace(/&lt;/g, '<');
+      if (last_line[0] == ' ') {
+        last_line = code[code.length - 2] + last_line;
+        code[code.length - 2] = '';
+      }
+      
       code[code.length - 1] = 'check(' + last_line + ', ' + expected + ');';
-      contents += 'it("' + desc.replace(/"/g, '\\"') + '", function() {';
+      contents += 'it("' + desc.replace(/"/g, '\\"').trim() + '", function() {';
       contents += code.join('\n') + '\n';
       contents += '});\n\n';
     }
