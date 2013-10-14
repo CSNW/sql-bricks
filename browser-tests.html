@@ -2,12 +2,12 @@
 <head>
   <meta charset="utf-8">
   <title>Mocha Tests</title>
-  <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+  <link rel="stylesheet" href="tests/mocha.css" />
 </head>
 <body>
   <div id="mocha"></div>
-  <script src="node_modules/underscore/underscore.js"></script>
-  <script src="node_modules/mocha/mocha.js"></script>
+  <script src="tests/underscore.js"></script>
+  <script src="tests/mocha.js"></script>
   <script>mocha.setup({ui: 'bdd', reporter: location.search.slice(1) || 'tap'})</script>
   <script src="sql-bricks.js"></script>
   <script src="tests/tests.js"></script>

@@ -265,6 +265,11 @@ describe('SQL Bricks', function() {
         .select('id', 'addr_id').from('user'),
         'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM user');
     });
+    it('insert().select()', function() {
+      check(insert('new_user', 'id', 'addr_id')
+        .select('id', 'addr_id').from('user'),
+        'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM user');
+    });
   });
 
   describe('GROUP BY clause', function() {
