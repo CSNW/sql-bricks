@@ -804,8 +804,10 @@ select('COUNT(*)').from('user').where({'access_level': 3});
 </pre>
       <p>SQL functions can also be used anywhere a value is expected (in the values for an <tt>INSERT</tt> or <tt>UPDATE</tt> or in the right-hand side of a <tt>WHERE</tt> expression) via wrapping a string in the <tt>sql()</tt> function:</p>
       <pre>
-select().from('user').where({'level_text': sql("CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END")});
-// SELECT * FROM user WHERE level_text = CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END
+select().from('user').where({'level_text':
+  sql("CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END")});
+// SELECT * FROM user WHERE level_text =
+// CASE WHEN level=1 THEN 'one' WHEN level=2 THEN 'two' ELSE 'other' END
 </pre>
       <p>Note that column names inside SQL functions that collide with SQL keywords will not be automatically escaped -- you have to do it manually, like this:</p>
       <pre>
