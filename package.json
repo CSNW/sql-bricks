@@ -1,8 +1,10 @@
 {
   "name": "sql-bricks",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
+  "homepage": "http://csnw.github.io/sql-bricks",
+  "bugs": "https://github.com/CSNW/sql-bricks/issues",
   "scripts": {
     "prepublish": "node tests/gen-tests.js",
     "test": "mocha tests/tests.js tests/doctests.js"
