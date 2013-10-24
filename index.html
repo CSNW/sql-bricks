@@ -522,6 +522,7 @@ insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
         <b class="header">select</b><code>ins.select(columns)</code>
         <br />
         <p>Returns a new <tt>SELECT</tt> statement that is connected to the <tt>INSERT</tt> statement, allowing chaining of select methods. When <tt>toString() / toParams()</tt> is called, it will render them both statements together as an <tt>INSERT INTO ... SELECT</tt> statement.</p>
+        <p>Note that if you want to call a method on the insert object, you have to save a reference to it before calling <tt>select()</tt>, since <tt>select()</tt> returns a reference to a child Select statement instead of the parent Insert statement.</p>
       </p>
 
       <p id="returning">
