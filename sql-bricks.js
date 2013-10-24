@@ -245,6 +245,10 @@ Insert.prototype.select = function select() {
   this._select.prev_stmt = this;
   return this._select;
 };
+Insert.prototype.returning = function returning() {
+  this._addListArgs(arguments, '_returning');
+  return this;
+};
 Insert.prototype._toString = function _toString(opts) {
   var keys = _.map(_.keys(this._values), function(col) {
     return handleColumn(col, opts);
@@ -258,9 +262,16 @@ Insert.prototype._toString = function _toString(opts) {
   sql += 'INTO ' + this.tbls.join(', ') + ' (' + keys + ') ';
 
   if (this._select)
-    sql += this._select._toString(opts);
+    sql += this._select._toString(opts) + ' ';
   else
     sql += 'VALUES (' + values + ')';
+
+  if (this._returning) {
+    sql += 'RETURNING ' + _.map(this._returning, function(col) {
+      return handleColumn(col, opts);
+    }).join(', ');
+  }
+
   return sql.trim();
 };
 

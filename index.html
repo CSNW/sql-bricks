@@ -179,7 +179,8 @@
       <li>- <a href="#insorReplace">orReplace, orRollback, orAbort, orFail, orIgnore</a></li>
       <li>- <a href="#into">into</a></li>
       <li>- <a href="#values">values</a></li>
-      <li>- <a href="#select">select</a></li>
+      <li>- <a href="#insselect">select</a></li>
+      <li>- <a href="#returning">returning</a></li>
     </ul>
     <a class="toc_title" href="#update">
       update
@@ -291,7 +292,7 @@ var local_users = active_users.clone().where({'local': true});
       <p id="toString">
         <b class="header">toString</b><code>stmt.toString()</code>
         <br />
-        Returns the non-parameterized SQL for the statement. This is called implicitly by Javascript when using a Statement anywhere that a string is expected (concatenation, <tt>Array.join()</tt>, etc).
+        Returns the non-parameterized SQL for the statement. This is called implicitly by Javascript when using a Statement anywhere that a string is expected (string concatenation, <tt>Array.join()</tt>, etc).
       </p>
 
       <p id="toParams">
@@ -517,10 +518,26 @@ insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
         <p><i>Note: <b>values</b> can also be passed as the second argument to <tt>insert()</tt>.</i></p>
       </p>
 
-      <p id="select">
+      <p id="insselect">
         <b class="header">select</b><code>ins.select(columns)</code>
         <br />
         <p>Returns a new <tt>SELECT</tt> statement that is connected to the <tt>INSERT</tt> statement, allowing chaining of select methods. When <tt>toString() / toParams()</tt> is called, it will render them both statements together as an <tt>INSERT INTO ... SELECT</tt> statement.</p>
+      </p>
+
+      <p id="returning">
+        <b class="header">returning</b><code>ins.returning(columns)</code>
+        <br />
+        <p>Adds a <tt>RETURNING</tt> clause to the <tt>INSERT</tt> statement.</p>
+        <pre>
+var ins = insert('user', 'first_name, last_name');
+ins.select('first_name, last_name')
+.from('account');
+ins.returning('account.pk');
+// INSERT INTO user (first_name, last_name)
+// SELECT first_name, last_name
+// FROM account
+// RETURNING account.pk
+</pre>
       </p>
 
       <h2 id="update">update</h2>

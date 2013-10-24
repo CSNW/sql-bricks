@@ -143,6 +143,13 @@ insertInto('user', 'first_name', 'last_name').values('Fred', 'Flintstone');
 check(insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'}), "INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')");
 });
 
+it("ins.returning('account.pk');", function() {
+var ins = insert('user', 'first_name, last_name');
+ins.select('first_name, last_name')
+.from('account');
+check(ins.returning('account.pk'), "INSERT INTO user (first_name, last_name) SELECT first_name, last_name FROM account RETURNING account.pk");
+});
+
 it("update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});", function() {
 check(update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'}), "UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'");
 });
