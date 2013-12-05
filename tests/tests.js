@@ -365,13 +365,13 @@ describe('SQL Bricks', function() {
       check(select().from('usr', 'psn').join('addr').on({'usr.addr_id': 'addr.id'})
           .on('psn.addr_id', 'addr.id'),
         'SELECT * FROM user usr, person psn ' + 
-        'INNER JOIN address addr ON usr.addr_id = addr.id, psn.addr_id = addr.id');
+        'INNER JOIN address addr ON usr.addr_id = addr.id AND psn.addr_id = addr.id');
     });
     it('can be called multiple times w/ an object literal', function() {
       check(select().from('usr', 'psn').join('addr').on({'usr.addr_id': 'addr.id'})
           .on({'psn.addr_id': 'addr.id'}),
         'SELECT * FROM user usr, person psn ' + 
-        'INNER JOIN address addr ON usr.addr_id = addr.id, psn.addr_id = addr.id');
+        'INNER JOIN address addr ON usr.addr_id = addr.id AND psn.addr_id = addr.id');
     });
   });
 

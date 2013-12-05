@@ -456,7 +456,7 @@ Join.prototype.toString = function toString(opts) {
   }
   return this.type + ' JOIN ' + tbl + ' ON ' + _.map(_.keys(on), function(key) {
     return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
-  }).join(', ');
+  }).join(' AND ');
 };
 
 
