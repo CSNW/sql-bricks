@@ -95,6 +95,13 @@ Select.prototype.offset = function offset(count) {
   this._offset = count;
   return this;
 };
+Select.prototype.as = function as(tbl_name) {
+  if (tbl_name == null)
+    return this._as;
+  
+  this._as = tbl_name;
+  return this;
+};
 
 var compounds = {
   'union': 'UNION', 'unionAll': 'UNION ALL',
@@ -448,15 +455,27 @@ Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
 };
 Join.prototype.toString = function toString(opts) {
   var on = this.on, tbl = this.tbl, left_tbl = this.left_tbl;
-  if (!on || _.isEmpty(on)) {
+  if ((!on || _.isEmpty(on)) && !(tbl instanceof Statement)) {
     if (sql._joinCriteria)
       on = this.autoGenerateOn(tbl, left_tbl);
     else
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
-  return this.type + ' JOIN ' + tbl + ' ON ' + _.map(_.keys(on), function(key) {
-    return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
-  }).join(', ');
+
+  if (tbl instanceof Statement)
+    tbl = '(' + tbl._toString(opts) + ')' + (tbl.as() ? ' AS ' + tbl.as() : '');
+  
+  if (isExpr(on)) {
+    on = on.toString(opts);
+  }
+  else {
+    if (on) {
+      on = _.map(_.keys(on), function(key) {
+        return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
+      }).join(', ')
+    }
+  }
+  return this.type + ' JOIN ' + tbl + (on ? ' ON ' + on : '');
 };
 
 
