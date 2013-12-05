@@ -532,6 +532,10 @@ describe('SQL Bricks', function() {
       check(select('action').from('user'),
         'SELECT "action" FROM user');
     });
+    it('should not quote reserved words in SELECT expressions', function() {
+      check(select("CASE WHEN name = 'Fred' THEN 1 ELSE 0 AS security_level").from('user'),
+        "SELECT CASE WHEN name = 'Fred' THEN 1 ELSE 0 AS security_level FROM user");
+    });
   });
 
   describe('subqueries in <, >, etc', function() {
