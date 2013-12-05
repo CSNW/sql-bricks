@@ -361,6 +361,14 @@ describe('SQL Bricks', function() {
       check(select().from('usr').join('addr', eq('usr.addr_id', sql('addr.id'))),
         'SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id');
     });
+    it('join() should accept a subquery for the table', function() {
+      check(select().from('user').join(select().from('user')),
+        'SELECT * FROM user INNER JOIN (SELECT * FROM user)');
+    });
+    it('join() should accept a subquery for the table w/ an AS', function() {
+      check(select().from('user').join(select().from('user').as('new_users')),
+        'SELECT * FROM user INNER JOIN (SELECT * FROM user) AS new_users');
+    });
   });
 
   describe('on()', function() {
