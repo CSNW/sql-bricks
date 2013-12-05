@@ -485,7 +485,7 @@ Join.prototype.toString = function toString(opts) {
     if (on) {
       on = _.map(_.keys(on), function(key) {
         return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
-      }).join(', ')
+      }).join(' AND ')
     }
   }
   return this.type + ' JOIN ' + tbl + (on ? ' ON ' + on : '');
