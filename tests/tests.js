@@ -348,6 +348,14 @@ describe('SQL Bricks', function() {
         'SELECT * FROM user usr ' + 
         'CROSS JOIN address addr ON usr.addr_fk = addr.pk');
     });
+    it('join() should accept a subquery for the table', function() {
+      check(select().from('user').join(select().from('user')),
+        'SELECT * FROM user INNER JOIN (SELECT * FROM user)');
+    });
+    it('join() should accept a subquery for the table w/ an AS', function() {
+      check(select().from('user').join(select().from('user').as('new_users')),
+        'SELECT * FROM user INNER JOIN (SELECT * FROM user) AS new_users');
+    });
   });
 
   describe('on()', function() {
