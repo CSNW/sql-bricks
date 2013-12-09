@@ -63,11 +63,16 @@ Select.prototype.fullJoin = Select.prototype.fullOuterJoin = function join() {
 Select.prototype.crossJoin = function join() {
   return this._addJoins(arguments, 'CROSS');
 };
-Select.prototype.on = function on() {
+Select.prototype.on = function on(on) {
   var last_join = this.joins[this.joins.length - 1];
-  if (!last_join.on)
-    last_join.on = {};
-  _.extend(last_join.on, argsToObject(arguments));
+  if (isExpr(on)) {
+    last_join.on = on;
+  }
+  else {
+    if (!last_join.on)
+      last_join.on = {};
+    _.extend(last_join.on, argsToObject(arguments));
+  }
   return this;
 };
 
@@ -454,9 +459,16 @@ Join.prototype.toString = function toString(opts) {
     else
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
-  return this.type + ' JOIN ' + tbl + ' ON ' + _.map(_.keys(on), function(key) {
-    return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
-  }).join(' AND ');
+  
+  if (isExpr(on)) {
+    on = on.toString(opts);
+  }
+  else {
+    on = _.map(_.keys(on), function(key) {
+      return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
+    }).join(' AND ')
+  }
+  return this.type + ' JOIN ' + tbl + ' ON ' + on;
 };
 
 

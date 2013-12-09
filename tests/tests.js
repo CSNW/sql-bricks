@@ -21,7 +21,7 @@ else {
 var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
   update = sql.update, del = sql.delete;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
-  isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal,
+  isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal, eq = sql.eq,
   lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
   exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny, union = sql.union;
 
@@ -348,6 +348,10 @@ describe('SQL Bricks', function() {
         'SELECT * FROM user usr ' + 
         'CROSS JOIN address addr ON usr.addr_fk = addr.pk');
     });
+    it('join() should accept an expression for the on argument', function() {
+      check(select().from('usr').join('addr', eq('usr.addr_id', sql('addr.id'))),
+        'SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id');
+    });
   });
 
   describe('on()', function() {
@@ -372,6 +376,10 @@ describe('SQL Bricks', function() {
           .on({'psn.addr_id': 'addr.id'}),
         'SELECT * FROM user usr, person psn ' + 
         'INNER JOIN address addr ON usr.addr_id = addr.id AND psn.addr_id = addr.id');
+    });
+    it('should accept an expression', function() {
+      check(select().from('usr').join('addr').on(eq('usr.addr_id', sql('addr.id'))),
+        'SELECT * FROM user usr INNER JOIN address addr ON usr.addr_id = addr.id');
     });
   });
 
