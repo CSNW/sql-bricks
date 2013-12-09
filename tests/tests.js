@@ -369,13 +369,13 @@ describe('SQL Bricks', function() {
       check(select().from('usr', 'psn').join('addr').on({'usr.addr_id': 'addr.id'})
           .on('psn.addr_id', 'addr.id'),
         'SELECT * FROM user usr, person psn ' + 
-        'INNER JOIN address addr ON usr.addr_id = addr.id, psn.addr_id = addr.id');
+        'INNER JOIN address addr ON usr.addr_id = addr.id AND psn.addr_id = addr.id');
     });
     it('can be called multiple times w/ an object literal', function() {
       check(select().from('usr', 'psn').join('addr').on({'usr.addr_id': 'addr.id'})
           .on({'psn.addr_id': 'addr.id'}),
         'SELECT * FROM user usr, person psn ' + 
-        'INNER JOIN address addr ON usr.addr_id = addr.id, psn.addr_id = addr.id');
+        'INNER JOIN address addr ON usr.addr_id = addr.id AND psn.addr_id = addr.id');
     });
     it('should accept an expression', function() {
       check(select().from('usr').join('addr').on(eq('usr.addr_id', sql('addr.id'))),
@@ -522,6 +522,10 @@ describe('SQL Bricks', function() {
     it('should quote sqlite reserved words', function() {
       check(select('action').from('user'),
         'SELECT "action" FROM user');
+    });
+    it('should not quote reserved words in SELECT expressions', function() {
+      check(select("CASE WHEN name = 'Fred' THEN 1 ELSE 0 AS security_level").from('user'),
+        "SELECT CASE WHEN name = 'Fred' THEN 1 ELSE 0 AS security_level FROM user");
     });
   });
 

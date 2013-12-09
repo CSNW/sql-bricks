@@ -466,7 +466,7 @@ Join.prototype.toString = function toString(opts) {
   else {
     on = _.map(_.keys(on), function(key) {
       return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
-    }).join(', ')
+    }).join(' AND ')
   }
   return this.type + ' JOIN ' + tbl + ' ON ' + on;
 };
@@ -733,12 +733,20 @@ var reserved = _.object(reserved, reserved);
 
 // handles prefixes before a '.' and suffixes after a ' '
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
+var unquoted_col_regex = /^[\w\.]+( AS \w+)?$/i;
 function handleColumn(expr, opts) {
   if (expr instanceof Statement)
     return '(' + expr._toString(opts) + ')';
   if (expr instanceof val)
     return handleValue(expr.val, opts);
 
+  if (unquoted_col_regex.test(expr))
+    return quoteReservedColumn(expr)
+  else
+    return expr;
+}
+
+function quoteReservedColumn(expr) {
   var prefix = '';
   var dot_ix = expr.lastIndexOf('.');
   if (dot_ix > -1) {
