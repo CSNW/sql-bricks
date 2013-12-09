@@ -835,7 +835,7 @@ select('COUNT("order")').from('user');
 
       <h2 id="contributing">Contributing</h2>
       <p>Before sending a pull request, please verify that <a href="browser-tests.html">all the existing tests</a> pass and add new tests for the changes you are making. The tests can be run in node with <tt>npm test</tt> (provided <tt>npm install</tt> has been run to install the dependencies) or they can be run in the browser with <tt>browser-tests.html</tt>. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.</p>
-      <p>Note that <b>pull requests for additional SQL dialects</b> or extensions beyond Postgres and SQLite will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.</p>
+      <p>Note that <b>pull requests for additional SQL dialects</b> or extensions beyond ANSI SQL, Postgres and SQLite will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.</p>
       <p>Also, <b>pull requests for additional SQL statements</b> beyond the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.</p>
 
       <h2 id="acknowledgments">Acknowledgments</h2>
