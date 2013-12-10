@@ -61,6 +61,15 @@ describe('SQL Bricks', function() {
         'UPDATE user SET name = $1',
         ["Muad'Dib"]);
     });
+    it('should call .toString() on arrays in parameterized sql', function() {
+      checkParams(update('user', {'name': ["Paul", "Muad'Dib"]}),
+        'UPDATE user SET name = $1',
+        ["Paul,Muad'Dib"]);
+    });
+    it('should call .toString() on arrays in non-parameterized sql', function() {
+      check(update('user', {'name': ["Paul", "Muad'Dib"]}),
+        "UPDATE user SET name = 'Paul,Muad''Dib'");
+    });
     it('should generate node-sqlite3 style params', function() {
       var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
       var result = insert('user', values).toParams({'placeholder': '?'});
