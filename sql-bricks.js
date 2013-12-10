@@ -365,13 +365,7 @@ Statement.prototype.toParams = function toParams(opts) {
   _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
   var sql = this._toString(opts);
   
-  // convert arrays (& other objects?)
-  opts.values = opts.values.map(function(val) {
-    if (val != null && typeof val == 'object')
-      return val.toString();
-    else
-      return val;
-  });
+  opts.values = opts.values.map(objToString);
   return {'text': sql, 'values': opts.values};
 };
 
@@ -716,14 +710,20 @@ function handleValue(val, opts) {
     return prefix + opts.value_ix++;
   }
 
-  // handle arrays (& other objects?)
-  if (val != null && typeof val == 'object')
-    val = val.toString();
+  val = objToString(val);
 
   if (typeof val == 'string')
     return "'" + val.replace(/'/g, "''") + "'"
   
   return val;
+}
+
+// convert arrays (& other objects?)
+function objToString(val) {
+  if (val != null && typeof val == 'object')
+    return val.toString();
+  else
+    return val;
 }
 
 // Table C-1 of http://www.postgresql.org/docs/9.3/static/sql-keywords-appendix.html
