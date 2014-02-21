@@ -235,7 +235,7 @@ Insert.prototype.into = function into(tbl, values) {
 };
 Insert.prototype.values = function values() {
   if (this._split_keys_vals_mode) {
-    var args = arguments;
+    var args = argsToArray(arguments);
     _.forEach(_.keys(this._values), function(key, ix) {
       this._values[key] = args[ix];
     }.bind(this));
