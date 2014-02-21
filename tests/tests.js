@@ -193,6 +193,33 @@ describe('SQL Bricks', function() {
       check(insert().orReplace().into('user').values({'id': 33, 'name': 'Fred'}),
         "INSERT OR REPLACE INTO user (id, name) VALUES (33, 'Fred')");
     });
+    it('should take an object of column/value pairs', function() {
+      check(insert('user', {'id': 33, 'name': 'Fred'}),
+        "INSERT INTO user (id, name) VALUES (33, 'Fred')");
+    });
+    it('should take an array of columns & values', function() {
+      check(insert('user', ['id', 'name']).values([33, 'Fred']),
+        "INSERT INTO user (id, name) VALUES (33, 'Fred')");
+    });
+    it('should take multiple parameters of columns & values', function() {
+      check(insert('user', 'id', 'name').values(33, 'Fred'),
+        "INSERT INTO user (id, name) VALUES (33, 'Fred')");
+    });
+    
+    describe('.into()', function() {
+      it('should take an object of column/value pairs', function() {
+        check(insert().into('user', {'id': 33, 'name': 'Fred'}),
+          "INSERT INTO user (id, name) VALUES (33, 'Fred')");
+      });
+      it('should take an array of columns & values', function() {
+        check(insert().into('user', ['id', 'name']).values([33, 'Fred']),
+          "INSERT INTO user (id, name) VALUES (33, 'Fred')");
+      });
+      it('should take multiple parameters of columns & values', function() {
+        check(insert().into('user', 'id', 'name').values(33, 'Fred'),
+          "INSERT INTO user (id, name) VALUES (33, 'Fred')");
+      });
+    });
   });
 
   describe('SELECT clause', function() {
@@ -249,7 +276,7 @@ describe('SQL Bricks', function() {
     });
   });
 
-  describe('should insert into a new table', function() {
+  describe('select().into() should insert into a new table', function() {
     it('.into()', function() {
       check(select().into('new_user').from('user'),
         'SELECT * INTO new_user FROM user');
@@ -268,7 +295,7 @@ describe('SQL Bricks', function() {
     });
   });
 
-  describe('should insert into a preexisting table', function() {
+  describe('insert().into() should insert into a preexisting table', function() {
     it('insert().into().select()', function() {
       check(insert().into('new_user', 'id', 'addr_id')
         .select('id', 'addr_id').from('user'),
