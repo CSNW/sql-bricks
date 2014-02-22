@@ -143,6 +143,16 @@ insertInto('user', 'first_name', 'last_name').values('Fred', 'Flintstone');
 check(insertInto('user').values({'first_name': 'Fred', 'last_name': 'Flintstone'}), "INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')");
 });
 
+it("insertInto('user', 'first_name', 'last_name').values([['Fred', 'Flintstone'], ['Wilma', 'Flintstone']]);", function() {
+check(insertInto('user', 'first_name', 'last_name').values([['Fred', 'Flintstone'], ['Wilma', 'Flintstone']]), "INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone'), ('Wilma', 'Flintstone')");
+});
+
+it("insertInto('user').values([{'first_name': 'Fred', 'last_name': 'Flintstone'}, {'first_name': 'Wilma', 'last_name': 'Flintstone'}]);", function() {
+insertInto('user', 'first_name', 'last_name').values([['Fred', 'Flintstone'], ['Wilma', 'Flintstone']]);
+
+check(insertInto('user').values([{'first_name': 'Fred', 'last_name': 'Flintstone'}, {'first_name': 'Wilma', 'last_name': 'Flintstone'}]), "INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone'), ('Wilma', 'Flintstone')");
+});
+
 it("ins.returning('account.pk');", function() {
 var ins = insert('user', 'first_name, last_name');
 ins.select('first_name, last_name')
