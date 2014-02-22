@@ -219,15 +219,15 @@ Insert.prototype.into = function into(tbl, values) {
     this.tbls = [expandAlias(tbl)];
 
   if (values) {
-    if (typeof values == 'object' && !_.isArray(values)) {
+    if (isPlainObject(values) || (_.isArray(values) && isPlainObject(values[0]))) {
       this.values(values);
     }
     else if (values.length) {
       this._split_keys_vals_mode = true;
-      this._values = {};
+      this._values = [{}];
       var val_arr = argsToArray(_.toArray(arguments).slice(1));
       _.forEach(val_arr, function(key) {
-        this._values[key] = null;
+        this._values[0][key] = null;
       }.bind(this));
     }
   }
@@ -235,13 +235,33 @@ Insert.prototype.into = function into(tbl, values) {
 };
 Insert.prototype.values = function values() {
   if (this._split_keys_vals_mode) {
-    var args = argsToArray(arguments);
-    _.forEach(_.keys(this._values), function(key, ix) {
-      this._values[key] = args[ix];
+    var outer_arr;
+    if (_.isArray(arguments[0]) && _.isArray(arguments[0][0]))
+      outer_arr = arguments[0];
+    else
+      outer_arr = [argsToArray(arguments)];
+
+    var keys = _.keys(this._values[0]);
+    _.forEach(outer_arr, function(args, outer_ix) {
+      if (!this._values[outer_ix])
+        this._values[outer_ix] = {};
+
+      _.forEach(keys, function(key, ix) {
+        this._values[outer_ix][key] = args[ix];
+      }.bind(this));
     }.bind(this));
   }
   else {
-    this._addToObj(argsToObject(arguments), '_values');
+    if (_.isArray(arguments[0]) && isPlainObject(arguments[0][0])) {
+      if (!this._values)
+        this._values = [];
+      this._values = this._values.concat(arguments[0]);
+    }
+    else {
+      if (!this._values)
+        this._values = [{}];
+      _.extend(this._values[0], argsToObject(arguments));
+    }
   }
   return this;
 };
@@ -255,12 +275,15 @@ Insert.prototype.returning = function returning() {
   return this;
 };
 Insert.prototype._toString = function _toString(opts) {
-  var keys = _.map(_.keys(this._values), function(col) {
+  var keys = _.map(_.keys(this._values[0]), function(col) {
     return handleColumn(col, opts);
   }).join(', ');
-  var values = _.map(_.values(this._values), function(val) {
-    return handleValue(val, opts);
+  var values = _.map(this._values, function(values) {
+    return '(' + _.map(_.values(values), function(val) {
+      return handleValue(val, opts);
+    }).join(', ') + ')';
   }).join(', ');
+
   var sql = 'INSERT ';
   if (this._or)
     sql += 'OR ' + this._or + ' '; 
@@ -269,7 +292,7 @@ Insert.prototype._toString = function _toString(opts) {
   if (this._select)
     sql += this._select._toString(opts) + ' ';
   else
-    sql += 'VALUES (' + values + ')';
+    sql += 'VALUES ' + values;
 
   if (this._returning) {
     sql += 'RETURNING ' + _.map(this._returning, function(col) {
@@ -356,8 +379,16 @@ Statement.prototype.clone = function clone() {
     stmt._where = stmt._where.clone();
   if (stmt.joins)
     stmt.joins = stmt.joins.slice();
-  if (stmt._values)
-    stmt._values = _.clone(stmt._values);
+  if (stmt._values) {
+    if (_.isArray(stmt._values)) {
+      stmt._values = _.map(stmt._values, function(val) {
+        return _.clone(val);
+      });
+    }
+    else {
+      stmt._values = _.clone(stmt._values);
+    }
+  }
   return stmt;
 };
 
@@ -779,6 +810,10 @@ function quoteReservedColumn(expr) {
     expr = '"' + expr + '"';
   
   return prefix + expr + suffix;
+}
+
+function isPlainObject(val) {
+  return _.isObject(val) && !_.isArray(val);
 }
 
 // optional conveniences
