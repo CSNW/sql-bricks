@@ -435,6 +435,7 @@ Statement.prototype._addJoins = function _addJoins(args, type) {
   _.forEach(tbls, function(tbl) {
     tbl = expandAlias(tbl);
     var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
+    left_tbl = expandAlias(left_tbl);
     this.joins.push(new Join(tbl, left_tbl, on, type));
   }.bind(this));
 

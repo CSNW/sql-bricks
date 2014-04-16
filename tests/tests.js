@@ -110,6 +110,19 @@ describe('SQL Bricks', function() {
       'SELECT * FROM user usr INNER JOIN person psn ON usr.psn_fk = psn.pk');
   });
 
+  it('should expand left_tbl on all joins', function() {
+    var left_tbls = [];
+    var orig = sql._joinCriteria;
+    sql._joinCriteria = function(left_tbl) {
+      left_tbls.push(left_tbl);
+      return orig.apply(this, arguments);
+    };
+
+    select().from('test').join('psn').join('usr').toString();
+    sql._joinCriteria = orig;
+    assert(left_tbls.indexOf('person') > -1 && left_tbls.indexOf('psn') == -1, 'left_tbl is not expanded: [' + left_tbls.join(',') + ']');
+  });
+
   it('should support aliases', function() {
     check(select().from('user usr2').join('address addr2'),
       'SELECT * FROM user usr2 INNER JOIN address addr2 ON usr2.addr_fk = addr2.pk');
