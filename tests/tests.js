@@ -210,6 +210,14 @@ describe('SQL Bricks', function() {
       check(insert('user', {'id': 33, 'name': 'Fred'}),
         "INSERT INTO user (id, name) VALUES (33, 'Fred')");
     });
+    it('should insert a null for undefined', function() {
+      check(insert('user', {'id': 33, 'name': undefined}),
+        "INSERT INTO user (id, name) VALUES (33, null)");
+    });
+    it('should insert a null for null', function() {
+      check(insert('user', {'id': 33, 'name': null}),
+        "INSERT INTO user (id, name) VALUES (33, null)");
+    });
     it('should take an array of columns & values', function() {
       check(insert('user', ['id', 'name']).values([33, 'Fred']),
         "INSERT INTO user (id, name) VALUES (33, 'Fred')");

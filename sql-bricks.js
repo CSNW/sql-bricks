@@ -754,6 +754,9 @@ function handleValue(val, opts) {
     return prefix + opts.value_ix++;
   }
 
+  if (val == null)
+    return 'null';
+
   val = objToString(val);
 
   if (typeof val == 'string')
