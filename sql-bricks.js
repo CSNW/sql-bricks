@@ -48,21 +48,20 @@ Select.prototype.from = function from() {
   var tbls = _.map(argsToArray(arguments), expandAlias);
   return this._add(tbls, 'tbls');
 };
-Select.prototype.join = Select.prototype.innerJoin = function join() {
-  return this._addJoins(arguments, 'INNER');
+
+var join_methods = {
+  'join': 'INNER', 'innerJoin': 'INNER',
+  'leftJoin': 'LEFT', 'leftOuterJoin': 'LEFT',
+  'rightJoin': 'RIGHT', 'rightOuterJoin': 'RIGHT',
+  'fullJoin': 'FULL', 'fullOuterJoin': 'FULL',
+  'crossJoin': 'CROSS'
 };
-Select.prototype.leftJoin = Select.prototype.leftOuterJoin = function join() {
-  return this._addJoins(arguments, 'LEFT');
-};
-Select.prototype.rightJoin = Select.prototype.rightOuterJoin = function join() {
-  return this._addJoins(arguments, 'RIGHT');
-};
-Select.prototype.fullJoin = Select.prototype.fullOuterJoin = function join() {
-  return this._addJoins(arguments, 'FULL');
-};
-Select.prototype.crossJoin = function join() {
-  return this._addJoins(arguments, 'CROSS');
-};
+Object.keys(join_methods).forEach(function(method) {
+  Select.prototype[method] = function join() {
+    return this._addJoins(arguments, join_methods[method]);
+  };
+});
+
 Select.prototype.on = function on(on) {
   var last_join = this.joins[this.joins.length - 1];
   if (isExpr(on)) {
@@ -130,10 +129,12 @@ Select.prototype.forUpdate = Select.prototype.forUpdateOf = function forUpdate()
   this._addListArgs(arguments, 'for_update_tbls');
   return this;
 };
+
 Select.prototype.noWait = function noWait() {
   this.no_wait = true;
   return this;
 };
+
 Select.prototype._toString = function _toString(opts) {
   var cols = this.cols.length ? this.cols : ['*'];
   var result = 'SELECT ';
@@ -209,11 +210,7 @@ function Insert(tbl, values) {
   Insert.super_.call(this, 'insert');
   return this.into.apply(this, arguments);
 };
-Insert.prototype.orReplace = function orReplace() { this._or = 'REPLACE'; return this; };
-Insert.prototype.orRollback = function orRollback() { this._or = 'ROLLBACK'; return this; };
-Insert.prototype.orAbort = function orAbort() { this._or = 'ABORT'; return this; };
-Insert.prototype.orFail = function orFail() { this._or = 'FAIL'; return this; };
-Insert.prototype.orIgnore = function orIgnore() { this._or = 'IGNORE'; return this; };
+
 Insert.prototype.into = function into(tbl, values) {
   if (tbl)
     this.tbls = [expandAlias(tbl)];
@@ -315,15 +312,13 @@ function Update(tbl, values) {
     this.values(values);
   return this;
 };
-Update.prototype.orReplace = Insert.prototype.orReplace;
-Update.prototype.orRollback = Insert.prototype.orRollback;
-Update.prototype.orAbort = Insert.prototype.orAbort;
-Update.prototype.orFail = Insert.prototype.orFail;
-Update.prototype.orIgnore = Insert.prototype.orIgnore;
+
 Update.prototype.set = Update.prototype.values = function set() {
   return this._addToObj(argsToObject(arguments), '_values');
 };
+
 Update.prototype.where = Update.prototype.and = Select.prototype.where;
+
 Update.prototype._toString = function _toString(opts) {
   var sql = 'UPDATE ';
   if (this._or)
@@ -338,7 +333,18 @@ Update.prototype._toString = function _toString(opts) {
   return sql.trim();
 };
 
+// Insert & Update OR clauses
+var or_methods = {
+  'orReplace': 'REPLACE', 'orRollback': 'ROLLBACK',
+  'orAbort': 'ABORT', 'orFail': 'FAIL'
+};
+Object.keys(or_methods).forEach(function(method) {
+  Insert.prototype[method] = Update.prototype[method] = function() {
+    this._or = or_methods[method]; return this;
+  };
+});
 
+// Delete
 sql.delete = sql.deleteFrom = inherits(Delete, Statement);
 function Delete(tbl) {
   if (!(this instanceof Delete))
