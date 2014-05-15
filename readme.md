@@ -19,7 +19,7 @@ library         | lines | files | schema       | language     | other notes
 [node-sql][3]   | 2600  |    59 | schema       | javascript   |
 [mongo-sql][4]  | 1700  |    49 | schemaless   | javascript   | 
 [gesundheit][5] | 1600  |    21 | schemaless   | coffeescript | uses Any-DB to wrap the DB driver
-[sql-bricks][6] |  800  |     1 | schemaless   | javascript   |
+[sql-bricks][6] |  750  |     1 | schemaless   | javascript   |
 
 [1]: https://github.com/tgriesser/knex
 [2]: https://github.com/hiddentao/squel
