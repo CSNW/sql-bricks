@@ -169,7 +169,6 @@
       <li>- <a href="#limit">limit</a></li>
       <li>- <a href="#offset">offset</a></li>
       <li>- <a href="#forUpdate">forUpdate, noWait</a></li>
-      <li>- <a href="#joinView">joinView</a></li>
     </ul>
     <a class="toc_title" href="#insert">
       insert
@@ -222,8 +221,6 @@
     <ul class="toc_section">
       <li>- <a href="#aliasExpansions">aliasExpansions</a></li>
       <li>- <a href="#joinCriteria">joinCriteria</a></li>
-      <li>- <a href="#addView">addView</a></li>
-      <li>- <a href="#getView">getView</a></li>
     </ul>
     <a class="toc_title" href="#sqlfunctions">SQL Functions</a>
     <a class="toc_title" href="#contributing">Contributing</a>
@@ -235,7 +232,7 @@
     <h1>SQL Bricks.js</h1>
     <p><a href="https://travis-ci.org/CSNW/sql-bricks" title="Build Status"><img src="https://travis-ci.org/CSNW/sql-bricks.png?branch=master"></a></p>
     <p id="introduction">As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.</p>
-    <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (<tt>order</tt>, <tt>desc</tt>, etc), automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions and <a href="#addView">pseudo-views</a>.</p>
+    <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (<tt>order</tt>, <tt>desc</tt>, etc), automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions.</p>
     <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.</p>
     <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://communities.progress.com/pcom/servlet/JiveServlet/download/11287-2-10624/s92.pdf">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
     <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html">a hundred and seventy-five tests</a> are available for your perusal.</p>
@@ -446,25 +443,6 @@ select().from('user').where({'last_name': 'Flintstone'}).union()
         <pre>
 select('addr_id').from('user').forUpdate('addr_id').noWait();
 // SELECT addr_id FROM user FOR UPDATE addr_id NO WAIT
-</pre>
-      </p>
-      <p id="joinView">
-        <b class="header">joinView</b><code>sel.joinView(view_name[, onCriteria, join_type])</code>
-        <br />
-        <p>Joins to the main tables of the <a href="#addView">pseudo-view</a> and merges into the query all of the view's joins and where clauses (with joined tables prefixed by the view's alias).</p> 
-        <p><b>view_name</b> can include an alias after a space or after the <tt>AS</tt> keyword (<tt>'my_view my_alias'</tt> or <tt>'my_view AS my_alias'</tt>). <b>onCriteria</b> is optional if a <a href="#joinCriteria">joinCriteria</a> function has been supplied. <b>join_type</b> defaults to <tt>'inner'</tt> and must be supplied for other types of joins.</p>
-        <pre>
-sql.addView('localUser',
-  select().from('user')
-    .join('address').on({'user.addr_id': 'address.id'})
-    .where({'address.local': true})
-);
-
-select('*').from('person').joinView('localUser l_usr', {'person.usr_id': 'l_usr.id'});
-// SELECT * FROM person
-// INNER JOIN user l_usr ON person.usr_id = l_usr.id
-// INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id
-// WHERE l_usr_address.local = true
 </pre>
       </p>
       
@@ -800,26 +778,6 @@ select().from('usr').join('psn', 'addr').join('zip');
 </pre>
 
         <p>Note that this scheme doesn't support complex JOIN table layouts: if you do something like <tt>.join('psn', 'addr').join('zip')</tt> above, it is impossible to also join something to the <tt>'psn'</tt> table. This <i>could</i> be achieved by adding a way to explicitly specify the table you're joining from: <tt>.join('psn', 'addr').join('zip').join('psn->employer')</tt>, but this hasn't been implemented.</p>
-      </p>
-
-      <p id="addView">
-        <b class="header">addView</b><code>sql.addView(stmt)</code>
-        <br />
-        <p>For those databases where native views have performance issues (SQLite and MySQL, for instance), sql-bricks provides pseudo-views. (Native views are treated as subqueries in SQLite; see the "Subquery Flattening" section of <a href="http://www.sqlite.org/optoverview.html">the SQLite Query Planner</a> for an idea of the performance problems.)</p>
-
-        <p>The <b>stmt</b> that will be saved as a pseudo-view must consists of a main table and, optionally, join tables and where criteria. Queries can then join to this pseudo-view via <a href="#joinView">joinView()</a>.</p>
-      </p>
-
-      <p id="getView">
-        <b class="header">getView</b><code>sql.getView()</code>
-        <br />
-        <p>Returns a view that has been previously registered with <tt>addView()</tt> so that it can be used directly or cloned and modified:</p>
-        <pre>
-sql.addView('activeUsers', select().from('usr').where({'usr.active': true}));
-
-sql.getView('activeUsers').clone().where({'usr.local': true})
-// SELECT * FROM user usr WHERE usr.active = true AND usr.local = true
-</pre>
       </p>
 
       <h2 id="sqlfunctions">SQL Functions</h2>

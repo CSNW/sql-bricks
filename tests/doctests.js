@@ -107,16 +107,6 @@ it("select('addr_id').from('user').forUpdate('addr_id').noWait();", function() {
 check(select('addr_id').from('user').forUpdate('addr_id').noWait(), "SELECT addr_id FROM user FOR UPDATE addr_id NO WAIT");
 });
 
-it("select('*').from('person').joinView('localUser l_usr', {'person.usr_id': 'l_usr.id'});", function() {
-sql.addView('localUser',
-  select().from('user')
-    .join('address').on({'user.addr_id': 'address.id'})
-    .where({'address.local': true})
-);
-
-check(select('*').from('person').joinView('localUser l_usr', {'person.usr_id': 'l_usr.id'}), "SELECT * FROM person INNER JOIN user l_usr ON person.usr_id = l_usr.id INNER JOIN address l_usr_address ON l_usr.addr_id = l_usr_address.id WHERE l_usr_address.local = true");
-});
-
 it("insert('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});", function() {
 check(insert('user', {'first_name': 'Fred', 'last_name': 'Flintstone'}), "INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')");
 });
@@ -258,12 +248,6 @@ check(select().from('usr').join('addr', 'psn'), "SELECT * FROM user usr INNER JO
 
 it("select().from('usr').join('psn', 'addr').join('zip');", function() {
 check(select().from('usr').join('psn', 'addr').join('zip'), "SELECT * FROM user usr INNER JOIN person psn ON usr.psn_id = psn.id INNER JOIN address addr ON usr.addr_id = addr.id INNER JOIN zipcode zip ON addr.zip_id = zip.id");
-});
-
-it("sql.getView('activeUsers').clone().where({'usr.local': true})", function() {
-sql.addView('activeUsers', select().from('usr').where({'usr.active': true}));
-
-check(sql.getView('activeUsers').clone().where({'usr.local': true}), "SELECT * FROM user usr WHERE usr.active = true AND usr.local = true");
 });
 
 it("select('COUNT(*)').from('user').where({'access_level': 3});", function() {

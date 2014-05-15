@@ -820,6 +820,7 @@ function isPlainObject(val) {
   return _.isObject(val) && !_.isArray(val);
 }
 
+
 // optional conveniences
 sql._aliases = {};
 sql.aliasExpansions = function aliasExpansions(aliases) {
@@ -831,85 +832,6 @@ function expandAlias(tbl) {
 
 sql.joinCriteria = function joinCriteria(fn) {
   this._joinCriteria = fn;
-};
-
-sql._views = {};
-sql.addView = function addView(view_name, sel) {
-  if (sel.tbls.length != 1)
-    throw new Error('Unsupported number of tables in pseudo-view: ' + sel.tbls.length);
-  sql._views[view_name] = sel;
-};
-sql.getView = function getView(view_name) {
-  return sql._views[view_name];
-};
-
-Select.prototype.joinView = function joinView(view, on, type) {
-  var alias = getAlias(view);
-  var view_name = getTable(view);
-  var view = sql._views[view_name];
-
-  var tbl = getTable(view.tbls[0]) + ' ' + alias;
-  this._addJoins([tbl, on || {}], type ? type.toUpperCase() : 'INNER');
-
-  var new_aliases = {};
-  new_aliases[getAlias(view.tbls[0])] = alias;
-
-  if (view.joins) {
-    _.forEach(_.map(_.pluck(view.joins, 'tbl'), getAlias), function(join_alias) {
-      new_aliases[join_alias] = alias + '_' + join_alias;
-    });
-
-    _.forEach(view.joins, function(join) {
-      var join_alias = getAlias(join.tbl);
-      var join_tbl = getTable(join.tbl);
-      var tbl = join_tbl + ' ' + new_aliases[join_alias];
-      var join = new Join(tbl, join.left_tbl, join.on, join.type);
-      this.joins.push(join);
-      if (!join.on)
-        join.on = join.autoGenerateOn(tbl, join.left_tbl);
-      join.on = namespaceOn(join.on);
-    }.bind(this));
-  }
-
-  if (view._where) {
-    _.forEach(view._where.expressions, function(expr) {
-      expr = expr.clone();
-      convertExpr(expr);
-      this.where(expr);
-    }.bind(this));
-  }
-
-  return this;
-
-  function convertExpr(expr) {
-    if (expr.col)
-      expr.col = convert(expr.col);
-    if (expr.expressions)
-      _.forEach(expr.expressions, convertExpr);
-  }
-
-  function namespaceOn(on) {
-    var namespaced_on = {};
-    for (var key in on)
-      namespaced_on[convert(key)] = convert(on[key]);
-    return namespaced_on;
-  }
-
-  function convert(col) {
-    var col_parts = col.split('.');
-    if (col_parts.length == 1)
-      return col;
-    
-    var tbl_ix = col_parts.length - 2;
-    var tbl_alias = col_parts[tbl_ix];
-    if (tbl_alias in new_aliases) {
-      col_parts[tbl_ix] = new_aliases[tbl_alias];
-      return col_parts.join('.');
-    }
-    else {
-      return col;
-    }
-  }
 };
 
 
