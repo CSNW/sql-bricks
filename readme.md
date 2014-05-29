@@ -55,6 +55,11 @@ select().from('user').where({last_name: 'Rubble'});
 The [SQLBricks API](http://csnw.github.io/sql-bricks/) is comprehensive, supporting all of SQL-92 for select/insert/update/delete. It is also quite flexible; in most places arguments can be passed in a variety of ways (arrays, objects, separate arguments, etc). That said, here are some of the most common operations:
 
 ```javascript
+// convenience variables (for node; for the browser: "var sql = SqlBricks;")
+var sql = require('sql-bricks');
+var select = sql.select, insert = sql.insert, update = sql.update;
+var or = sql.or, like = sql.like, lt = sql.lt;
+
 // WHERE: (.toString() is optional; JS will call it automatically in most cases)
 select().from('user').where({last_name: 'Rubble'}).toString();
 // SELECT * FROM user WHERE last_name = 'Rubble'
