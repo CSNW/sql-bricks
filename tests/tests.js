@@ -76,6 +76,12 @@ describe('SQL Bricks', function() {
       assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
       assert.deepEqual(result.values, ['Fred', 'Flintstone']);
     });
+    it('should generate node-mysql style params', function() {
+      var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
+      var result = insert('user', values).toParams({'placeholder': '?', 'placeholder_numeric': false});
+      assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?, ?)');
+      assert.deepEqual(result.values, ['Fred', 'Flintstone']);
+    });
     it('should properly parameterize subqueries', function() {
       var values = {'first_name': 'Fred'};
       checkParams(select(select('last_name').from('user').where(values)),
