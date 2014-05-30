@@ -5,7 +5,7 @@
 SQL Bricks.js is a transparent, schemaless library for building and composing SQL statements.
 
 - Supports all SQL-92 clauses for select/insert/update/delete (plus some postgres & sqlite additions)
-- Over [150 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
+- Over [175 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
 - Single straightforward [source file](sql-bricks.js) (less than 1,000 lines), easy to understand & debug
 

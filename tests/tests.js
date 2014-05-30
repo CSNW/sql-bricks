@@ -8,13 +8,15 @@ if (typeof require != 'undefined') {
   assert = require('assert');
 }
 else {
-  assert = {
-    'equal': function(actual, expected) {
-      if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
-    },
-    'deepEqual': function(actual, expected) {
-      if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
-    }
+  assert = function(condition, message) {
+    if (!condition)
+      throw new Error(message);
+  };
+  assert.equal = function(actual, expected) {
+    if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+  };
+  assert.deepEqual = function(actual, expected) {
+    if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
 }
 
