@@ -405,7 +405,7 @@ Statement.prototype.toParams = function toParams(opts) {
   if (!opts)
     opts = {};
   _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
-  _.defaults(opts, {'placeholder': '$', 'placeholder_numeric': true});
+  _.defaults(opts, {'placeholder': '$%d'});
   var sql = this._toString(opts);
   
   opts.values = opts.values.map(objToString);
@@ -752,7 +752,7 @@ function handleValue(val, opts) {
 
   if (opts.parameterized) {
     opts.values.push(val);
-    return opts.placeholder + (opts.placeholder_numeric ? opts.value_ix++ : '');
+    return opts.placeholder.replace('%d', opts.value_ix++);
   }
 
   if (val == null)
