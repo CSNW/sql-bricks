@@ -686,6 +686,7 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
+  var col_sql = handleColumn(this.col, opts);
   var sql;
   if (_.isArray(this.list)) {
     sql = _.map(this.list, function(val) {
@@ -695,7 +696,7 @@ In.prototype.toString = function toString(opts) {
   else if (this.list instanceof Statement) {
     sql = this.list._toString(opts);
   }
-  return handleColumn(this.col, opts) + ' IN (' + sql + ')';
+  return col_sql + ' IN (' + sql + ')';
 };
 
 sql.exists = function(subquery) { return new Exists(subquery); }
