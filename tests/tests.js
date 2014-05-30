@@ -72,9 +72,20 @@ describe('SQL Bricks', function() {
     });
     it('should generate node-sqlite3 style params', function() {
       var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
-      var result = insert('user', values).toParams({'placeholder': '?'});
+      var result = insert('user', values).toParams({'placeholder': '?%d'});
       assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?1, ?2)');
       assert.deepEqual(result.values, ['Fred', 'Flintstone']);
+    });
+    it('should generate node-mysql style params', function() {
+      var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
+      var result = insert('user', values).toParams({'placeholder': '?'});
+      assert.equal(result.text, 'INSERT INTO user (first_name, last_name) VALUES (?, ?)');
+      assert.deepEqual(result.values, ['Fred', 'Flintstone']);
+    });
+    it('should output non-numeric params in SQL order', function() {
+      var result = select().from('user').where($in(sql.val(5), [3, 5, 10])).toParams({'placeholder': '?'});
+      assert.equal(result.text, 'SELECT * FROM user WHERE ? IN (?, ?, ?)');
+      assert.deepEqual(result.values, [5, 3, 5, 10]);
     });
     it('should properly parameterize subqueries', function() {
       var values = {'first_name': 'Fred'};

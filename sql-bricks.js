@@ -405,6 +405,7 @@ Statement.prototype.toParams = function toParams(opts) {
   if (!opts)
     opts = {};
   _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
+  _.defaults(opts, {'placeholder': '$%d'});
   var sql = this._toString(opts);
   
   opts.values = opts.values.map(objToString);
@@ -685,6 +686,7 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
+  var col_sql = handleColumn(this.col, opts);
   var sql;
   if (_.isArray(this.list)) {
     sql = _.map(this.list, function(val) {
@@ -694,7 +696,7 @@ In.prototype.toString = function toString(opts) {
   else if (this.list instanceof Statement) {
     sql = this.list._toString(opts);
   }
-  return handleColumn(this.col, opts) + ' IN (' + sql + ')';
+  return col_sql + ' IN (' + sql + ')';
 };
 
 sql.exists = function(subquery) { return new Exists(subquery); }
@@ -751,8 +753,7 @@ function handleValue(val, opts) {
 
   if (opts.parameterized) {
     opts.values.push(val);
-    var prefix = opts.placeholder || '$';
-    return prefix + opts.value_ix++;
+    return opts.placeholder.replace('%d', opts.value_ix++);
   }
 
   if (val == null)

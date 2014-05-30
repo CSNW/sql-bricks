@@ -92,8 +92,12 @@ update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPara
 // {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
 
 // SQLite-style params
-update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?%d'});
 // {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
+
+// MySQL-style params
+update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});
+// {"text": "UPDATE user SET first_name = ? WHERE last_name = ?", "values": ["Fred", "Flintstone"]}
 ```
 
 Documentation: http://csnw.github.io/sql-bricks

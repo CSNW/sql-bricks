@@ -57,8 +57,12 @@ it("update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).to
 check(update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams(), {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]});
 });
 
+it("update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?%d'});", function() {
+check(update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?%d'}), {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]});
+});
+
 it("update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});", function() {
-check(update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'}), {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]});
+check(update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'}), {"text": "UPDATE user SET first_name = ? WHERE last_name = ?", "values": ["Fred", "Flintstone"]});
 });
 
 it("select().from('user').join('address', {'user.addr_id': 'address.id'});", function() {
