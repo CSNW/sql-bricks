@@ -555,6 +555,16 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(between('name', 'Frank', 'Fred')),
         "SELECT * FROM user WHERE name BETWEEN 'Frank' AND 'Fred'")
     });
+    it('should do nothing for null, undefined, {}', function() {
+      check(select().from('user').where(),
+        "SELECT * FROM user");
+      check(select().from('user').where(null),
+        "SELECT * FROM user");
+      check(select().from('user').where({}),
+        "SELECT * FROM user");
+      check(select().from('user').where(undefined),
+        "SELECT * FROM user");
+    })
   });
 
   describe('.limit()', function() {
