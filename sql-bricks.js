@@ -450,7 +450,7 @@ Statement.prototype._addListArgs = function _addListArgs(args, name) {
 };
 
 Statement.prototype._addExpression = function _addExpression(args, name) {
-  if (args.length <= 1 && args[0] == null || _.isEmpty(args[0]))
+  if (args.length <= 1 && (args[0] == null || _.isEmpty(args[0])))
     return this;
   
   if (!this[name])

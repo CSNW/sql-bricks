@@ -564,7 +564,11 @@ describe('SQL Bricks', function() {
         "SELECT * FROM user");
       check(select().from('user').where(undefined),
         "SELECT * FROM user");
-    })
+    });
+    it('should not ignore the 2nd arg if the first is {}', function() {
+      check(select().from('user').where({}, {'name': 'Fred'}),
+        "SELECT * FROM user WHERE name = 'Fred'");
+    });
   });
 
   describe('.limit()', function() {
