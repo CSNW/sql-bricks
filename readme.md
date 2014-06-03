@@ -26,7 +26,7 @@ library         | lines | files | schema       | language     | other notes
 [3]: https://github.com/brianc/node-sql
 [4]: https://github.com/goodybag/mongo-sql
 [5]: https://github.com/BetSmartMedia/gesundheit
-[6]: https://github.com/tgriesser/knex
+[6]: https://github.com/CSNW/sql-bricks
 
 # Use
 
