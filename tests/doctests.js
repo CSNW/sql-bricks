@@ -267,6 +267,14 @@ it("select('COUNT(\"order\")').from('user');", function() {
 check(select('COUNT("order")').from('user'), "SELECT COUNT(\"order\") FROM user");
 });
 
+it("select('user.name AS username').from('user');", function() {
+check(select('user.name AS username').from('user'), "SELECT user.name AS username FROM user");
+});
+
+it("select('user.order AS user_order').from('user');", function() {
+check(select('user.order AS user_order').from('user'), "SELECT user.\"order\" AS user_order FROM user");
+});
+
 
 
 

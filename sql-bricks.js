@@ -786,6 +786,7 @@ reserved = _.object(reserved, reserved);
 // handles prefixes before a '.' and suffixes after a ' '
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 var unquoted_col_regex = /^[\w\.]+( AS \w+)?$/i;
+var caps_regex = /[A-Z]/;
 function handleColumn(expr, opts) {
   if (expr instanceof Statement)
     return '(' + expr._toString(opts) + ')';
@@ -793,12 +794,12 @@ function handleColumn(expr, opts) {
     return handleValue(expr.val, opts);
 
   if (unquoted_col_regex.test(expr))
-    return quoteReservedColumn(expr)
+    return quoteColumn(expr)
   else
     return expr;
 }
 
-function quoteReservedColumn(expr) {
+function quoteColumn(expr) {
   var prefix = '';
   var dot_ix = expr.lastIndexOf('.');
   if (dot_ix > -1) {
@@ -813,7 +814,7 @@ function quoteReservedColumn(expr) {
     expr = expr.slice(0, space_ix);
   }
 
-  if (expr.toLowerCase() in reserved)
+  if (caps_regex.test(expr) || expr in reserved)
     expr = '"' + expr + '"';
   
   return prefix + expr + suffix;
