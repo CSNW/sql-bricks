@@ -589,6 +589,17 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('should quote column names with capitals in them', function() {
+    it('in SELECT statement', function() {
+      check(select('Name').from('user'),
+        'SELECT "Name" FROM user');
+    });
+    it('in SELECT statement after tbl prefix, before AS suffix', function() {
+      check(select('user.Name AS UserName').from('user'),
+        'SELECT user."Name" AS UserName FROM user')
+    });
+  });
+
   describe('should quote reserved words in column names', function() {
     it('in ORDER BY', function() {
       check(select().from('usr').orderBy('order'),
