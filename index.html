@@ -223,6 +223,7 @@
       <li>- <a href="#joinCriteria">joinCriteria</a></li>
     </ul>
     <a class="toc_title" href="#sqlfunctions">SQL Functions</a>
+    <a class="toc_title" href="#askeyword">AS Keyword</a>
     <a class="toc_title" href="#contributing">Contributing</a>
     <a class="toc_title" href="#acknowledgments">Acknowledgments</a>
     <a class="toc_title" href="#license">License</a>
@@ -804,6 +805,19 @@ select().from('user').where({'level_text':
 select('COUNT("order")').from('user');
 // SELECT COUNT("order") FROM user
 </pre>
+
+      <h2 id="askeyword">AS Keyword</h2>
+      <p>The <tt>AS</tt> keyword is treated like SQL functions. It can be included in column strings and Sql-Bricks will parse it and handle it properly:
+      <pre>
+select('user.name AS username').from('user');
+// SELECT user.name AS username FROM user
+</pre>
+      <p>This doesn't break automatic column quoting of column names that are reserved words or are capitalized:
+      <pre>
+select('user.order AS user_order').from('user');
+// SELECT user."order" AS user_order FROM user
+</pre>
+      <p>That said, if you do anything fancier (SQL functions, etc) then you will need to quote any column names that need quoting manually -- SQL-Bricks only provides the auto-quoting convenience for the most common cases.</p>
 
       <h2 id="contributing">Contributing</h2>
       <p>Before sending a pull request, please verify that <a href="browser-tests.html">all the existing tests</a> pass and add new tests for the changes you are making. The tests can be run in node with <tt>npm test</tt> (provided <tt>npm install</tt> has been run to install the dependencies) or they can be run in the browser with <tt>browser-tests.html</tt>. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.</p>
