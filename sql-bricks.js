@@ -45,8 +45,7 @@ Select.prototype.distinct = function distinct() {
 };
 
 Select.prototype.from = function from() {
-  var tbls = _.map(argsToArray(arguments), expandAlias);
-  return this._add(tbls, 'tbls');
+  return this._add(argsToArray(arguments), 'tbls');
 };
 
 var join_methods = {
@@ -148,7 +147,7 @@ Select.prototype._toString = function _toString(opts) {
     result += this._into + ' ';
   }
   if (this.tbls)
-    result += 'FROM ' + this.tbls.join(', ') + ' ';
+    result += 'FROM ' + this.tbls.map(handleTbl).join(', ') + ' ';
   if (this.joins) {
     result += _.map(this.joins, function(join) {
       return join.toString(opts);
@@ -186,15 +185,14 @@ Select.prototype._toString = function _toString(opts) {
   if (this.for_update) {
     result += 'FOR UPDATE ';
     if (this.for_update_tbls)
-      result += this.for_update_tbls.join(', ') + ' ';
+      result += this.for_update_tbls.map(handleTbl).join(', ') + ' ';
     if (this.no_wait)
       result += 'NO WAIT ';
   }
   return result.trim();
 
-  function handleCol(expr) {
-    return handleColumn(expr, opts);
-  }
+  function handleCol(expr) { return handleColOrTbl(expr, opts); }
+  function handleTbl(expr) { return handleTable(expr, opts); }
 };
 
 
@@ -213,7 +211,7 @@ function Insert(tbl, values) {
 
 Insert.prototype.into = function into(tbl, values) {
   if (tbl)
-    this.tbls = [expandAlias(tbl)];
+    this.tbls = [tbl];
 
   if (values) {
     if (isPlainObject(values) || (_.isArray(values) && isPlainObject(values[0]))) {
@@ -273,7 +271,7 @@ Insert.prototype.returning = function returning() {
 };
 Insert.prototype._toString = function _toString(opts) {
   var keys = _.map(_.keys(this._values[0]), function(col) {
-    return handleColumn(col, opts);
+    return handleColOrTbl(col, opts);
   }).join(', ');
   var values = _.map(this._values, function(values) {
     return '(' + _.map(_.values(values), function(val) {
@@ -284,7 +282,7 @@ Insert.prototype._toString = function _toString(opts) {
   var sql = 'INSERT ';
   if (this._or)
     sql += 'OR ' + this._or + ' '; 
-  sql += 'INTO ' + this.tbls.join(', ') + ' (' + keys + ') ';
+  sql += 'INTO ' + this.tbls.map(handleTbl).join(', ') + ' (' + keys + ') ';
 
   if (this._select)
     sql += this._select._toString(opts) + ' ';
@@ -293,11 +291,13 @@ Insert.prototype._toString = function _toString(opts) {
 
   if (this._returning) {
     sql += 'RETURNING ' + _.map(this._returning, function(col) {
-      return handleColumn(col, opts);
+      return handleColOrTbl(col, opts);
     }).join(', ');
   }
 
   return sql.trim();
+
+  function handleTbl(expr) { return handleTable(expr, opts); }
 };
 
 
@@ -307,7 +307,7 @@ function Update(tbl, values) {
     return new Update(tbl, argsToObject(_.toArray(arguments).slice(1)));
 
   Update.super_.call(this, 'update');
-  this.tbls = [expandAlias(tbl)];
+  this.tbls = [tbl];
   if (values)
     this.values(values);
   return this;
@@ -323,9 +323,9 @@ Update.prototype._toString = function _toString(opts) {
   var sql = 'UPDATE ';
   if (this._or)
     sql += 'OR ' + this._or + ' ';
-  sql += this.tbls[0] + ' SET ';
+  sql += handleTable(this.tbls[0], opts) + ' SET ';
   sql += _.map(this._values, function(value, key) {
-    return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
+    return handleColOrTbl(key, opts) + ' = ' + handleValue(value, opts);
   }).join(', ') + ' ';
 
   if (this._where)
@@ -352,21 +352,23 @@ function Delete(tbl) {
 
   Delete.super_.call(this, 'delete');
   if (tbl)
-    this.tbls = [expandAlias(tbl)];
+    this.tbls = [tbl];
   return this;
 }
 Delete.prototype.from = Select.prototype.from;
 Delete.prototype.using = function using() {
-  return this._add(_.map(argsToArray(arguments), expandAlias), '_using');
+  return this._add(argsToArray(arguments), '_using');
 };
 Delete.prototype.where = Delete.prototype.and = Select.prototype.where;
 Delete.prototype._toString = function _toString(opts) {
-  var sql = 'DELETE FROM ' + this.tbls[0] + ' ';
+  var sql = 'DELETE FROM ' + handleTable(this.tbls[0], opts) + ' ';
   if (this._using)
-    sql += 'USING ' + this._using.join(', ') + ' ';
+    sql += 'USING ' + this._using.map(handleTbl).join(', ') + ' ';
   if (this._where)
     sql += 'WHERE ' + this._exprToString(opts);
   return sql.trim();
+
+  function handleTbl(expr) { return handleTable(expr, opts); }
 };
 
 
@@ -474,9 +476,7 @@ Statement.prototype._addJoins = function _addJoins(args, type) {
   }
 
   _.forEach(tbls, function(tbl) {
-    tbl = expandAlias(tbl);
     var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
-    left_tbl = expandAlias(left_tbl);
     this.joins.push(new Join(tbl, left_tbl, on, type));
   }.bind(this));
 
@@ -496,7 +496,7 @@ Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
   return sql._joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
 };
 Join.prototype.toString = function toString(opts) {
-  var on = this.on, tbl = this.tbl, left_tbl = this.left_tbl;
+  var on = this.on, tbl = handleTable(this.tbl, opts), left_tbl = handleTable(this.left_tbl, opts);
   if (!on || _.isEmpty(on)) {
     if (sql._joinCriteria)
       on = this.autoGenerateOn(tbl, left_tbl);
@@ -509,7 +509,7 @@ Join.prototype.toString = function toString(opts) {
   }
   else {
     on = _.map(_.keys(on), function(key) {
-      return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
+      return handleColOrTbl(key, opts) + ' = ' + handleColOrTbl(on[key], opts);
     }).join(' AND ')
   }
   return this.type + ' JOIN ' + tbl + ' ON ' + on;
@@ -627,7 +627,7 @@ Binary.prototype.clone = function clone() {
   return new Binary(this.op, this.col, this.val);
 };
 Binary.prototype.toString = function toString(opts) {
-  var sql = handleColumn(this.col, opts);
+  var sql = handleColOrTbl(this.col, opts);
   return sql + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
 }
 
@@ -641,7 +641,7 @@ Like.prototype.clone = function clone() {
   return new Like(this.col, this.val, this.escape_char);
 };
 Like.prototype.toString = function toString(opts) {
-  var sql = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
+  var sql = handleColOrTbl(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
   if (this.escape_char)
     sql += " ESCAPE '" + this.escape_char + "'";
   return sql;
@@ -657,7 +657,7 @@ Between.prototype.clone = function clone() {
   return new Between(this.col, this.val1, this.val2);
 };
 Between.prototype.toString = function(opts) {
-  return handleColumn(this.col, opts) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
+  return handleColOrTbl(this.col, opts) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
 };
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
@@ -671,7 +671,7 @@ Unary.prototype.clone = function clone() {
   return new Unary(this.op, this.col);
 };
 Unary.prototype.toString = function toString(opts) {
-  return handleColumn(this.col, opts) + ' ' + this.op;
+  return handleColOrTbl(this.col, opts) + ' ' + this.op;
 };
 
 sql['in'] = function(col, list) {
@@ -689,7 +689,7 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
-  var col_sql = handleColumn(this.col, opts);
+  var col_sql = handleColOrTbl(this.col, opts);
   var sql;
   if (_.isArray(this.list)) {
     sql = _.map(this.list, function(val) {
@@ -728,7 +728,9 @@ function getAlias(tbl) {
 function getTable(tbl) {
   var space_ix = tbl.indexOf(' ');
   if (space_ix > -1)
-    return tbl.slice(0, space_ix);
+    tbl = tbl.slice(0, space_ix);
+  if (tbl[0] == '"' && tbl[tbl.length - 1] == '"')
+    tbl = tbl.slice(1, -1);
   return tbl;
 }
 
@@ -778,32 +780,30 @@ function objToString(val) {
     return val;
 }
 
-// Postgres: Table C-1 of http://www.postgresql.org/docs/9.3/static/sql-keywords-appendix.html
-// SQLite: http://www.sqlite.org/lang_keywords.html
-var reserved = ['all', 'analyse', 'analyze', 'and', 'any', 'array', 'as', 'asc', 'asymmetric', 'authorization', 'both', 'case', 'cast', 'check', 'collate', 'collation', 'column', 'constraint', 'create', 'cross', 'current_catalog', 'current_date', 'current_role', 'current_time', 'current_timestamp', 'current_user', 'default', 'deferrable', 'desc', 'distinct', 'do', 'else', 'end', 'except', 'false', 'fetch', 'for', 'foreign', 'freeze', 'from', 'full', 'grant', 'group', 'having', 'ilike', 'in', 'initially', 'inner', 'intersect', 'into', 'is', 'isnull', 'join', 'lateral', 'leading', 'left', 'like', 'limit', 'localtime', 'localtimestamp', 'natural', 'not', 'notnull', 'null', 'offset', 'on', 'only', 'or', 'order', 'outer', 'over', 'overlaps', 'placing', 'primary', 'references', 'returning', 'right', 'select', 'session_user', 'similar', 'some', 'symmetric', 'table', 'then', 'to', 'trailing', 'true', 'union', 'unique', 'user', 'using', 'variadic', 'verbose', 'when', 'where', 'window', 'with', 'abort', 'action', 'add', 'after', 'all', 'alter', 'analyze', 'and', 'as', 'asc', 'attach', 'autoincrement', 'before', 'begin', 'between', 'by', 'cascade', 'case', 'cast', 'check', 'collate', 'column', 'commit', 'conflict', 'constraint', 'create', 'cross', 'current_date', 'current_time', 'current_timestamp', 'database', 'default', 'deferrable', 'deferred', 'delete', 'desc', 'detach', 'distinct', 'drop', 'each', 'else', 'end', 'escape', 'except', 'exclusive', 'exists', 'explain', 'fail', 'for', 'foreign', 'from', 'full', 'glob', 'group', 'having', 'if', 'ignore', 'immediate', 'in', 'index', 'indexed', 'initially', 'inner', 'insert', 'instead', 'intersect', 'into', 'is', 'isnull', 'join', 'key', 'left', 'like', 'limit', 'match', 'natural', 'no', 'not', 'notnull', 'null', 'of', 'offset', 'on', 'or', 'order', 'outer', 'plan', 'pragma', 'primary', 'query', 'raise', 'references', 'regexp', 'reindex', 'release', 'rename', 'replace', 'restrict', 'right', 'rollback', 'row', 'savepoint', 'select', 'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger', 'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual', 'when', 'where'];
-reserved = _.object(reserved, reserved);
+function handleTable(expr, opts) {
+  return handleColOrTbl(expandAlias(expr), opts);
+}
 
 // handles prefixes before a '.' and suffixes after a ' '
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
-var unquoted_col_regex = /^[\w\.]+( AS \w+)?$/i;
-var caps_regex = /[A-Z]/;
-function handleColumn(expr, opts) {
+var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
+function handleColOrTbl(expr, opts) {
   if (expr instanceof Statement)
     return '(' + expr._toString(opts) + ')';
   if (expr instanceof val)
     return handleValue(expr.val, opts);
 
-  if (unquoted_col_regex.test(expr))
-    return quoteColumn(expr)
+  if (!(expr instanceof sql) && unquoted_regex.test(expr))
+    return quoteColOrTbl(expr);
   else
     return expr;
 }
 
-function quoteColumn(expr) {
+function quoteColOrTbl(expr) {
   var prefix = '';
   var dot_ix = expr.lastIndexOf('.');
   if (dot_ix > -1) {
-    prefix = expr.slice(0, dot_ix + 1);
+    prefix = expr.slice(0, dot_ix);
     expr = expr.slice(dot_ix + 1);
   }
 
@@ -813,12 +813,22 @@ function quoteColumn(expr) {
     suffix = expr.slice(space_ix);
     expr = expr.slice(0, space_ix);
   }
-
-  if (caps_regex.test(expr) || expr in reserved)
-    expr = '"' + expr + '"';
   
-  return prefix + expr + suffix;
+  return (prefix ? autoQuote(prefix) + '.' : '') + autoQuote(expr) + suffix;
 }
+
+// auto-quote tbl & col names if they have caps or are reserved words
+function autoQuote(str) {
+  if (/^\w+$/.test(str) && (/[A-Z]/.test(str) || str in reserved))
+    return '"' + str + '"';
+  return str;
+}
+
+// Postgres: Table C-1 of http://www.postgresql.org/docs/9.3/static/sql-keywords-appendix.html
+// SQLite: http://www.sqlite.org/lang_keywords.html
+var reserved = ['all', 'analyse', 'analyze', 'and', 'any', 'array', 'as', 'asc', 'asymmetric', 'authorization', 'both', 'case', 'cast', 'check', 'collate', 'collation', 'column', 'constraint', 'create', 'cross', 'current_catalog', 'current_date', 'current_role', 'current_time', 'current_timestamp', 'current_user', 'default', 'deferrable', 'desc', 'distinct', 'do', 'else', 'end', 'except', 'false', 'fetch', 'for', 'foreign', 'freeze', 'from', 'full', 'grant', 'group', 'having', 'ilike', 'in', 'initially', 'inner', 'intersect', 'into', 'is', 'isnull', 'join', 'lateral', 'leading', 'left', 'like', 'limit', 'localtime', 'localtimestamp', 'natural', 'not', 'notnull', 'null', 'offset', 'on', 'only', 'or', 'order', 'outer', 'over', 'overlaps', 'placing', 'primary', 'references', 'returning', 'right', 'select', 'session_user', 'similar', 'some', 'symmetric', 'table', 'then', 'to', 'trailing', 'true', 'union', 'unique', 'user', 'using', 'variadic', 'verbose', 'when', 'where', 'window', 'with', 'abort', 'action', 'add', 'after', 'all', 'alter', 'analyze', 'and', 'as', 'asc', 'attach', 'autoincrement', 'before', 'begin', 'between', 'by', 'cascade', 'case', 'cast', 'check', 'collate', 'column', 'commit', 'conflict', 'constraint', 'create', 'cross', 'current_date', 'current_time', 'current_timestamp', 'database', 'default', 'deferrable', 'deferred', 'delete', 'desc', 'detach', 'distinct', 'drop', 'each', 'else', 'end', 'escape', 'except', 'exclusive', 'exists', 'explain', 'fail', 'for', 'foreign', 'from', 'full', 'glob', 'group', 'having', 'if', 'ignore', 'immediate', 'in', 'index', 'indexed', 'initially', 'inner', 'insert', 'instead', 'intersect', 'into', 'is', 'isnull', 'join', 'key', 'left', 'like', 'limit', 'match', 'natural', 'no', 'not', 'notnull', 'null', 'of', 'offset', 'on', 'or', 'order', 'outer', 'plan', 'pragma', 'primary', 'query', 'raise', 'references', 'regexp', 'reindex', 'release', 'rename', 'replace', 'restrict', 'right', 'rollback', 'row', 'savepoint', 'select', 'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger', 'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual', 'when', 'where'];
+reserved = _.object(reserved, reserved);
+
 
 function isPlainObject(val) {
   return _.isObject(val) && !_.isArray(val);
