@@ -37,8 +37,8 @@ In the browser:
 ```javascript
 var select = SqlBricks.select;
 
-select().from('user').where({last_name: 'Rubble'});
-// SELECT * FROM user WHERE last_name = 'Rubble'
+select().from('person').where({last_name: 'Rubble'});
+// SELECT * FROM person WHERE last_name = 'Rubble'
 ```
 
 In node:
@@ -46,8 +46,8 @@ In node:
 ```javascript
 var select = require('sql-bricks').select;
 
-select().from('user').where({last_name: 'Rubble'});
-// SELECT * FROM user WHERE last_name = 'Rubble'
+select().from('person').where({last_name: 'Rubble'});
+// SELECT * FROM person WHERE last_name = 'Rubble'
 ```
 
 # Examples
@@ -61,16 +61,16 @@ var select = sql.select, insert = sql.insert, update = sql.update;
 var or = sql.or, like = sql.like, lt = sql.lt;
 
 // WHERE: (.toString() is optional; JS will call it automatically in most cases)
-select().from('user').where({last_name: 'Rubble'}).toString();
-// SELECT * FROM user WHERE last_name = 'Rubble'
+select().from('person').where({last_name: 'Rubble'}).toString();
+// SELECT * FROM person WHERE last_name = 'Rubble'
 
 // JOINs:
-select().from('user').join('address').on({'user.addr_id': 'address.id'});
-// SELECT * FROM user INNER JOIN address ON user.addr_id = address.id
+select().from('person').join('address').on({'person.addr_id': 'address.id'});
+// SELECT * FROM person INNER JOIN address ON person.addr_id = address.id
 
 // Nested WHERE criteria:
-select('*').from('user').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
-// SELECT * FROM user WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+select('*').from('person').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
+// SELECT * FROM person WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
 
 // GROUP BY / HAVING
 select('city', 'max(temp_lo)').from('weather')
@@ -79,25 +79,25 @@ select('city', 'max(temp_lo)').from('weather')
 // GROUP BY city HAVING max(temp_lo) < 40
 
 // INSERT
-insert('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
-// INSERT INTO user (first_name, last_name) VALUES ('Fred', 'Flintstone')
+insert('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});
+// INSERT INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')
 
 // UPDATE
-update('user', {'first_name': 'Fred', 'last_name': 'Flintstone'});
-// UPDATE user SET first_name = 'Fred', last_name = 'Flintstone'
+update('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});
+// UPDATE person SET first_name = 'Fred', last_name = 'Flintstone'
 
 
 // Parameterized SQL
-update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
-// {"text": "UPDATE user SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
+update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();
+// {"text": "UPDATE person SET first_name = $1 WHERE last_name = $2", "values": ["Fred", "Flintstone"]}
 
 // SQLite-style params
-update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?%d'});
-// {"text": "UPDATE user SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
+update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?%d'});
+// {"text": "UPDATE person SET first_name = ?1 WHERE last_name = ?2", "values": ["Fred", "Flintstone"]}
 
 // MySQL-style params
-update('user', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});
-// {"text": "UPDATE user SET first_name = ? WHERE last_name = ?", "values": ["Fred", "Flintstone"]}
+update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams({placeholder: '?'});
+// {"text": "UPDATE person SET first_name = ? WHERE last_name = ?", "values": ["Fred", "Flintstone"]}
 ```
 
 Documentation: http://csnw.github.io/sql-bricks
