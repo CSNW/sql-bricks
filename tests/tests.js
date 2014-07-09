@@ -208,16 +208,24 @@ describe('SQL Bricks', function() {
       check(update('user', {'name': 'Fred'}),
         "UPDATE \"user\" SET name = 'Fred'");
     });
-    it('SQLite: should handle OR REPLACE', function() {
+    it('should handle OR REPLACE (sqlite dialect)', function() {
       check(update('user').orReplace().set({'name': 'Fred', 'id': 33}),
         "UPDATE OR REPLACE \"user\" SET name = 'Fred', id = 33");
+    });
+    it('should handle RETURNING (postgres dialect)', function() {
+      check(update('user').set({'fname': 'Fred'}).where({'lname': 'Flintstone'}).returning('*'),
+        "UPDATE \"user\" SET fname = 'Fred' WHERE lname = 'Flintstone' RETURNING *");
     });
   });
 
   describe('INSERT statements', function() {
-    it('should handle .orReplace()', function() {
+    it('should handle OR REPLACE (sqlite dialect)', function() {
       check(insert().orReplace().into('user').values({'id': 33, 'name': 'Fred'}),
         "INSERT OR REPLACE INTO \"user\" (id, name) VALUES (33, 'Fred')");
+    });
+    it('should handle RETURNING (postgres dialect)', function() {
+      check(insert('user').values({'fname': 'Fred'}).returning('*'),
+        "INSERT INTO \"user\" (fname) VALUES ('Fred') RETURNING *");
     });
     it('should take an object of column/value pairs', function() {
       check(insert('user', {'id': 33, 'name': 'Fred'}),
