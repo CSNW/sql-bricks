@@ -319,6 +319,8 @@ Update.prototype.set = Update.prototype.values = function set() {
 
 Update.prototype.where = Update.prototype.and = Select.prototype.where;
 
+Update.prototype.returning = Insert.prototype.returning;
+
 Update.prototype._toString = function _toString(opts) {
   var sql = 'UPDATE ';
   if (this._or)
@@ -330,6 +332,12 @@ Update.prototype._toString = function _toString(opts) {
 
   if (this._where)
     sql += 'WHERE ' + this._exprToString(opts);
+    
+  if (this._returning) {
+    sql += 'RETURNING ' + _.map(this._returning, function(col) {
+      return handleColOrTbl(col, opts);
+    }).join(', ');
+  }
   return sql.trim();
 };
 
