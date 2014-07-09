@@ -287,7 +287,7 @@ Insert.prototype._toString = function _toString(opts) {
   if (this._select)
     sql += this._select._toString(opts) + ' ';
   else
-    sql += 'VALUES ' + values;
+    sql += 'VALUES ' + values + ' ';
 
   if (this._returning) {
     sql += 'RETURNING ' + _.map(this._returning, function(col) {
