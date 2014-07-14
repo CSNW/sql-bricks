@@ -417,8 +417,7 @@ Statement.prototype.toParams = function toParams(opts) {
   _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
   _.defaults(opts, {'placeholder': '$%d'});
   var sql = this._toString(opts);
-  
-  opts.values = opts.values.map(objToString);
+
   return {'text': sql, 'values': opts.values};
 };
 
@@ -769,23 +768,36 @@ function handleValue(val, opts) {
     return opts.placeholder.replace('%d', opts.value_ix++);
   }
 
-  if (val == null)
-    return 'null';
-
-  val = objToString(val);
-
-  if (typeof val == 'string')
-    return "'" + val.replace(/'/g, "''") + "'"
-  
-  return val;
+  return sql.convert(val);
 }
 
-// convert arrays (& other objects?)
-function objToString(val) {
-  if (val != null && typeof val == 'object')
-    return val.toString();
-  else
-    return val;
+sql.convert = function(val) {
+  for (var type in sql.conversions)
+    if (_['is' + type].call(_, val))
+      return sql.conversions[type](val);
+  
+  throw new Error('value is of an unsupported type and cannot be converted to SQL: ' + val);
+}
+
+sql.conversions = {
+  'String': function(str) { return "'" + str.replace(/'/g, "''") + "'"; },
+  'Null': function() { return 'null'; },
+  'Undefined': function() { return 'null'; },
+  'Number': function(num) { return num.toString(); },
+  'Boolean': function(bool) { return bool.toString().toUpperCase(); },
+  'Date': function(dt) { return "TIMESTAMP WITH TIME ZONE '" + dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + ':' + pad(dt.getSeconds()) + timezone(dt.getTimezoneOffset()) + "'"; },
+  'Array': function(arr) { return '{' + arr.map(sql.convert).join(', ') + '}'; }
+};
+
+function pad(num) {
+  var str = num.toString();
+  if (str.length == 1)
+    str = '0' + str;
+  return str;
+}
+
+function timezone(min) {
+  return (min > 0 ? '+' : '-') + pad(min / 60) + ':' + pad(min % 60);
 }
 
 function handleTable(expr, opts) {

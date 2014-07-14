@@ -44,13 +44,13 @@ check(select().from('person').where(sql.val('Fred'), sql('first_name')), "SELECT
 
 it("active_persons;", function() {
 var active_persons = select('*').from('person').where({'active': true});
-check(active_persons, "SELECT * FROM person WHERE active = true");
+check(active_persons, "SELECT * FROM person WHERE active = TRUE");
 });
 
 it("local_persons;", function() {
 var active_persons = select('*').from('person').where({'active': true});
 var local_persons = active_persons.clone().where({'local': true});
-check(local_persons, "SELECT * FROM person WHERE active = true AND local = true");
+check(local_persons, "SELECT * FROM person WHERE active = TRUE AND local = TRUE");
 });
 
 it("update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toParams();", function() {
