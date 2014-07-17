@@ -625,6 +625,13 @@ for (var name in binary_ops) {
 }
 
 function Binary(op, col, val, quantifier) {
+  if (val == null) {
+    if (op == '=')
+      return sql.isNull(col);
+    else if (op == '<>')
+      return sql.isNotNull(col);
+  }
+  
   this.op = op;
   this.col = col;
   this.val = val;

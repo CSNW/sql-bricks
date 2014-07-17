@@ -24,8 +24,9 @@ var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
   update = sql.update, del = sql.delete;
 var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   isNull = sql.isNull, isNotNull = sql.isNotNull, equal = sql.equal, eq = sql.eq,
-  lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte, between = sql.between,
-  exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny, union = sql.union;
+  notEq = sql.notEq, lt = sql.lt, lte = sql.lte, gt = sql.gt, gte = sql.gte,
+  between = sql.between, exists = sql.exists, eqAny = sql.eqAny, notEqAny = sql.notEqAny,
+  union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
 var table_to_alias = _.invert(alias_expansions);
@@ -559,9 +560,17 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(isNotNull('first_name')),
         'SELECT * FROM "user" WHERE first_name IS NOT NULL');
     });
+    it('should automatically generate IS NULL', function() {
+      check(select().from('user').where({'first_name': null}),
+        'SELECT * FROM "user" WHERE first_name IS NULL');
+    });
     it('should handle explicit equal()', function() {
       check(select().from('user').where(equal('first_name', 'Fred')),
         "SELECT * FROM \"user\" WHERE first_name = 'Fred'");
+    });
+    it('should automatically generate IS NOT NULL', function() {
+      check(select().from('user').where(notEq('first_name', null)),
+        "SELECT * FROM \"user\" WHERE first_name IS NOT NULL");
     });
     it('should handle lt()', function() {
       check(select().from('user').where(lt('order', 5)),
