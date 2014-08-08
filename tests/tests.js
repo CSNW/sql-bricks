@@ -64,14 +64,16 @@ describe('SQL Bricks', function() {
         'UPDATE "user" SET name = $1',
         ["Muad'Dib"]);
     });
-    it('should call .toString() on arrays in parameterized sql', function() {
+    it('should not attempt to serialize arrays (should be done by subsequent layer)', function() {
       checkParams(update('user', {'name': ["Paul", "Muad'Dib"]}),
         'UPDATE "user" SET name = $1',
-        ["Paul,Muad'Dib"]);
+        [["Paul","Muad'Dib"]]);
     });
-    it('should call .toString() on arrays in non-parameterized sql', function() {
-      check(update('user', {'name': ["Paul", "Muad'Dib"]}),
-        "UPDATE \"user\" SET name = 'Paul,Muad''Dib'");
+    it('should not attempt to serialize dates', function() {
+      var dt = new Date();
+      checkParams(update('user', {'birthdate': dt}),
+        'UPDATE "user" SET birthdate = $1',
+        [dt]);
     });
     it('should generate node-sqlite3 style params', function() {
       var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
@@ -116,6 +118,24 @@ describe('SQL Bricks', function() {
     it('should support sql.val() to pass in values where columns are expected', function() {
       check(select().from('user').where(sql.val('Fred'), sql('first_name')),
         "SELECT * FROM \"user\" WHERE 'Fred' = first_name");
+    });
+
+    describe('.toString() value conversions', function() {
+      it('should, by default, convert arrays to SQL Array syntax', function() {
+        check(update('user', {'name': ["Paul", "Muad'Dib"]}),
+          "UPDATE \"user\" SET name = {'Paul', 'Muad''Dib'}");
+      });
+      it('should, by default, convert dates to SQL TIMESTAMP WITH TIME ZONE format', function() {
+        check(update('user', {'birthdate': new Date('1980-01-01T00:00:00Z')}),
+          "UPDATE \"user\" SET birthdate = TIMESTAMP WITH TIME ZONE '1980-01-01 00:00:00.000+00:00'");
+      });
+      it('should support user-supplied conversions', function() {
+        var orig_bool = sql.conversions.Boolean;
+        sql.conversions.Boolean = function(bool) { return bool ? '1' : '0'; };
+        var str = del('user').where('active', false).toString();
+        sql.conversions.Boolean = orig_bool;
+        assert.equal(str, 'DELETE FROM "user" WHERE active = 0');
+      });
     });
   });
 

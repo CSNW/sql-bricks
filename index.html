@@ -282,9 +282,9 @@ select().from('person').where(sql.val('Fred'), sql('first_name'));
         Clones a statement so that subsequent modifications do not affect the original statement.
         <pre>
 var active_persons = select('*').from('person').where({'active': true});
-// SELECT * FROM person WHERE active = true
+// SELECT * FROM person WHERE active = TRUE
 var local_persons = active_persons.clone().where({'local': true});
-// SELECT * FROM person WHERE active = true AND local = true
+// SELECT * FROM person WHERE active = TRUE AND local = TRUE
 </pre>
       </p>
       <p id="toString">
