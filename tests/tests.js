@@ -126,8 +126,8 @@ describe('SQL Bricks', function() {
           "UPDATE \"user\" SET name = {'Paul', 'Muad''Dib'}");
       });
       it('should, by default, convert dates to SQL TIMESTAMP WITH TIME ZONE format', function() {
-        var str = update('user', {'birthdate': new Date(1980, 0, 1)}).toString();
-        assert(/^UPDATE "user" SET birthdate = TIMESTAMP WITH TIME ZONE '1980-01-01 00:00:00[+-]\d\d:\d\d'/.test(str));
+        check(update('user', {'birthdate': new Date('1980-01-01T00:00:00Z')}),
+          "UPDATE \"user\" SET birthdate = TIMESTAMP WITH TIME ZONE '1980-01-01 00:00:00.000+00:00'");
       });
       it('should support user-supplied conversions', function() {
         var orig_bool = sql.conversions.Boolean;

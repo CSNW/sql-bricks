@@ -792,20 +792,9 @@ sql.conversions = {
   'Undefined': function() { return 'null'; },
   'Number': function(num) { return num.toString(); },
   'Boolean': function(bool) { return bool.toString().toUpperCase(); },
-  'Date': function(dt) { return "TIMESTAMP WITH TIME ZONE '" + dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + ':' + pad(dt.getSeconds()) + timezone(dt.getTimezoneOffset()) + "'"; },
+  'Date': function(dt) { return "TIMESTAMP WITH TIME ZONE '" + dt.toISOString().replace('T', ' ').replace('Z', '+00:00') + "'"; },
   'Array': function(arr) { return '{' + arr.map(sql.convert).join(', ') + '}'; }
 };
-
-function pad(num) {
-  var str = num.toString();
-  if (str.length == 1)
-    str = '0' + str;
-  return str;
-}
-
-function timezone(min) {
-  return (min > 0 ? '+' : '-') + pad(min / 60) + ':' + pad(min % 60);
-}
 
 function handleTable(expr, opts) {
   return handleColOrTbl(expandAlias(expr), opts);
