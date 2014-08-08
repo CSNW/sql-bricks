@@ -610,6 +610,40 @@ describe('SQL Bricks', function() {
       check(select().from('user').where({}, {'name': 'Fred'}),
         "SELECT * FROM \"user\" WHERE name = 'Fred'");
     });
+
+    describe('customizations', function() {
+      it('should support customized criteria', function() {
+        check(select().from('table').where(arraysToOrs({ this: 'test', that: ['test1', 'test2']})),
+          "SELECT * FROM \"table\" WHERE this = 'test' AND (that = 'test1' OR that = 'test2')");
+      });
+
+      it('should support changing the default array handling', function() {
+        var proto = sql.select.prototype;
+        var orig = proto.where;
+        proto.where = function(criteria) {
+          return orig.call(this, arraysToOrs(criteria));
+        };
+
+        check(select().from('table').where({ this: 'test', that: ['test1', 'test2']}),
+          "SELECT * FROM \"table\" WHERE this = 'test' AND (that = 'test1' OR that = 'test2')");
+
+        proto.where = orig;
+      });
+
+      function arraysToOrs(criteria) {
+        var where = and();
+        for (var col in criteria) {
+          var val = criteria[col];
+          var expr;
+          if (_.isArray(val))
+            expr = or(val.map(function(val) { return eq(col, val); }));
+          else
+            expr = eq(col, val);
+          where.expressions.push(expr);
+        }
+        return where;
+      }
+    });
   });
 
   describe('.limit()', function() {
