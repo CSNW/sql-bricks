@@ -564,8 +564,8 @@ function argsToExpressions(args) {
 
 // SQL Expression language
 
-sql.and = function and() { return new Group('AND', _.toArray(arguments)); };
-sql.or = function or() { return new Group('OR', _.toArray(arguments)); };
+sql.and = function and() { return new Group('AND', argsToArray(arguments)); };
+sql.or = function or() { return new Group('OR', argsToArray(arguments)); };
 
 function Group(op, expressions) {
   this.op = op;

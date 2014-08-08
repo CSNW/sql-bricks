@@ -515,6 +515,10 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(and({'last_name': 'Flintstone'}, or({'first_name': 'Fred'}, {'first_name': 'Wilma'}))),
         "SELECT * FROM \"user\" WHERE last_name = 'Flintstone' AND (first_name = 'Fred' OR first_name = 'Wilma')");
     });
+    it('should handle or([...])', function() {
+      check(select().from('table').where({ this: 'test' }).and(or(['test1', 'test2'].map(function(val) { return eq('that', val); }))),
+        "SELECT * FROM \"table\" WHERE this = 'test' AND (that = 'test1' OR that = 'test2')");
+    });
     it('and() should be implicit', function() {
       check(select().from('user').where({'last_name': 'Flintstone'}, or({'first_name': 'Fred'}, {'first_name': 'Wilma'})),
         "SELECT * FROM \"user\" WHERE last_name = 'Flintstone' AND (first_name = 'Fred' OR first_name = 'Wilma')");
