@@ -348,6 +348,14 @@ describe('SQL Bricks', function() {
       check(select().from('one', 'usr').from(['two', 'psn']).from('three, addr'),
         'SELECT * FROM one, "user" usr, two, person psn, three, address addr');
     });
+    it('should handle subquery object', function() {
+      check(select().from(select().from('user').as('subq')),
+        'SELECT * FROM (SELECT * FROM "user") subq');
+    });
+    it('should handle subquery string', function() {
+      check(select().from('(SELECT * FROM "user") subq'),
+        'SELECT * FROM (SELECT * FROM "user") subq');
+    });
   });
 
   describe('select().into() should insert into a new table', function() {
