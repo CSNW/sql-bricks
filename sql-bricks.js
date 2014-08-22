@@ -23,7 +23,7 @@ sql.select = inherits(Select, Statement);
 function Select() {
   if (!(this instanceof Select))
     return new Select(argsToArray(arguments));
-  
+
   Select.super_.call(this, 'select');
   return this.select.apply(this, arguments);
 }
@@ -46,6 +46,11 @@ Select.prototype.distinct = function distinct() {
 
 Select.prototype.from = function from() {
   return this._add(argsToArray(arguments), 'tbls');
+};
+
+Select.prototype.as = function as(alias) {
+  this._alias = alias;
+  return this;
 };
 
 var join_methods = {
@@ -115,7 +120,7 @@ _.forEach(compounds, function(value, key) {
     }
 
     this._add(stmts, '_' + key);
-    
+
     if (stmt)
       return stmt;
     else
@@ -281,7 +286,7 @@ Insert.prototype._toString = function _toString(opts) {
 
   var sql = 'INSERT ';
   if (this._or)
-    sql += 'OR ' + this._or + ' '; 
+    sql += 'OR ' + this._or + ' ';
   sql += 'INTO ' + this.tbls.map(handleTbl).join(', ') + ' (' + keys + ') ';
 
   if (this._select)
@@ -332,7 +337,7 @@ Update.prototype._toString = function _toString(opts) {
 
   if (this._where)
     sql += 'WHERE ' + this._exprToString(opts);
-    
+
   if (this._returning) {
     sql += 'RETURNING ' + _.map(this._returning, function(col) {
       return handleColOrTbl(col, opts);
@@ -441,7 +446,7 @@ Statement.prototype._exprToString = function _exprToString(opts, expr) {
 Statement.prototype._add = function _add(arr, name) {
   if (!this[name])
     this[name] = [];
-  
+
   this[name] = this[name].concat(arr);
   return this;
 };
@@ -461,7 +466,7 @@ Statement.prototype._addListArgs = function _addListArgs(args, name) {
 Statement.prototype._addExpression = function _addExpression(args, name) {
   if (args.length <= 1 && (args[0] == null || _.isEmpty(args[0])))
     return this;
-  
+
   if (!this[name])
     this[name] = sql.and();
   var exprs = argsToExpressions(args);
@@ -510,7 +515,7 @@ Join.prototype.toString = function toString(opts) {
     else
       throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
   }
-  
+
   if (isExpr(on)) {
     on = on.toString(opts);
   }
@@ -536,7 +541,7 @@ function argsToArray(args) {
 function argsToObject(args) {
   if (typeof args[0] == 'object')
     return args[0];
-  
+
   var obj = {};
   if (args[0] != null)
     obj[args[0]] = args[1];
@@ -631,7 +636,7 @@ function Binary(op, col, val, quantifier) {
     else if (op == '<>')
       return sql.isNotNull(col);
   }
-  
+
   this.op = op;
   this.col = col;
   this.val = val;
@@ -692,7 +697,7 @@ sql['in'] = function(col, list) {
   if (_.isArray(list) || list instanceof Statement)
     return new In(col, list);
   else
-    return new In(col, _.toArray(arguments).slice(1));  
+    return new In(col, _.toArray(arguments).slice(1));
 };
 
 function In(col, list) {
@@ -782,7 +787,7 @@ sql.convert = function(val) {
   for (var type in sql.conversions)
     if (_['is' + type].call(_, val))
       return sql.conversions[type](val);
-  
+
   throw new Error('value is of an unsupported type and cannot be converted to SQL: ' + val);
 }
 
@@ -804,8 +809,13 @@ function handleTable(expr, opts) {
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
 function handleColOrTbl(expr, opts) {
-  if (expr instanceof Statement)
-    return '(' + expr._toString(opts) + ')';
+  if (expr instanceof Statement) {
+    var result = '(' + expr._toString(opts) + ')';
+    if (expr._alias) {
+      result += ' ' + autoQuote(expr._alias);
+    }
+    return result;
+  }
   if (expr instanceof val)
     return handleValue(expr.val, opts);
 
@@ -829,7 +839,7 @@ function quoteColOrTbl(expr) {
     suffix = expr.slice(space_ix);
     expr = expr.slice(0, space_ix);
   }
-  
+
   return (prefix ? autoQuote(prefix) + '.' : '') + autoQuote(expr) + suffix;
 }
 
