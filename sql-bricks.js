@@ -3,7 +3,8 @@
 var global = this;
 var _ = global._ || require('underscore');
 
-// sql() wrapper to enable SQL (such as a column name) where a value is expected
+// sql() wrapper allows SQL (column/table/etc) where a value (string/number/etc) is expected
+// it is also the main namespace for SQLBricks
 function sql(str) {
   if (!(this instanceof sql))
     return new sql(str);
@@ -12,6 +13,8 @@ function sql(str) {
 sql.prototype.toString = function toString() {
   return this.str;
 };
+
+// val() wrapper allows a value (string/number/etc) where SQL (column/table/etc) is expected
 sql.val = val;
 function val(_val) {
   if (!(this instanceof val))
@@ -19,6 +22,7 @@ function val(_val) {
   this.val = _val;
 }
 
+// SELECT statement
 sql.select = inherits(Select, Statement);
 function Select() {
   if (!(this instanceof Select))
@@ -27,32 +31,45 @@ function Select() {
   Select.super_.call(this, 'select');
   return this.select.apply(this, arguments);
 }
-Select.prototype.select = function select() {
+
+// COLUMNS clause
+Select.prototype.select = function() {
   return this._addListArgs(arguments, 'cols');
 };
-Select.prototype.into = Select.prototype.intoTable = function into(tbl) {
-  this._into = tbl;
-  return this;
-};
-Select.prototype.intoTemp = Select.prototype.intoTempTable = function intoTemp(tbl) {
-  this._into_temp = true;
-  return this.into(tbl);
-};
-
-Select.prototype.distinct = function distinct() {
+Select.prototype.distinct = function() {
   this._distinct = true;
   return this._addListArgs(arguments, 'cols');
 };
-
-Select.prototype.from = function from() {
-  return this._add(argsToArray(arguments), 'tbls');
+Select.prototype.columnsToString = function(opts) {
+  var cols = this.cols.length ? this.cols : ['*'];
+  var result = 'SELECT ';
+  if (this._distinct)
+    result += 'DISTINCT ';
+  return result + cols.map(curry(handleColOrTbl, opts)).join(', ') + ' ';
 };
 
-Select.prototype.as = function as(alias) {
-  this._alias = alias;
+// INTO clause
+Select.prototype.into = Select.prototype.intoTable = function(tbl) {
+  this._into = tbl;
   return this;
 };
+Select.prototype.intoTemp = Select.prototype.intoTempTable = function(tbl) {
+  this._into_temp = true;
+  return this.into(tbl);
+};
+Select.prototype.intoToString = function() {
+  if (!this._into)
+    return;
+  var result = 'INTO ';
+  if (this._into_temp)
+    result += 'TEMP ';
+  return result + this._into + ' ';
+};
 
+// FROM clause (includes JOINs)
+Select.prototype.from = function() {
+  return this._add(argsToArray(arguments), 'tbls');
+};
 var join_methods = {
   'join': 'INNER', 'innerJoin': 'INNER',
   'leftJoin': 'LEFT', 'leftOuterJoin': 'LEFT',
@@ -66,7 +83,7 @@ Object.keys(join_methods).forEach(function(method) {
   };
 });
 
-Select.prototype.on = function on(on) {
+Select.prototype.on = function(on) {
   var last_join = this.joins[this.joins.length - 1];
   if (isExpr(on)) {
     last_join.on = on;
@@ -79,31 +96,93 @@ Select.prototype.on = function on(on) {
   return this;
 };
 
-Select.prototype.where = Select.prototype.and = function where() {
+Select.prototype.fromToString = function(opts) {
+  var result = '';
+  if (this.tbls)
+    result += 'FROM ' + this.tbls.map(curry(handleTable, opts)).join(', ') + ' ';
+  if (this.joins)
+    result += _.invoke(this.joins, 'toString', opts).join(' ') + ' ';
+  return result;
+};
+
+// WHERE clause
+Select.prototype.where = Select.prototype.and = function() {
   return this._addExpression(arguments, '_where');
 };
+Select.prototype.whereToString = function(opts) {
+  if (this._where)
+    return 'WHERE ' + this._exprToString(opts);
+};
 
-Select.prototype.group = Select.prototype.groupBy = function groupBy(cols) {
+// GROUP BY clause
+Select.prototype.group = Select.prototype.groupBy = function(cols) {
   return this._addListArgs(arguments, 'group_by');
 };
-
-Select.prototype.having = function having() {
-  return this._addExpression(arguments, '_having');
-}
-
-Select.prototype.order = Select.prototype.orderBy = function orderBy(cols) {
-  return this._addListArgs(arguments, 'order_by');
+Select.prototype.groupByToString = function(opts) {
+  if (this.group_by)
+    return 'GROUP BY ' + this.group_by.map(curry(handleColOrTbl, opts)).join(', ') + ' ';
 };
 
-Select.prototype.limit = function limit(count) {
+// HAVING clause
+Select.prototype.having = function() {
+  return this._addExpression(arguments, '_having');
+};
+Select.prototype.havingToString = function(opts) {
+  if (this._having)
+    return 'HAVING ' + this._exprToString(opts, this._having);
+};
+
+// ORDER BY clause
+Select.prototype.order = Select.prototype.orderBy = function(cols) {
+  return this._addListArgs(arguments, 'order_by');
+};
+Select.prototype.orderByToString = function(opts) {
+  if (this.order_by)
+    return 'ORDER BY ' + this.order_by.map(curry(handleColOrTbl, opts)).join(', ') + ' ';
+};
+
+// LIMIT clause
+Select.prototype.limit = function(count) {
   this._limit = count;
   return this;
 };
-Select.prototype.offset = function offset(count) {
+Select.prototype.limitToString = function(opts) {
+  if (this._limit != null)
+    return 'LIMIT ' + this._limit + ' ';
+};
+
+// OFFSET clause
+Select.prototype.offset = function(count) {
   this._offset = count;
   return this;
 };
+Select.prototype.offsetToString = function(opts) {
+  if (this._offset != null)
+    return 'OFFSET ' + this._offset + ' ';
+}
 
+// FOR UPDATE clause
+Select.prototype.forUpdate = Select.prototype.forUpdateOf = function forUpdate() {
+  this.for_update = true;
+  this._addListArgs(arguments, 'for_update_tbls');
+  return this;
+};
+Select.prototype.noWait = function noWait() {
+  this.no_wait = true;
+  return this;
+};
+Select.prototype.forUpdateToString = function(opts) {
+  if (!this.for_update)
+    return;
+  var result = 'FOR UPDATE ';
+  if (this.for_update_tbls)
+    result += this.for_update_tbls.map(curry(handleTable, opts)).join(', ') + ' ';
+  if (this.no_wait)
+    result += 'NO WAIT ';
+  return result;
+};
+
+// compound expressions join queries together
 var compounds = {
   'union': 'UNION', 'unionAll': 'UNION ALL',
   'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
@@ -128,55 +207,24 @@ _.forEach(compounds, function(value, key) {
   };
 });
 
-Select.prototype.forUpdate = Select.prototype.forUpdateOf = function forUpdate() {
-  this.for_update = true;
-  this._addListArgs(arguments, 'for_update_tbls');
+// subquery aliasing
+Select.prototype.as = function(alias) {
+  this._alias = alias;
   return this;
 };
 
-Select.prototype.noWait = function noWait() {
-  this.no_wait = true;
-  return this;
-};
-
+sql.select.clauses = ['columns', 'into', 'from', 'where', 'groupBy', 'having', 'orderBy', 'limit', 'offset', 'forUpdate'];
 Select.prototype._toString = function _toString(opts) {
-  var cols = this.cols.length ? this.cols : ['*'];
-  var result = 'SELECT ';
-  if (this._distinct)
-    result += 'DISTINCT ';
-  result += _.map(cols, handleCol).join(', ') + ' ';
-  if (this._into) {
-    result += 'INTO ';
-    if (this._into_temp)
-      result += 'TEMP ';
-    result += this._into + ' ';
-  }
-  if (this.tbls)
-    result += 'FROM ' + this.tbls.map(handleTbl).join(', ') + ' ';
-  if (this.joins) {
-    result += _.map(this.joins, function(join) {
-      return join.toString(opts);
-    }).join(' ') + ' ';
-  }
+  var result = '';
 
-  if (this._where)
-    result += 'WHERE ' + this._exprToString(opts);
+  // build main SELECT statement
+  sql.select.clauses.forEach(function(clause) {
+    var rlt = this[clause + 'ToString'](opts);
+    if (rlt)
+      result += rlt;
+  }.bind(this));
 
-  if (this.group_by)
-    result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
-
-  if (this._having)
-    result += 'HAVING ' + this._exprToString(opts, this._having);
-
-  if (this.order_by)
-    result += 'ORDER BY ' + _.map(this.order_by, handleCol).join(', ') + ' ';
-
-  if (this._limit != null)
-    result += 'LIMIT ' + this._limit + ' ';
-
-  if (this._offset != null)
-    result += 'OFFSET ' + this._offset + ' ';
-
+  // handle any compound statements
   _.forEach(compounds, function(value, key) {
     var arr = this['_' + key];
     if (arr) {
@@ -187,17 +235,7 @@ Select.prototype._toString = function _toString(opts) {
     }
   }.bind(this));
 
-  if (this.for_update) {
-    result += 'FOR UPDATE ';
-    if (this.for_update_tbls)
-      result += this.for_update_tbls.map(handleTbl).join(', ') + ' ';
-    if (this.no_wait)
-      result += 'NO WAIT ';
-  }
   return result.trim();
-
-  function handleCol(expr) { return handleColOrTbl(expr, opts); }
-  function handleTbl(expr) { return handleTable(expr, opts); }
 };
 
 
@@ -276,7 +314,7 @@ Insert.prototype.returning = function returning() {
 };
 Insert.prototype._toString = function _toString(opts) {
   var keys = _.map(_.keys(this._values[0]), function(col) {
-    return handleColOrTbl(col, opts);
+    return handleColOrTbl(opts, col);
   }).join(', ');
   var values = _.map(this._values, function(values) {
     return '(' + _.map(_.values(values), function(val) {
@@ -287,7 +325,7 @@ Insert.prototype._toString = function _toString(opts) {
   var sql = 'INSERT ';
   if (this._or)
     sql += 'OR ' + this._or + ' ';
-  sql += 'INTO ' + this.tbls.map(handleTbl).join(', ') + ' (' + keys + ') ';
+  sql += 'INTO ' + this.tbls.map(curry(handleTable, opts)).join(', ') + ' (' + keys + ') ';
 
   if (this._select)
     sql += this._select._toString(opts) + ' ';
@@ -296,13 +334,11 @@ Insert.prototype._toString = function _toString(opts) {
 
   if (this._returning) {
     sql += 'RETURNING ' + _.map(this._returning, function(col) {
-      return handleColOrTbl(col, opts);
+      return handleColOrTbl(opts, col);
     }).join(', ');
   }
 
   return sql.trim();
-
-  function handleTbl(expr) { return handleTable(expr, opts); }
 };
 
 
@@ -330,9 +366,9 @@ Update.prototype._toString = function _toString(opts) {
   var sql = 'UPDATE ';
   if (this._or)
     sql += 'OR ' + this._or + ' ';
-  sql += handleTable(this.tbls[0], opts) + ' SET ';
+  sql += handleTable(opts, this.tbls[0]) + ' SET ';
   sql += _.map(this._values, function(value, key) {
-    return handleColOrTbl(key, opts) + ' = ' + handleValue(value, opts);
+    return handleColOrTbl(opts, key) + ' = ' + handleValue(value, opts);
   }).join(', ') + ' ';
 
   if (this._where)
@@ -340,7 +376,7 @@ Update.prototype._toString = function _toString(opts) {
 
   if (this._returning) {
     sql += 'RETURNING ' + _.map(this._returning, function(col) {
-      return handleColOrTbl(col, opts);
+      return handleColOrTbl(opts, col);
     }).join(', ');
   }
   return sql.trim();
@@ -374,14 +410,12 @@ Delete.prototype.using = function using() {
 };
 Delete.prototype.where = Delete.prototype.and = Select.prototype.where;
 Delete.prototype._toString = function _toString(opts) {
-  var sql = 'DELETE FROM ' + handleTable(this.tbls[0], opts) + ' ';
+  var sql = 'DELETE FROM ' + handleTable(opts, this.tbls[0]) + ' ';
   if (this._using)
-    sql += 'USING ' + this._using.map(handleTbl).join(', ') + ' ';
+    sql += 'USING ' + this._using.map(curry(handleTable, opts)).join(', ') + ' ';
   if (this._where)
     sql += 'WHERE ' + this._exprToString(opts);
   return sql.trim();
-
-  function handleTbl(expr) { return handleTable(expr, opts); }
 };
 
 
@@ -508,7 +542,7 @@ Join.prototype.autoGenerateOn = function autoGenerateOn(tbl, left_tbl) {
   return sql._joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
 };
 Join.prototype.toString = function toString(opts) {
-  var on = this.on, tbl = handleTable(this.tbl, opts), left_tbl = handleTable(this.left_tbl, opts);
+  var on = this.on, tbl = handleTable(opts, this.tbl), left_tbl = handleTable(opts, this.left_tbl);
   if (!on || _.isEmpty(on)) {
     if (sql._joinCriteria)
       on = this.autoGenerateOn(tbl, left_tbl);
@@ -521,12 +555,16 @@ Join.prototype.toString = function toString(opts) {
   }
   else {
     on = _.map(_.keys(on), function(key) {
-      return handleColOrTbl(key, opts) + ' = ' + handleColOrTbl(on[key], opts);
+      return handleColOrTbl(opts, key) + ' = ' + handleColOrTbl(opts, on[key]);
     }).join(' AND ')
   }
   return this.type + ' JOIN ' + tbl + ' ON ' + on;
 };
 
+// simple single-arg curry
+function curry(fn, arg) {
+  return fn.bind(null, arg);
+}
 
 // handle an array, a comma-delimited str or separate args
 function argsToArray(args) {
@@ -646,7 +684,7 @@ Binary.prototype.clone = function clone() {
   return new Binary(this.op, this.col, this.val);
 };
 Binary.prototype.toString = function toString(opts) {
-  var sql = handleColOrTbl(this.col, opts);
+  var sql = handleColOrTbl(opts, this.col);
   return sql + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
 }
 
@@ -660,7 +698,7 @@ Like.prototype.clone = function clone() {
   return new Like(this.col, this.val, this.escape_char);
 };
 Like.prototype.toString = function toString(opts) {
-  var sql = handleColOrTbl(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
+  var sql = handleColOrTbl(opts, this.col) + ' LIKE ' + handleValue(this.val, opts);
   if (this.escape_char)
     sql += " ESCAPE '" + this.escape_char + "'";
   return sql;
@@ -676,7 +714,7 @@ Between.prototype.clone = function clone() {
   return new Between(this.col, this.val1, this.val2);
 };
 Between.prototype.toString = function(opts) {
-  return handleColOrTbl(this.col, opts) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
+  return handleColOrTbl(opts, this.col) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
 };
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
@@ -690,7 +728,7 @@ Unary.prototype.clone = function clone() {
   return new Unary(this.op, this.col);
 };
 Unary.prototype.toString = function toString(opts) {
-  return handleColOrTbl(this.col, opts) + ' ' + this.op;
+  return handleColOrTbl(opts, this.col) + ' ' + this.op;
 };
 
 sql['in'] = function(col, list) {
@@ -708,7 +746,7 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
-  var col_sql = handleColOrTbl(this.col, opts);
+  var col_sql = handleColOrTbl(opts, this.col);
   var sql;
   if (_.isArray(this.list)) {
     sql = _.map(this.list, function(val) {
@@ -801,14 +839,14 @@ sql.conversions = {
   'Array': function(arr) { return '{' + arr.map(sql.convert).join(', ') + '}'; }
 };
 
-function handleTable(expr, opts) {
-  return handleColOrTbl(expandAlias(expr), opts);
+function handleTable(opts, expr) {
+  return handleColOrTbl(opts, expandAlias(expr));
 }
 
 // handles prefixes before a '.' and suffixes after a ' '
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
-function handleColOrTbl(expr, opts) {
+function handleColOrTbl(opts, expr) {
   if (expr instanceof Statement) {
     var result = '(' + expr._toString(opts) + ')';
     if (expr._alias) {
