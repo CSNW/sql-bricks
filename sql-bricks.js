@@ -3,7 +3,8 @@
 var global = this;
 var _ = global._ || require('underscore');
 
-// sql() wrapper to enable SQL (such as a column name) where a value is expected
+// sql() wrapper allows SQL (column/table/etc) where a value (string/number/etc) is expected
+// it is also the main namespace for SQLBricks
 function sql(str) {
   if (!(this instanceof sql))
     return new sql(str);
@@ -12,6 +13,8 @@ function sql(str) {
 sql.prototype.toString = function toString() {
   return this.str;
 };
+
+// val() wrapper allows a value (string/number/etc) where SQL (column/table/etc) is expected
 sql.val = val;
 function val(_val) {
   if (!(this instanceof val))
@@ -19,6 +22,21 @@ function val(_val) {
   this.val = _val;
 }
 
+// mechanism to easily define clauses for SQL statements
+[Select, Insert, Update, Delete].forEach(function(stmt) {
+  stmt.defineClause = function(clause_id, template) {
+    if (!this.prototype.clauses)
+      this.prototype.clauses = [];
+
+    var templ_fn = template;
+    if (typeof templ_fn != 'function')
+      templ_fn = function(opts) { return templ(template, this, opts); };
+    this.prototype[clause_id + 'ToString'] = templ_fn;
+    this.prototype.clauses.push(clause_id);
+  };
+});
+
+// SELECT statement
 sql.select = inherits(Select, Statement);
 function Select() {
   if (!(this instanceof Select))
@@ -27,31 +45,19 @@ function Select() {
   Select.super_.call(this, 'select');
   return this.select.apply(this, arguments);
 }
-Select.prototype.select = function select() {
-  return this._addListArgs(arguments, 'cols');
+
+Select.prototype.select = addListMethod('_columns');
+Select.prototype.distinct = function() {
+  this._distinct = true;
+  return this._addListArgs(arguments, '_columns');
 };
-Select.prototype.into = Select.prototype.intoTable = function into(tbl) {
+Select.prototype.into = Select.prototype.intoTable = setAttrMethod('_into');
+Select.prototype.intoTemp = Select.prototype.intoTempTable = function(tbl) {
+  this._temp = true;
   this._into = tbl;
   return this;
 };
-Select.prototype.intoTemp = Select.prototype.intoTempTable = function intoTemp(tbl) {
-  this._into_temp = true;
-  return this.into(tbl);
-};
-
-Select.prototype.distinct = function distinct() {
-  this._distinct = true;
-  return this._addListArgs(arguments, 'cols');
-};
-
-Select.prototype.from = function from() {
-  return this._add(argsToArray(arguments), 'tbls');
-};
-
-Select.prototype.as = function as(alias) {
-  this._alias = alias;
-  return this;
-};
+Select.prototype.from = addListMethod('_from');
 
 var join_methods = {
   'join': 'INNER', 'innerJoin': 'INNER',
@@ -65,8 +71,7 @@ Object.keys(join_methods).forEach(function(method) {
     return this._addJoins(arguments, join_methods[method]);
   };
 });
-
-Select.prototype.on = function on(on) {
+Select.prototype.on = function(on) {
   var last_join = this.joins[this.joins.length - 1];
   if (isExpr(on)) {
     last_join.on = on;
@@ -79,31 +84,19 @@ Select.prototype.on = function on(on) {
   return this;
 };
 
-Select.prototype.where = Select.prototype.and = function where() {
-  return this._addExpression(arguments, '_where');
-};
+Select.prototype.where = Select.prototype.and = addExpressionMethod('_where');
+Select.prototype.having = addExpressionMethod('_having');
+Select.prototype.groupBy = Select.prototype.group = addListMethod('_groupBy');
+Select.prototype.orderBy = Select.prototype.order = addListMethod('_orderBy');
+Select.prototype.of = addListMethod('_of');
 
-Select.prototype.group = Select.prototype.groupBy = function groupBy(cols) {
-  return this._addListArgs(arguments, 'group_by');
-};
+// TODO: shouldn't LIMIT/OFFSET use handleValue()? Otherwise isn't it vulnerable to SQL Injection?
+Select.prototype.limit = setAttrMethod('_limit');
+Select.prototype.offset = setAttrMethod('_offset');
+Select.prototype.forUpdate = setBoolMethod('_forUpdate');
+Select.prototype.noWait = setBoolMethod('_noWait');
 
-Select.prototype.having = function having() {
-  return this._addExpression(arguments, '_having');
-}
-
-Select.prototype.order = Select.prototype.orderBy = function orderBy(cols) {
-  return this._addListArgs(arguments, 'order_by');
-};
-
-Select.prototype.limit = function limit(count) {
-  this._limit = count;
-  return this;
-};
-Select.prototype.offset = function offset(count) {
-  this._offset = count;
-  return this;
-};
-
+// TODO: Don't we need to keep track of the order of UNION, INTERSECT, etc, clauses?
 var compounds = {
   'union': 'UNION', 'unionAll': 'UNION ALL',
   'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
@@ -128,79 +121,50 @@ _.forEach(compounds, function(value, key) {
   };
 });
 
-Select.prototype.forUpdate = Select.prototype.forUpdateOf = function forUpdate() {
-  this.for_update = true;
-  this._addListArgs(arguments, 'for_update_tbls');
-  return this;
-};
-
-Select.prototype.noWait = function noWait() {
-  this.no_wait = true;
+// subquery aliasing
+Select.prototype.as = function(alias) {
+  this._alias = alias;
   return this;
 };
 
 Select.prototype._toString = function _toString(opts) {
-  var cols = this.cols.length ? this.cols : ['*'];
-  var result = 'SELECT ';
-  if (this._distinct)
-    result += 'DISTINCT ';
-  result += _.map(cols, handleCol).join(', ') + ' ';
-  if (this._into) {
-    result += 'INTO ';
-    if (this._into_temp)
-      result += 'TEMP ';
-    result += this._into + ' ';
-  }
-  if (this.tbls)
-    result += 'FROM ' + this.tbls.map(handleTbl).join(', ') + ' ';
-  if (this.joins) {
-    result += _.map(this.joins, function(join) {
-      return join.toString(opts);
-    }).join(' ') + ' ';
-  }
-
-  if (this._where)
-    result += 'WHERE ' + this._exprToString(opts);
-
-  if (this.group_by)
-    result += 'GROUP BY ' + _.map(this.group_by, handleCol).join(', ') + ' ';
-
-  if (this._having)
-    result += 'HAVING ' + this._exprToString(opts, this._having);
-
-  if (this.order_by)
-    result += 'ORDER BY ' + _.map(this.order_by, handleCol).join(', ') + ' ';
-
-  if (this._limit != null)
-    result += 'LIMIT ' + this._limit + ' ';
-
-  if (this._offset != null)
-    result += 'OFFSET ' + this._offset + ' ';
-
-  _.forEach(compounds, function(value, key) {
-    var arr = this['_' + key];
-    if (arr) {
-      result += value + ' ';
-      result += arr.map(function(stmt) {
-        return stmt._toString(opts);
-      }).join(' ' + value + ' ');
-    }
-  }.bind(this));
-
-  if (this.for_update) {
-    result += 'FOR UPDATE ';
-    if (this.for_update_tbls)
-      result += this.for_update_tbls.map(handleTbl).join(', ') + ' ';
-    if (this.no_wait)
-      result += 'NO WAIT ';
-  }
-  return result.trim();
-
-  function handleCol(expr) { return handleColOrTbl(expr, opts); }
-  function handleTbl(expr) { return handleTable(expr, opts); }
+  if (!this._columns.length)
+    this._columns = ['*'];
+  return Select.super_.prototype._toString.apply(this, arguments);
 };
 
+Select.defineClause('select', 'SELECT {{#if _distinct}}DISTINCT {{/if}}{{#if _columns}}{{columns _columns}}{{/if}}');
+Select.defineClause('into', '{{#if _into}}INTO {{#if _temp}}TEMP {{/if}}{{table _into}}{{/if}}');
+Select.defineClause('from', function(opts) {
+  if (!this._from)
+    return;
+  var result = 'FROM ' + handleTables(this._from);
+  if (this.joins)
+    result += ' ' + _.invoke(this.joins, 'toString', opts).join(' ');
+  return result;
+});
+Select.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
+Select.defineClause('groupBy', '{{#if _groupBy}}GROUP BY {{columns _groupBy}}{{/if}}');
+Select.defineClause('having', '{{#if _having}}HAVING {{expression _having}}{{/if}}');
 
+_.forEach(compounds, function(sql_keyword, clause_id) {
+  Select.defineClause(clause_id, function(opts) {
+    var arr = this['_' + clause_id];
+    if (arr) {
+      return arr.map(function(stmt) {
+        return sql_keyword + ' ' + stmt._toString(opts);
+      }).join(' ');
+    }
+  });
+});
+
+Select.defineClause('orderBy', '{{#if _orderBy}}ORDER BY {{columns _orderBy}}{{/if}}');
+Select.defineClause('limit', '{{#ifNotNull _limit}}LIMIT {{_limit}}{{/ifNotNull}}');
+Select.defineClause('offset', '{{#ifNotNull _offset}}OFFSET {{_offset}}{{/ifNotNull}}');
+Select.defineClause('forUpdate', '{{#if _forUpdate}}FOR UPDATE{{#if _of}} OF {{columns _of}}{{/if}}{{#if _noWait}} NO WAIT{{/if}}{{/if}}');
+
+
+// INSERT statement
 sql.insert = sql.insertInto = inherits(Insert, Statement);
 function Insert(tbl, values) {
   if (!(this instanceof Insert)) {
@@ -216,7 +180,7 @@ function Insert(tbl, values) {
 
 Insert.prototype.into = function into(tbl, values) {
   if (tbl)
-    this.tbls = [tbl];
+    this._table = tbl;
 
   if (values) {
     if (isPlainObject(values) || (_.isArray(values) && isPlainObject(values[0]))) {
@@ -270,49 +234,36 @@ Insert.prototype.select = function select() {
   this._select.prev_stmt = this;
   return this._select;
 };
-Insert.prototype.returning = function returning() {
-  this._addListArgs(arguments, '_returning');
-  return this;
-};
-Insert.prototype._toString = function _toString(opts) {
-  var keys = _.map(_.keys(this._values[0]), function(col) {
-    return handleColOrTbl(col, opts);
-  }).join(', ');
-  var values = _.map(this._values, function(values) {
-    return '(' + _.map(_.values(values), function(val) {
-      return handleValue(val, opts);
-    }).join(', ') + ')';
-  }).join(', ');
 
-  var sql = 'INSERT ';
-  if (this._or)
-    sql += 'OR ' + this._or + ' ';
-  sql += 'INTO ' + this.tbls.map(handleTbl).join(', ') + ' (' + keys + ') ';
+Insert.prototype.returning = addListMethod('_returning');
+
+Insert.defineClause('insert', 'INSERT');
+Insert.defineClause('or', '{{#if _or}}OR {{_or}}{{/if}}');
+Insert.defineClause('into', '{{#if _table}}INTO {{table _table}}{{/if}}');
+Insert.defineClause('columns', function(opts) {
+  return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
+});
+Insert.defineClause('values', function(opts) {
+  var values = _.map(this._values, function(values) {
+    return '(' + handleValues(_.values(values), opts).join(', ') + ')';
+  }).join(', ');
 
   if (this._select)
-    sql += this._select._toString(opts) + ' ';
+    return this._select._toString(opts);
   else
-    sql += 'VALUES ' + values + ' ';
-
-  if (this._returning) {
-    sql += 'RETURNING ' + _.map(this._returning, function(col) {
-      return handleColOrTbl(col, opts);
-    }).join(', ');
-  }
-
-  return sql.trim();
-
-  function handleTbl(expr) { return handleTable(expr, opts); }
-};
+    return 'VALUES ' + values;
+});
+Insert.defineClause('returning', '{{#if _returning}}RETURNING {{columns _returning}}{{/if}}');
 
 
+// UPDATE statement
 sql.update = inherits(Update, Statement);
 function Update(tbl, values) {
   if (!(this instanceof Update))
     return new Update(tbl, argsToObject(_.toArray(arguments).slice(1)));
 
   Update.super_.call(this, 'update');
-  this.tbls = [tbl];
+  this._table = tbl;
   if (values)
     this.values(values);
   return this;
@@ -323,30 +274,20 @@ Update.prototype.set = Update.prototype.values = function set() {
 };
 
 Update.prototype.where = Update.prototype.and = Select.prototype.where;
-
 Update.prototype.returning = Insert.prototype.returning;
 
-Update.prototype._toString = function _toString(opts) {
-  var sql = 'UPDATE ';
-  if (this._or)
-    sql += 'OR ' + this._or + ' ';
-  sql += handleTable(this.tbls[0], opts) + ' SET ';
-  sql += _.map(this._values, function(value, key) {
-    return handleColOrTbl(key, opts) + ' = ' + handleValue(value, opts);
-  }).join(', ') + ' ';
+Update.defineClause('update', 'UPDATE');
+Update.defineClause('or', '{{#if _or}}OR {{_or}}{{/if}}');
+Update.defineClause('table', '{{table _table}}');
+Update.defineClause('set', function(opts) {
+  return 'SET ' + _.map(this._values, function(value, key) {
+    return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
+  }).join(', ');
+});
+Update.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
+Update.defineClause('returning', '{{#if _returning}}RETURNING {{columns _returning}}{{/if}}');
 
-  if (this._where)
-    sql += 'WHERE ' + this._exprToString(opts);
-
-  if (this._returning) {
-    sql += 'RETURNING ' + _.map(this._returning, function(col) {
-      return handleColOrTbl(col, opts);
-    }).join(', ');
-  }
-  return sql.trim();
-};
-
-// Insert & Update OR clauses
+// Insert & Update OR clauses (SQLite dialect)
 var or_methods = {
   'orReplace': 'REPLACE', 'orRollback': 'ROLLBACK',
   'orAbort': 'ABORT', 'orFail': 'FAIL'
@@ -357,7 +298,8 @@ Object.keys(or_methods).forEach(function(method) {
   };
 });
 
-// Delete
+
+// DELETE statement
 sql.delete = sql.deleteFrom = inherits(Delete, Statement);
 function Delete(tbl) {
   if (!(this instanceof Delete))
@@ -365,31 +307,24 @@ function Delete(tbl) {
 
   Delete.super_.call(this, 'delete');
   if (tbl)
-    this.tbls = [tbl];
+    this._from = tbl;
   return this;
 }
-Delete.prototype.from = Select.prototype.from;
-Delete.prototype.using = function using() {
-  return this._add(argsToArray(arguments), '_using');
-};
+Delete.prototype.from = setAttrMethod('_from');
+Delete.prototype.using = addListMethod('_using');
 Delete.prototype.where = Delete.prototype.and = Select.prototype.where;
-Delete.prototype._toString = function _toString(opts) {
-  var sql = 'DELETE FROM ' + handleTable(this.tbls[0], opts) + ' ';
-  if (this._using)
-    sql += 'USING ' + this._using.map(handleTbl).join(', ') + ' ';
-  if (this._where)
-    sql += 'WHERE ' + this._exprToString(opts);
-  return sql.trim();
-
-  function handleTbl(expr) { return handleTable(expr, opts); }
-};
+Delete.defineClause('delete', 'DELETE FROM {{table _from}}');
+Delete.defineClause('using', '{{#if _using}}USING {{tables _using}}{{/if}}');
+Delete.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
 
 
+// base statement
 sql.Statement = Statement;
 function Statement(type) {
   this.type = type;
 };
 
+// TODO: this seems to not handle... a *lot* of properties
 Statement.prototype.clone = function clone() {
   var ctor = _.find([Select, Insert, Update, Delete], function(ctor) {
     return this instanceof ctor;
@@ -433,14 +368,14 @@ Statement.prototype.toString = function toString() {
     return this._toString({}).trim();
 };
 
-
-Statement.prototype._exprToString = function _exprToString(opts, expr) {
-  if (!expr)
-    expr = this._where;
-  expr.parens = false;
-  if (expr.expressions && expr.expressions.length == 1)
-    expr.expressions[0].parens = false;
-  return expr.toString(opts) + ' ';
+Statement.prototype._toString = function(opts) {
+  var result = '';
+  this.clauses.forEach(function(clause) {
+    var rlt = this[clause + 'ToString'](opts);
+    if (rlt)
+      result += rlt + ' ';
+  }.bind(this));
+  return result.trim();
 };
 
 Statement.prototype._add = function _add(arr, name) {
@@ -488,13 +423,39 @@ Statement.prototype._addJoins = function _addJoins(args, type) {
   }
 
   _.forEach(tbls, function(tbl) {
-    var left_tbl = this.last_join || (this.tbls && this.tbls[this.tbls.length - 1]);
+    var left_tbl = this.last_join || (this._from && this._from[this._from.length - 1]);
     this.joins.push(new Join(tbl, left_tbl, on, type));
   }.bind(this));
 
   this.last_join = tbls[tbls.length - 1];
   return this;
 };
+
+function setAttrMethod(attr) {
+  return function(tbl) {
+    this[attr] = tbl;
+    return this;
+  };
+}
+
+function setBoolMethod(attr) {
+  return function() {
+    this[attr] = true;
+    return this;
+  };
+}
+
+function addListMethod(attr) {
+  return function() {
+    return this._addListArgs(arguments, attr);
+  };
+}
+
+function addExpressionMethod(attr) {
+  return function() {
+    return this._addExpression(arguments, attr);
+  };
+}
 
 
 function Join(tbl, left_tbl, on, type) {
@@ -521,12 +482,11 @@ Join.prototype.toString = function toString(opts) {
   }
   else {
     on = _.map(_.keys(on), function(key) {
-      return handleColOrTbl(key, opts) + ' = ' + handleColOrTbl(on[key], opts);
+      return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
     }).join(' AND ')
   }
   return this.type + ' JOIN ' + tbl + ' ON ' + on;
 };
-
 
 // handle an array, a comma-delimited str or separate args
 function argsToArray(args) {
@@ -567,8 +527,8 @@ function argsToExpressions(args) {
   }
 }
 
-// SQL Expression language
 
+// SQL Expression language
 sql.and = function and() { return new Group('AND', argsToArray(arguments)); };
 sql.or = function or() { return new Group('OR', argsToArray(arguments)); };
 
@@ -646,7 +606,7 @@ Binary.prototype.clone = function clone() {
   return new Binary(this.op, this.col, this.val);
 };
 Binary.prototype.toString = function toString(opts) {
-  var sql = handleColOrTbl(this.col, opts);
+  var sql = handleColumn(this.col, opts);
   return sql + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
 }
 
@@ -660,7 +620,7 @@ Like.prototype.clone = function clone() {
   return new Like(this.col, this.val, this.escape_char);
 };
 Like.prototype.toString = function toString(opts) {
-  var sql = handleColOrTbl(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
+  var sql = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
   if (this.escape_char)
     sql += " ESCAPE '" + this.escape_char + "'";
   return sql;
@@ -676,7 +636,7 @@ Between.prototype.clone = function clone() {
   return new Between(this.col, this.val1, this.val2);
 };
 Between.prototype.toString = function(opts) {
-  return handleColOrTbl(this.col, opts) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
+  return handleColumn(this.col, opts) + ' BETWEEN ' + handleValue(this.val1, opts) + ' AND ' + handleValue(this.val2, opts);
 };
 
 sql.isNull = function isNull(col) { return new Unary('IS NULL', col); };
@@ -690,7 +650,7 @@ Unary.prototype.clone = function clone() {
   return new Unary(this.op, this.col);
 };
 Unary.prototype.toString = function toString(opts) {
-  return handleColOrTbl(this.col, opts) + ' ' + this.op;
+  return handleColumn(this.col, opts) + ' ' + this.op;
 };
 
 sql['in'] = function(col, list) {
@@ -708,16 +668,13 @@ In.prototype.clone = function clone() {
   return new In(this.col, this.list.slice());
 };
 In.prototype.toString = function toString(opts) {
-  var col_sql = handleColOrTbl(this.col, opts);
+  var col_sql = handleColumn(this.col, opts);
   var sql;
-  if (_.isArray(this.list)) {
-    sql = _.map(this.list, function(val) {
-      return handleValue(val, opts);
-    }).join(', ');
-  }
-  else if (this.list instanceof Statement) {
+  if (_.isArray(this.list))
+    sql = handleValues(this.list, opts).join(', ');
+  else if (this.list instanceof Statement)
     sql = this.list._toString(opts);
-  }
+  
   return col_sql + ' IN (' + sql + ')';
 };
 
@@ -768,6 +725,18 @@ function objToEquals(obj) {
   return expressions;
 }
 
+function handleExpression(expr, opts) {
+  expr.parens = false;
+  if (expr.expressions && expr.expressions.length == 1)
+    expr.expressions[0].parens = false;
+  return expr.toString(opts);
+}
+
+function handleValues(vals, opts) {
+  return vals.map(function(val) {
+    return handleValue(val, opts);
+  });
+}
 function handleValue(val, opts) {
   if (val instanceof Statement)
     return '(' + val._toString(opts) + ')';
@@ -801,14 +770,20 @@ sql.conversions = {
   'Array': function(arr) { return '{' + arr.map(sql.convert).join(', ') + '}'; }
 };
 
-function handleTable(expr, opts) {
-  return handleColOrTbl(expandAlias(expr), opts);
+function handleTables(tables, opts) {
+  return tables.map(function(tbl) { return handleTable(tbl, opts); }).join(', ');
+}
+function handleTable(table, opts) {
+  return handleColumn(expandAlias(table), opts);
 }
 
+function handleColumns(cols, opts) {
+  return cols.map(function(col) { return handleColumn(col, opts); }).join(', ');
+}
 // handles prefixes before a '.' and suffixes after a ' '
 // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
 var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
-function handleColOrTbl(expr, opts) {
+function handleColumn(expr, opts) {
   if (expr instanceof Statement) {
     var result = '(' + expr._toString(opts) + ')';
     if (expr._alias) {
@@ -874,6 +849,70 @@ sql.joinCriteria = function joinCriteria(fn) {
   this._joinCriteria = fn;
 };
 
+
+// uber-simple mini-templating language to make it easy to define clauses
+// handlebars-like syntax, supports helpers and nested blocks
+// does not support context changes, the dot operator on properties or HTML escaping
+function templ(str, ctx, opts) {
+  var result = '';
+  var lastIndex = 0;
+
+  var tmpl_re = /\{\{([#\/])?(\w+) ?(\w+)?\}\}/g;
+  var m;
+  while (m = tmpl_re.exec(str)) {
+    var is_block = m[1];
+    var is_start = m[1] == '#';
+    if (m[3]) {
+      var fn_name = m[2], attr = m[3];
+      var helper = templ.helpers[fn_name];
+    }
+    else {
+      var attr = m[2];
+    }
+    var val = ctx[attr];
+    result += str.slice(lastIndex, m.index);
+
+    if (is_block) {
+      if (is_start) {
+        var end_re = new RegExp("\\{\\{([#/])" + fn_name + ' ?(\\w+)?\\}\\}', 'g');
+        end_re.lastIndex = tmpl_re.lastIndex;
+        // incr & decr level 'til we find the end block that matches this start block
+        var level = 1;
+        while (level) {
+          var end_m = end_re.exec(str);
+          if (!end_m)
+            throw new Error('End not found for block ' + fn_name);
+          if (end_m[1] == '#')
+            level++;
+          else
+            level--;
+        }
+        var contents = str.slice(tmpl_re.lastIndex, end_m.index);
+        result += helper.call(ctx, val, opts, contents, ctx);
+        lastIndex = tmpl_re.lastIndex = end_re.lastIndex;
+      }
+    }
+    else {
+      if (fn_name)
+        result += helper.call(ctx, val, opts);
+      else
+        result += val;
+      lastIndex = tmpl_re.lastIndex;
+    }
+  }
+  result += str.slice(lastIndex);
+  return result;
+}
+sql.templ = templ;
+
+templ.helpers = {
+  'if': function(val, opts, contents, ctx) { return val ? templ(contents, ctx, opts) : ''; },
+  'ifNotNull': function(val, opts, contents, ctx) { return val != null ? templ(contents, ctx, opts) : ''; },
+  'columns': handleColumns,
+  'table': handleTable,
+  'tables': handleTables,
+  'expression': handleExpression
+};
 
 // provided for browser support, based on https://gist.github.com/prust/5936064
 function inherits(ctor, superCtor) {

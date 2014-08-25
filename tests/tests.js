@@ -18,6 +18,15 @@ else {
   assert.deepEqual = function(actual, expected) {
     if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
+  assert.throws = function(fn) {
+    try {
+      fn();
+    }
+    catch(ex) {
+      return true;
+    }
+    throw new Error('The function passed to assert.throws() did not throw');
+  }
 }
 
 var select = sql.select, insertInto = sql.insertInto, insert = sql.insert,
@@ -39,6 +48,34 @@ sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
 });
 
 describe('SQL Bricks', function() {
+  describe('mini-templating lang', function() {
+    it('should find content of if', function() {
+      var result = sql.templ('{{#if test}}Hi there!{{/if}}', {'test': true});
+      assert.equal(result, 'Hi there!');
+    });
+    it('should display content on both sides of it', function() {
+      var result = sql.templ('before{{#if test}}inside{{/if}}after', {'test': false});
+      assert.equal(result, 'beforeafter');
+    });
+    it('should handle multiple values', function() {
+      var result = sql.templ('before{{val}}between{{val2}}after', {'val': 'value 1', 'val2': 'value 2'});
+      assert.equal(result, 'beforevalue 1betweenvalue 2after');
+    });
+    it('should handle multiple if chunks', function() {
+      var result = sql.templ('before{{#if test}}first{{/if}}between{{#if test}}second{{/if}}after', {'test': true});
+      assert.equal(result, 'beforefirstbetweensecondafter');
+    });
+    it('should throw on mismatched if', function() {
+      assert.throws(function() {
+        sql.templ('{{#if test}}Hi there!', {'test': true});
+      });
+    });
+    it('should handle nested if', function() {
+      var result = sql.templ('{{#if oneThing}} and {{#if anotherThing}}Test{{/if}}{{/if}}', {'oneThing': true, 'anotherThing': true});
+      assert.equal(result, ' and Test');
+    });
+  });
+
   describe('parameterized sql', function() {
     it('should generate for insert statements', function() {
       var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
@@ -322,12 +359,16 @@ describe('SQL Bricks', function() {
         'SELECT DISTINCT one, "order", two, "desc" FROM "user"');
     });
     it('should support FOR UPDATE', function() {
-      check(select().from('user').forUpdate('user'),
-        'SELECT * FROM "user" FOR UPDATE "user"');
+      check(select().from('user').forUpdate(),
+        'SELECT * FROM "user" FOR UPDATE');
     });
-    it('should support FOR UPDATE ... NO WAIT', function() {
-      check(select().from('user').forUpdateOf('user').noWait(),
-        'SELECT * FROM "user" FOR UPDATE "user" NO WAIT');
+    it('should support FOR UPDATE w/ col list', function() {
+      check(select().from('user').forUpdate().of('user'),
+        'SELECT * FROM "user" FOR UPDATE OF "user"');
+    });
+    it('should support FOR UPDATE OF ... NO WAIT', function() {
+      check(select().from('user').forUpdate().of('user').noWait(),
+        'SELECT * FROM "user" FOR UPDATE OF "user" NO WAIT');
     });
   });
 

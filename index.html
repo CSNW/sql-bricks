@@ -448,8 +448,8 @@ select().from('person').where({'last_name': 'Flintstone'}).union()
         <br />
         <p>Add the <tt>FOR UPDATE</tt> clause to lock all selected records from all tables in the select (or just the tables specified), along with an optional <tt>NO WAIT</tt> at the end:</p>
         <pre>
-select('addr_id').from('person').forUpdate('addr_id').noWait();
-// SELECT addr_id FROM person FOR UPDATE addr_id NO WAIT
+select('addr_id').from('person').forUpdate().of('addr_id').noWait();
+// SELECT addr_id FROM person FOR UPDATE OF addr_id NO WAIT
 </pre>
       </p>
       
