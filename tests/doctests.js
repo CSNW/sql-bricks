@@ -107,8 +107,8 @@ it(".select().from('person').where({'last_name': 'Rubble'});", function() {
 check(select().from('person').where({'last_name': 'Flintstone'}).union()  .select().from('person').where({'last_name': 'Rubble'}), "SELECT * FROM person WHERE last_name = 'Flintstone' UNION SELECT * FROM person WHERE last_name = 'Rubble'");
 });
 
-it("select('addr_id').from('person').forUpdate('addr_id').noWait();", function() {
-check(select('addr_id').from('person').forUpdate('addr_id').noWait(), "SELECT addr_id FROM person FOR UPDATE addr_id NO WAIT");
+it("select('addr_id').from('person').forUpdate().of('addr_id').noWait();", function() {
+check(select('addr_id').from('person').forUpdate().of('addr_id').noWait(), "SELECT addr_id FROM person FOR UPDATE OF addr_id NO WAIT");
 });
 
 it("insert('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});", function() {
