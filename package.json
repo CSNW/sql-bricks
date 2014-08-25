@@ -1,6 +1,6 @@
 {
   "name": "sql-bricks",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
   "homepage": "http://csnw.github.io/sql-bricks",
