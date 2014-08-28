@@ -313,9 +313,12 @@ function Delete(tbl) {
 Delete.prototype.from = setAttrMethod('_from');
 Delete.prototype.using = addListMethod('_using');
 Delete.prototype.where = Delete.prototype.and = Select.prototype.where;
+Delete.prototype.returning = Insert.prototype.returning;
+
 Delete.defineClause('delete', 'DELETE FROM {{table _from}}');
 Delete.defineClause('using', '{{#if _using}}USING {{tables _using}}{{/if}}');
 Delete.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
+Delete.defineClause('returning', '{{#if _returning}}RETURNING {{columns _returning}}{{/if}}');
 
 
 // base statement
