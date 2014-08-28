@@ -848,7 +848,7 @@ describe('SQL Bricks', function() {
     });
     it('should handle RETURNING (postgres dialect)', function() {
       check(del('user').where({'lname': 'Flintstone'}).returning('*'),
-        "DELETE FROM \"user\" WHERE lname = 'Flintstone' WHERE lname = 'Flintstone' RETURNING *");
+        "DELETE FROM \"user\" WHERE lname = 'Flintstone' RETURNING *");
     });
   });
 });
