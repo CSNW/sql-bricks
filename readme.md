@@ -5,7 +5,7 @@
 SQL Bricks.js is a transparent, schemaless library for building and composing SQL statements.
 
 - Supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for select/insert/update/delete (plus some postgres & sqlite additions)
-- Over [175 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
+- Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
 - Single straightforward [source file](sql-bricks.js) (less than 1,000 lines), easy to understand & debug
 
@@ -19,7 +19,7 @@ library         | lines | files | schema       | language     | other notes
 [node-sql][3]   | 2600  |    59 | schema       | javascript   |
 [mongo-sql][4]  | 1700  |    49 | schemaless   | javascript   | 
 [gesundheit][5] | 1600  |    21 | schemaless   | coffeescript | uses Any-DB to wrap the DB driver
-[sql-bricks][6] |  750  |     1 | schemaless   | javascript   |
+[sql-bricks][6] |  800  |     1 | schemaless   | javascript   |
 
 [1]: https://github.com/tgriesser/knex
 [2]: https://github.com/hiddentao/squel
@@ -27,6 +27,10 @@ library         | lines | files | schema       | language     | other notes
 [4]: https://github.com/goodybag/mongo-sql
 [5]: https://github.com/BetSmartMedia/gesundheit
 [6]: https://github.com/CSNW/sql-bricks
+
+# Related Libraries
+
+[pg-bricks](https://github.com/Suor/pg-bricks) adds postgres connections, transactions, query execution and data accessors on top of SQLBricks.  
 
 # Use
 
