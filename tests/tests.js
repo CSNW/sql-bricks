@@ -846,8 +846,12 @@ describe('SQL Bricks', function() {
       check(del('user').using('addr').where('user.addr_fk', sql('addr.pk')),
         "DELETE FROM \"user\" USING address addr WHERE \"user\".addr_fk = addr.pk");
     });
-  });
+    it('should handle RETURNING (postgres dialect)', function() {
+      check(del('user').where({'lname': 'Flintstone'}).returning('*'),
+        "DELETE FROM \"user\" WHERE lname = 'Flintstone' RETURNING *");
     });
+  });
+});
 
 function check(stmt, expected) {
   assert.equal(stmt.toString(), expected);
