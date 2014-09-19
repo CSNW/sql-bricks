@@ -1,10 +1,12 @@
 (function() {
 
-var global = this;
-var _ = global._ || require('underscore');
-var sql = global.SqlBricks || require('../sql-bricks.js');
+var is_common_js = typeof exports != 'undefined';
+var _ = is_common_js ? require('underscore') : window._;
+var sql = is_common_js ? require('../sql-bricks.js')() : window.SqlBricks();
+var SQLiteBricks = is_common_js ? require('../sqlite.js') : window.SQLiteBricks;
+var PostgresBricks = is_common_js ? require('../postgres.js') : window.PostgresBricks;
 var assert;
-if (typeof require != 'undefined') {
+if (is_common_js) {
   assert = require('assert');
 }
 else {
@@ -119,12 +121,12 @@ it("insertInto('person', 'first_name', 'last_name').values('Fred', 'Flintstone')
 check(insertInto('person', 'first_name', 'last_name').values('Fred', 'Flintstone'), "INSERT INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')");
 });
 
-it("insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});", function() {
-check(insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33}), "INSERT OR REPLACE INTO person (first_name, id) VALUES ('Fred', 33)");
+it("SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});", function() {
+check(SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33}), "INSERT OR REPLACE INTO person (first_name, id) VALUES ('Fred', 33)");
 });
 
-it("insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'});", function() {
-check(insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'}), "INSERT OR REPLACE INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')");
+it("SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'});", function() {
+check(SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'}), "INSERT OR REPLACE INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')");
 });
 
 it("insertInto('person', 'first_name', 'last_name').values('Fred', 'Flintstone');", function() {
@@ -148,7 +150,7 @@ check(insertInto('person').values([{'first_name': 'Fred', 'last_name': 'Flintsto
 });
 
 it("ins.returning('account.pk');", function() {
-var ins = insert('person', 'first_name, last_name');
+var ins = PostgresBricks().insert('person', 'first_name, last_name');
 ins.select('first_name, last_name')
 .from('account');
 check(ins.returning('account.pk'), "INSERT INTO person (first_name, last_name) SELECT first_name, last_name FROM account RETURNING account.pk");
@@ -158,8 +160,8 @@ it("update('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});", funct
 check(update('person', {'first_name': 'Fred', 'last_name': 'Flintstone'}), "UPDATE person SET first_name = 'Fred', last_name = 'Flintstone'");
 });
 
-it("update('person').orReplace().set({'first_name': 'Fred', 'id': 33});", function() {
-check(update('person').orReplace().set({'first_name': 'Fred', 'id': 33}), "UPDATE OR REPLACE person SET first_name = 'Fred', id = 33");
+it("SQLiteBricks().update('person').orReplace().set({'first_name': 'Fred', 'id': 33});", function() {
+check(SQLiteBricks().update('person').orReplace().set({'first_name': 'Fred', 'id': 33}), "UPDATE OR REPLACE person SET first_name = 'Fred', id = 33");
 });
 
 it("update('person').set('first_name', 'Fred').set('last_name', 'Flintstone');", function() {
@@ -282,7 +284,7 @@ check(select('person.order AS person_order').from('person'), "SELECT person.\"or
 });
 
 function check(actual, expected) {
-  if (actual instanceof sql.Statement)
+  if (_.isObject(actual))
     assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);

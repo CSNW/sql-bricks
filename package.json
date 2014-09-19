@@ -1,13 +1,13 @@
 {
   "name": "sql-bricks",
-  "version": "0.14.0",
+  "version": "1.0.0-beta",
   "author": "Peter Rust <peter@cornerstonenw.com>",
   "description": "Transparent, Schemaless SQL Generation",
   "homepage": "http://csnw.github.io/sql-bricks",
   "bugs": "https://github.com/CSNW/sql-bricks/issues",
   "scripts": {
     "prepublish": "node tests/gen-tests.js",
-    "test": "mocha tests/tests.js tests/doctests.js"
+    "test": "mocha tests/tests.js tests/limit-offset-tests.js tests/sqlite-tests.js tests/postgres-tests.js tests/doctests.js"
   },
   "main": "sql-bricks.js",
   "repository": {

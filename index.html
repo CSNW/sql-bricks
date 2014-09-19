@@ -479,7 +479,7 @@ insertInto('person', 'first_name', 'last_name').values('Fred', 'Flintstone');
         <br />
         <p>Adds appropriate SQLite/MySQL clause to the <tt>INSERT</tt> statement:</p>
         <pre>
-insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});
+SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});
 // INSERT OR REPLACE INTO person (first_name, id) VALUES ('Fred', 33)
 </pre>
       </p>
@@ -488,7 +488,7 @@ insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});
         <br />
         <p><tt>insertInto()</tt> (or the shorter alias <tt>insert()</tt>) is preferred over <tt>insert().into()</tt>. <tt>.into()</tt> is kept as a way to match the SQLite dialect <tt>INSERT OR REPLACE INTO</tt>:</p>
         <pre>
-insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
+SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
 // INSERT OR REPLACE INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')
 </pre>
       </p>
@@ -526,7 +526,7 @@ insertInto('person').values([{'first_name': 'Fred', 'last_name': 'Flintstone'}, 
         <br />
         <p>Adds a <tt>RETURNING</tt> clause to the <tt>INSERT</tt> statement.</p>
         <pre>
-var ins = insert('person', 'first_name, last_name');
+var ins = PostgresBricks().insert('person', 'first_name, last_name');
 ins.select('first_name, last_name')
 .from('account');
 ins.returning('account.pk');
@@ -552,7 +552,7 @@ update('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});
         <br />
         <p>Adds appropriate SQLite/MySQL clause to the <tt>UPDATE</tt> statement:</p>
         <pre>
-update('person').orReplace().set({'first_name': 'Fred', 'id': 33});
+SQLiteBricks().update('person').orReplace().set({'first_name': 'Fred', 'id': 33});
 // UPDATE OR REPLACE person SET first_name = 'Fred', id = 33
 </pre>
       </p>
