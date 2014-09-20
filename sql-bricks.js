@@ -1,10 +1,10 @@
-
-// function returns the sql namespace
-function SqlBricks() {
+(function() {
   "use strict";
+
+  var is_common_js = typeof exports != 'undefined';
   
   var _;
-  if (typeof exports != 'undefined')
+  if (is_common_js)
     _ = require('underscore');
   else
     _ = window._;
@@ -941,9 +941,11 @@ function SqlBricks() {
     }
     return ctor;
   }
+  sql.inherits = inherits;
 
-  return sql;
-}
+  if (is_common_js)
+    module.exports = sql;
+  else
+    window.SqlBricks = sql;
 
-if (typeof exports != 'undefined')
-  module.exports = SqlBricks;
+})();

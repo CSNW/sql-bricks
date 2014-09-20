@@ -29,10 +29,8 @@ else {
   }
 }
 
-var SqlBricks = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
-var LimitOffset = is_common_js ? require('../limit-offset.js') : window.LimitOffsetBricks;
-var sql = LimitOffset();
-var select = sql.select;
+var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
+var select = sql.configure({dialect: 'sqlite'}).select;
 
 describe('LIMIT ... OFFSET extension', function() {
   describe('.limit()', function() {
@@ -56,16 +54,9 @@ describe('LIMIT ... OFFSET extension', function() {
 
 describe('SQLBricks() extension mechanism', function() {
   it('should create multiple, non-conflicting namespaces', function() {
-    var sql_92 = SqlBricks();
-    var sql_ext = LimitOffset();
-    assert(!sql_92.select().limit);
+    var sql_ext = sql.configure({dialect: 'sqlite'});
+    assert(!sql.select().limit);
     assert(sql_ext.select().limit);
-  });
-
-  it('should extend the passed namespace', function() {
-    var sql = SqlBricks();
-    var sql_ext = LimitOffset(sql);
-    assert.equal(sql, sql_ext);
   });
 });
 

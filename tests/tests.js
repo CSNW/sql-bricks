@@ -3,7 +3,7 @@
 var is_common_js = typeof exports != 'undefined';
 
 var _ = is_common_js ? require('underscore') : window._;
-var sql = is_common_js ? require('../sql-bricks.js')() : window.SqlBricks();
+var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
 
 var assert;
 if (is_common_js) {

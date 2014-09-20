@@ -473,25 +473,6 @@ insertInto('person', 'first_name', 'last_name').values('Fred', 'Flintstone');
 // INSERT INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')
 </pre>
       </p>
-      <p id="insorReplace">
-        <b class="header">orReplace, orRollback, orAbort, orFail, orIgnore</b>
-        <code>ins.orReplace(), ins.orRollback(), ins.orAbort(), ins.orFail(), ins.orIgnore()</code>
-        <br />
-        <p>Adds appropriate SQLite/MySQL clause to the <tt>INSERT</tt> statement:</p>
-        <pre>
-SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});
-// INSERT OR REPLACE INTO person (first_name, id) VALUES ('Fred', 33)
-</pre>
-      </p>
-      <p id="into">
-        <b class="header">into</b><code>ins.into(tbl)</code>
-        <br />
-        <p><tt>insertInto()</tt> (or the shorter alias <tt>insert()</tt>) is preferred over <tt>insert().into()</tt>. <tt>.into()</tt> is kept as a way to match the SQLite dialect <tt>INSERT OR REPLACE INTO</tt>:</p>
-        <pre>
-SQLiteBricks().insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
-// INSERT OR REPLACE INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')
-</pre>
-      </p>
       <p id="values">
         <b class="header">values</b><code>ins.values(values)</code>
         <br />
@@ -521,22 +502,6 @@ insertInto('person').values([{'first_name': 'Fred', 'last_name': 'Flintstone'}, 
         <p>Note that if you want to call a method on the insert object, you have to save a reference to it before calling <tt>select()</tt>, since <tt>select()</tt> returns a reference to a child Select statement instead of the parent Insert statement.</p>
       </p>
 
-      <p id="returning">
-        <b class="header">returning</b><code>ins.returning(columns)</code>
-        <br />
-        <p>Adds a <tt>RETURNING</tt> clause to the <tt>INSERT</tt> statement.</p>
-        <pre>
-var ins = PostgresBricks().insert('person', 'first_name, last_name');
-ins.select('first_name, last_name')
-.from('account');
-ins.returning('account.pk');
-// INSERT INTO person (first_name, last_name)
-// SELECT first_name, last_name
-// FROM account
-// RETURNING account.pk
-</pre>
-      </p>
-
       <h2 id="update">update</h2>
       <p id="updconstructor">
         <b class="header">constructor</b><code>update(tbl[, values])</code>
@@ -546,16 +511,6 @@ ins.returning('account.pk');
 update('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});
 // UPDATE person SET first_name = 'Fred', last_name = 'Flintstone'
 </pre>
-      <p id="updorReplace">
-        <b class="header">orReplace, orRollback, orAbort, orFail, orIgnore</b>
-        <code>upd.orReplace(), upd.orRollback(), upd.orAbort(), upd.orFail(), upd.orIgnore()</code>
-        <br />
-        <p>Adds appropriate SQLite/MySQL clause to the <tt>UPDATE</tt> statement:</p>
-        <pre>
-SQLiteBricks().update('person').orReplace().set({'first_name': 'Fred', 'id': 33});
-// UPDATE OR REPLACE person SET first_name = 'Fred', id = 33
-</pre>
-      </p>
 
       <p id="set">
         <b class="header">set</b><span class="alias">Alias: <b>values</b></span><br />
