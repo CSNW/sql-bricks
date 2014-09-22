@@ -176,7 +176,7 @@
   Select.defineClause('from', function(opts) {
     if (!this._from)
       return;
-    var result = 'FROM ' + handleTables(this._from);
+    var result = 'FROM ' + handleTables(this._from, opts);
     if (this.joins)
       result += ' ' + _.invoke(this.joins, 'toString', opts).join(' ');
     return result;
