@@ -4,7 +4,7 @@
 
 SQL Bricks.js is a transparent, schemaless library for building and composing SQL statements.
 
-- Supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for select/insert/update/delete (plus some postgres & sqlite additions)
+- Supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for select/insert/update/delete (postgres extensions are at https://github.com/Suor/sql-bricks-postgres, sqlite extensions are at https://github.com/CSNW/sql-bricks-sqlite)
 - Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
 - Single straightforward [source file](sql-bricks.js) (less than 1,000 lines), easy to understand & debug
@@ -30,7 +30,9 @@ library         | lines | files | schema       | language     | other notes
 
 # Related Libraries
 
-[pg-bricks](https://github.com/Suor/pg-bricks) adds postgres connections, transactions, query execution and data accessors on top of SQLBricks.  
+[sql-bricks-postgres](https://github.com/Suor/sql-bricks-postgres) adds postgres extensions like `LIMIT ... OFFSET` and `RETURNING`
+[pg-bricks](https://github.com/Suor/pg-bricks) adds postgres connections, transactions, query execution and data accessors on top of SQLBricks.
+[sql-bricks-sqlite](https://github.com/CSNW/sql-bricks-sqlite) adds sqlite extensios like `LIMIT ... OFFSET` and `OR REPLACE`  
 
 # Use
 

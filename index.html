@@ -235,11 +235,13 @@
     <p id="introduction">As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.</p>
     <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (<tt>order</tt>, <tt>desc</tt>, etc) &amp; columns that contain capital letters, automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions.</p>
     <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.</p>
-    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
+    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">SQL-92</a></b> (additional clauses supported by <b>Postgres</b> and <b>SQLite</b> are in dialect-specific extension libraries, like <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a>). Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
     <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html">200 tests</a> are available for your perusal.</p>
 
     <h2>Related Libraries</h2>
+    <p><a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a> adds postgres-dialect extensions, like <tt>LIMIT ... OFFSET</tt> and <tt>RETURNING</tt></p> 
     <p><a href="https://github.com/Suor/pg-bricks">pg-bricks</a> adds postgres connections, transactions, query execution and data accessors on top of SQLBricks.</p>
+    <p><a href="https://github.com/CSNW/sql-bricks-sqlite">sql-bricks-sqlite</a> adds sqlite-dialect extensions, like <tt>LIMIT ... OFFSET</tt> and <tt>OR REPLACE</tt></p>
 
     <div id="documentation">
       <h2 id="use">Use</h2>
@@ -783,6 +785,7 @@ select('person.order AS person_order').from('person');
       <p>Also, <b>pull requests for additional SQL statements</b> beyond the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.</p>
 
       <h2 id="acknowledgments">Acknowledgments</h2>
+      <p>Thanks to Suor for taking over maintenance of the postgres-dialect extension library: <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a></p>
       <p>Huge thanks to <a href="https://github.com/brianc">Brian C</a> for his hard work supporting and maintaining <a href="https://github.com/brianc/node-sql">node-sql</a> and <a href="https://github.com/brianc/node-postgres">node-postgres</a> and especially for his patience with me and my pull requests.</p>
       <p>Also, thanks to <a href="https://github.com/jashkenas">jashkenas</a> for <a href="https://github.com/jashkenas/underscore">underscore</a>, which SQL Bricks depends on -- and for its documentation, which served as a model and template for these docs.</p>
 
