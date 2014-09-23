@@ -235,11 +235,13 @@
     <p id="introduction">As with other SQL generation libraries, SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.</p>
     <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (<tt>order</tt>, <tt>desc</tt>, etc) &amp; columns that contain capital letters, automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions.</p>
     <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with SQL experience will immediately know the API.</p>
-    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">SQL-92</a></b> as well as some additional clauses supported by <b>Postgres</b> and <b>SQLite</b>. Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
+    <p>SQL Bricks supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">SQL-92</a></b> (additional clauses supported by <b>Postgres</b> and <b>SQLite</b> are in dialect-specific extension libraries, like <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a>). Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
     <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html">200 tests</a> are available for your perusal.</p>
 
     <h2>Related Libraries</h2>
+    <p><a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a> adds postgres-dialect extensions, like <tt>LIMIT ... OFFSET</tt> and <tt>RETURNING</tt></p> 
     <p><a href="https://github.com/Suor/pg-bricks">pg-bricks</a> adds postgres connections, transactions, query execution and data accessors on top of SQLBricks.</p>
+    <p><a href="https://github.com/CSNW/sql-bricks-sqlite">sql-bricks-sqlite</a> adds sqlite-dialect extensions, like <tt>LIMIT ... OFFSET</tt> and <tt>OR REPLACE</tt></p>
 
     <div id="documentation">
       <h2 id="use">Use</h2>
@@ -473,25 +475,6 @@ insertInto('person', 'first_name', 'last_name').values('Fred', 'Flintstone');
 // INSERT INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')
 </pre>
       </p>
-      <p id="insorReplace">
-        <b class="header">orReplace, orRollback, orAbort, orFail, orIgnore</b>
-        <code>ins.orReplace(), ins.orRollback(), ins.orAbort(), ins.orFail(), ins.orIgnore()</code>
-        <br />
-        <p>Adds appropriate SQLite/MySQL clause to the <tt>INSERT</tt> statement:</p>
-        <pre>
-insert().orReplace().into('person').values({'first_name': 'Fred', 'id': 33});
-// INSERT OR REPLACE INTO person (first_name, id) VALUES ('Fred', 33)
-</pre>
-      </p>
-      <p id="into">
-        <b class="header">into</b><code>ins.into(tbl)</code>
-        <br />
-        <p><tt>insertInto()</tt> (or the shorter alias <tt>insert()</tt>) is preferred over <tt>insert().into()</tt>. <tt>.into()</tt> is kept as a way to match the SQLite dialect <tt>INSERT OR REPLACE INTO</tt>:</p>
-        <pre>
-insert().orReplace().into('person').values({'first_name': 'Fred', 'last_name': 'Flintstone'});
-// INSERT OR REPLACE INTO person (first_name, last_name) VALUES ('Fred', 'Flintstone')
-</pre>
-      </p>
       <p id="values">
         <b class="header">values</b><code>ins.values(values)</code>
         <br />
@@ -521,22 +504,6 @@ insertInto('person').values([{'first_name': 'Fred', 'last_name': 'Flintstone'}, 
         <p>Note that if you want to call a method on the insert object, you have to save a reference to it before calling <tt>select()</tt>, since <tt>select()</tt> returns a reference to a child Select statement instead of the parent Insert statement.</p>
       </p>
 
-      <p id="returning">
-        <b class="header">returning</b><code>ins.returning(columns)</code>
-        <br />
-        <p>Adds a <tt>RETURNING</tt> clause to the <tt>INSERT</tt> statement.</p>
-        <pre>
-var ins = insert('person', 'first_name, last_name');
-ins.select('first_name, last_name')
-.from('account');
-ins.returning('account.pk');
-// INSERT INTO person (first_name, last_name)
-// SELECT first_name, last_name
-// FROM account
-// RETURNING account.pk
-</pre>
-      </p>
-
       <h2 id="update">update</h2>
       <p id="updconstructor">
         <b class="header">constructor</b><code>update(tbl[, values])</code>
@@ -546,16 +513,6 @@ ins.returning('account.pk');
 update('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});
 // UPDATE person SET first_name = 'Fred', last_name = 'Flintstone'
 </pre>
-      <p id="updorReplace">
-        <b class="header">orReplace, orRollback, orAbort, orFail, orIgnore</b>
-        <code>upd.orReplace(), upd.orRollback(), upd.orAbort(), upd.orFail(), upd.orIgnore()</code>
-        <br />
-        <p>Adds appropriate SQLite/MySQL clause to the <tt>UPDATE</tt> statement:</p>
-        <pre>
-update('person').orReplace().set({'first_name': 'Fred', 'id': 33});
-// UPDATE OR REPLACE person SET first_name = 'Fred', id = 33
-</pre>
-      </p>
 
       <p id="set">
         <b class="header">set</b><span class="alias">Alias: <b>values</b></span><br />
@@ -828,6 +785,7 @@ select('person.order AS person_order').from('person');
       <p>Also, <b>pull requests for additional SQL statements</b> beyond the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.</p>
 
       <h2 id="acknowledgments">Acknowledgments</h2>
+      <p>Thanks to Suor for taking over maintenance of the postgres-dialect extension library: <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a></p>
       <p>Huge thanks to <a href="https://github.com/brianc">Brian C</a> for his hard work supporting and maintaining <a href="https://github.com/brianc/node-sql">node-sql</a> and <a href="https://github.com/brianc/node-postgres">node-postgres</a> and especially for his patience with me and my pull requests.</p>
       <p>Also, thanks to <a href="https://github.com/jashkenas">jashkenas</a> for <a href="https://github.com/jashkenas/underscore">underscore</a>, which SQL Bricks depends on -- and for its documentation, which served as a model and template for these docs.</p>
 

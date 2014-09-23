@@ -1,10 +1,12 @@
 (function() {
 
-var global = this;
-var _ = global._ || require('underscore');
-var sql = global.SqlBricks || require('../sql-bricks.js');
+var is_common_js = typeof exports != 'undefined';
+
+var _ = is_common_js ? require('underscore') : window._;
+var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
+
 var assert;
-if (typeof require != 'undefined') {
+if (is_common_js) {
   assert = require('assert');
 }
 else {
@@ -266,25 +268,9 @@ describe('SQL Bricks', function() {
       check(update('user', {'name': 'Fred'}),
         "UPDATE \"user\" SET name = 'Fred'");
     });
-    it('should handle OR REPLACE (sqlite dialect)', function() {
-      check(update('user').orReplace().set({'name': 'Fred', 'id': 33}),
-        "UPDATE OR REPLACE \"user\" SET name = 'Fred', id = 33");
-    });
-    it('should handle RETURNING (postgres dialect)', function() {
-      check(update('user').set({'fname': 'Fred'}).where({'lname': 'Flintstone'}).returning('*'),
-        "UPDATE \"user\" SET fname = 'Fred' WHERE lname = 'Flintstone' RETURNING *");
-    });
   });
 
   describe('INSERT statements', function() {
-    it('should handle OR REPLACE (sqlite dialect)', function() {
-      check(insert().orReplace().into('user').values({'id': 33, 'name': 'Fred'}),
-        "INSERT OR REPLACE INTO \"user\" (id, name) VALUES (33, 'Fred')");
-    });
-    it('should handle RETURNING (postgres dialect)', function() {
-      check(insert('user').values({'fname': 'Fred'}).returning('*'),
-        "INSERT INTO \"user\" (fname) VALUES ('Fred') RETURNING *");
-    });
     it('should take an object of column/value pairs', function() {
       check(insert('user', {'id': 33, 'name': 'Fred'}),
         "INSERT INTO \"user\" (id, name) VALUES (33, 'Fred')");
@@ -695,24 +681,6 @@ describe('SQL Bricks', function() {
     });
   });
 
-  describe('.limit()', function() {
-    it('should add a LIMIT clause', function() {
-      check(select().from('user').limit(10),
-        'SELECT * FROM "user" LIMIT 10');
-    });
-  });
-
-  describe('.offset()', function() {
-    it('should add an OFFSET clause', function() {
-      check(select().from('user').offset(10),
-        'SELECT * FROM "user" OFFSET 10');
-    });
-    it('should place OFFSET after LIMIT if both are supplied', function() {
-      check(select().from('user').offset(5).limit(10),
-        'SELECT * FROM "user" LIMIT 10 OFFSET 5');
-    });
-  });
-
   describe('should quote column names with capitals in them', function() {
     it('in SELECT', function() {
       check(select('Name').from('user'),
@@ -841,14 +809,6 @@ describe('SQL Bricks', function() {
     it('should generate a DELETE statement with a WHERE clause', function() {
       check(del('user').where('first_name', 'Fred'),
         "DELETE FROM \"user\" WHERE first_name = 'Fred'")
-    });
-    it('should generate a DELETE with using', function() {
-      check(del('user').using('addr').where('user.addr_fk', sql('addr.pk')),
-        "DELETE FROM \"user\" USING address addr WHERE \"user\".addr_fk = addr.pk");
-    });
-    it('should handle RETURNING (postgres dialect)', function() {
-      check(del('user').where({'lname': 'Flintstone'}).returning('*'),
-        "DELETE FROM \"user\" WHERE lname = 'Flintstone' RETURNING *");
     });
   });
 });

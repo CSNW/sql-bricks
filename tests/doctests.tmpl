@@ -1,10 +1,10 @@
 (function() {
 
-var global = this;
-var _ = global._ || require('underscore');
-var sql = global.SqlBricks || require('../sql-bricks.js');
+var is_common_js = typeof exports != 'undefined';
+var _ = is_common_js ? require('underscore') : window._;
+var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
 var assert;
-if (typeof require != 'undefined') {
+if (is_common_js) {
   assert = require('assert');
 }
 else {
@@ -36,7 +36,7 @@ describe('SQL Bricks', function() {
 });
 
 function check(actual, expected) {
-  if (actual instanceof sql.Statement)
+  if (_.isObject(actual))
     assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);
