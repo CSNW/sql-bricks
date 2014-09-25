@@ -789,7 +789,9 @@
   function handleColumn(expr, opts) {
     if (expr instanceof Statement) {
       var result = '(' + expr._toString(opts) + ')';
-      if (expr._alias) {
+      if (expr._strAlias) {
+        result += expr._strAlias(opts);
+      } else if (expr._alias) {
         result += ' ' + autoQuote(expr._alias);
       }
       return result;
