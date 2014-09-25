@@ -159,6 +159,23 @@
     };
   });
 
+  // subquery aliasing
+  Select.prototype._toNestedString = function(opts) {
+    return '(' + this._toString(opts) + ')' + this._aliasToString(opts);
+  };
+
+  Select.prototype._aliasToString = function(opts) {
+    if (!this._alias)
+      return '';
+
+    return ' ' + autoQuote(this._alias);
+  };
+
+  Select.prototype.as = function(alias) {
+    this._alias = alias;
+    return this;
+  };
+
   Select.prototype._toString = function _toString(opts) {
     if (!this._columns.length)
       this._columns = ['*'];
@@ -390,23 +407,6 @@
         result += rlt + ' ';
     }.bind(this));
     return result.trim();
-  };
-
-  Statement.prototype._toNestedString = function(opts) {
-    return '(' + this._toString(opts) + ')' + this._aliasToString(opts);
-  };
-
-  Statement.prototype._aliasToString = function(opts) {
-    if (!this._alias)
-      return '';
-
-    return ' ' + autoQuote(this._alias);
-  };
-
-  // subquery aliasing
-  Statement.prototype.as = function(alias) {
-    this._alias = alias;
-    return this;
   };
 
   Statement.prototype._add = function _add(arr, name) {
