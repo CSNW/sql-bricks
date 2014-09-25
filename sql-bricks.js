@@ -848,7 +848,7 @@
     sql._aliases = aliases;
   }
   function expandAlias(tbl) {
-    return tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
+    return typeof tbl == 'string' && tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
   }
 
   sql.joinCriteria = function joinCriteria(fn) {
