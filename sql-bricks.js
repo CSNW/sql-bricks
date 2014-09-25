@@ -160,6 +160,17 @@
   });
 
   // subquery aliasing
+  Select.prototype._toNestedString = function(opts) {
+    return '(' + this._toString(opts) + ')' + this._aliasToString(opts);
+  };
+
+  Select.prototype._aliasToString = function(opts) {
+    if (!this._alias)
+      return '';
+
+    return ' ' + autoQuote(this._alias);
+  };
+
   Select.prototype.as = function(alias) {
     this._alias = alias;
     return this;
@@ -787,13 +798,9 @@
   // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
   var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
   function handleColumn(expr, opts) {
-    if (expr instanceof Statement) {
-      var result = '(' + expr._toString(opts) + ')';
-      if (expr._alias) {
-        result += ' ' + autoQuote(expr._alias);
-      }
-      return result;
-    }
+    if (expr instanceof Statement)
+      return expr._toNestedString(opts);
+
     if (expr instanceof val)
       return handleValue(expr.val, opts);
 
