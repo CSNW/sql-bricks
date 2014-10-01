@@ -289,14 +289,12 @@
     return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
   });
   Insert.defineClause('values', function(opts) {
-    var values = _.map(this._values, function(values) {
-      return '(' + handleValues(_.values(values), opts).join(', ') + ')';
-    }).join(', ');
-
     if (this._select)
       return this._select._toString(opts);
     else
-      return 'VALUES ' + values;
+      return 'VALUES ' + _.map(this._values, function(values) {
+        return '(' + handleValues(_.values(values), opts).join(', ') + ')';
+      }).join(', ');
   });
 
 

@@ -420,6 +420,11 @@ describe('SQL Bricks', function() {
         .select('id', 'addr_id').from('user'),
         'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM "user"');
     });
+    it('insert().select() with params', function() {
+      check(insert('new_user', 'id', 'addr_id')
+        .select('id', 'addr_id').from('user').where({active: true}).toParams().text,
+        'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM "user" WHERE active = $1');
+    });
   });
 
   describe('GROUP BY clause', function() {
