@@ -285,6 +285,7 @@
   Insert.defineClause('insert', 'INSERT');
   Insert.defineClause('into', '{{#if _table}}INTO {{table _table}}{{/if}}');
   Insert.defineClause('columns', function(opts) {
+    if (!this._values) return '';
     return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
   });
   Insert.defineClause('values', function(opts) {

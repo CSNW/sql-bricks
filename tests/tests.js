@@ -410,6 +410,11 @@ describe('SQL Bricks', function() {
         .select('id', 'addr_id').from('user'),
         'INSERT INTO new_user (id, addr_id) SELECT id, addr_id FROM "user"');
     });
+    it('insert().into().select() with no columns', function() {
+      check(insert().into('new_user')
+        .select('id', 'addr_id').from('user'),
+        'INSERT INTO new_user SELECT id, addr_id FROM "user"');
+    });
     it('insert().select()', function() {
       check(insert('new_user', 'id', 'addr_id')
         .select('id', 'addr_id').from('user'),
