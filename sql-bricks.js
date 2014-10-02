@@ -928,6 +928,8 @@
 
   // provided for browser support, based on https://gist.github.com/prust/5936064
   function inherits(ctor, superCtor) {
+    function noop() {};
+
     if (Object.create) {
       ctor.super_ = superCtor;
       ctor.prototype = Object.create(superCtor.prototype, {
@@ -940,7 +942,6 @@
       });
     }
     else {
-      function noop() {};
       noop.prototype = superCtor.prototype;
       ctor.super_ = superCtor;
       ctor.prototype = new noop;
