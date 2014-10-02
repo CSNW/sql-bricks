@@ -940,10 +940,11 @@
       });
     }
     else {
+      function noop() {};
       noop.prototype = superCtor.prototype;
       ctor.super_ = superCtor;
       ctor.prototype = new noop;
-      ctor.prototype.constructor = superCtor;
+      ctor.prototype.constructor = ctor;
     }
     return ctor;
   }
