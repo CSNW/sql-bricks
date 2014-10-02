@@ -30,9 +30,20 @@ library         | lines | files | schema       | language     | other notes
 
 # Related Libraries
 
-[sql-bricks-postgres](https://github.com/Suor/sql-bricks-postgres) adds postgres extensions like `LIMIT ... OFFSET` and `RETURNING`
-[pg-bricks](https://github.com/Suor/pg-bricks) adds postgres connections, transactions, query execution and data accessors on top of SQLBricks.
-[sql-bricks-sqlite](https://github.com/CSNW/sql-bricks-sqlite) adds sqlite extensios like `LIMIT ... OFFSET` and `OR REPLACE`  
+* [sql-bricks-postgres](https://github.com/Suor/sql-bricks-postgres) adds postgres-dialect extensions:
+  * `LIMIT` and `OFFSET`
+  * `RETURNING`
+  * `UPDATE ... FROM`
+  * `DELETE ... USING`
+  * `FROM VALUES`
+* [pg-bricks](https://github.com/Suor/pg-bricks) adds:
+  * connections
+  * transactions
+  * query execution
+  * data accessors
+* [sql-bricks-sqlite](https://github.com/CSNW/sql-bricks-sqlite) adds sqlite-dialect extensions:
+  * `LIMIT` and `OFFSET`
+  * `OR REPLACE`, `OR ABORT`, `OR ROLLBACK`, `OR FAIL`
 
 # Use
 
