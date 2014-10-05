@@ -4,6 +4,9 @@ var is_common_js = typeof exports != 'undefined';
 
 var _ = is_common_js ? require('underscore') : window._;
 var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
+if (process && process.env.SQLBRICKS_EXTENSION == 'EMPTY') {
+  sql = sql._extension();
+}
 
 var assert;
 if (is_common_js) {
@@ -185,14 +188,14 @@ describe('SQL Bricks', function() {
 
   it('should expand left_tbl on all joins', function() {
     var left_tbls = [];
-    var orig = sql._joinCriteria;
-    sql._joinCriteria = function(left_tbl) {
+    var orig = sql.joinCriteria();
+    sql.joinCriteria(function(left_tbl) {
       left_tbls.push(left_tbl);
       return orig.apply(this, arguments);
-    };
+    });
 
     select().from('test').join('psn').join('usr').toString();
-    sql._joinCriteria = orig;
+    sql.joinCriteria(orig);
     assert(left_tbls.indexOf('person') > -1 && left_tbls.indexOf('psn') == -1, 'left_tbl is not expanded: [' + left_tbls.join(',') + ']');
   });
 

@@ -858,7 +858,8 @@
   }
 
   sql.joinCriteria = function joinCriteria(fn) {
-    this._joinCriteria = fn;
+    if (!fn) return sql._joinCriteria;
+    sql._joinCriteria = fn;
   };
 
 
@@ -950,6 +951,44 @@
     return ctor;
   }
   sql.inherits = inherits;
+
+  function construct(constructor, args) {
+      function F() {
+          return constructor.apply(this, args);
+      }
+      F.prototype = constructor.prototype;
+      return new F();
+  }
+
+  function subclass(base) {
+    var cls = function () {
+      if (!(this instanceof cls))
+        return construct(cls, arguments);
+
+      base.apply(this, arguments);
+    }
+
+    return inherits(cls, base);
+  }
+
+  sql._extension = function () {
+    var xsql = subclass(sql);
+
+    for (var p in sql) {
+      if (sql.hasOwnProperty(p)) {
+        if (sql[p] instanceof Statement) {
+          xsql[p] = subclass(sql[p]);
+          xsql[p].defineClause = sql[p].defineClause;
+          xsql[p].prototype.clauses = sql[p].prototype.clauses.slice();
+        } else {
+          xsql[p] = sql[p];
+        }
+      }
+    }
+
+    return xsql;
+  }
+
 
   if (is_common_js)
     module.exports = sql;
