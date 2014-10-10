@@ -959,6 +959,7 @@
       var item = sql[prop_name];
       if (!(item instanceof Statement))
         return ext[prop_name] = item;
+      
       ext[prop_name] = subclass(item);
       ext[prop_name].defineClause = item.defineClause;
       ext[prop_name].prototype.clauses = item.prototype.clauses.slice();
