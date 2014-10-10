@@ -955,7 +955,8 @@
   sql._extension = function () {
     var ext = subclass(sql);
 
-    _.forEach(sql, function(prop_name, item) {
+    _.forEach(_.keys(sql), function(prop_name) {
+      var item = sql[prop_name];
       if (!(item instanceof Statement))
         return ext[prop_name] = item;
       ext[prop_name] = subclass(item);
