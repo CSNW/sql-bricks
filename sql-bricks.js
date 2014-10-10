@@ -952,43 +952,36 @@
   }
   sql.inherits = inherits;
 
-  function construct(constructor, args) {
-      function F() {
-          return constructor.apply(this, args);
-      }
-      F.prototype = constructor.prototype;
-      return new F();
+  sql._extension = function () {
+    var ext = subclass(sql);
+
+    _.forEach(sql, function(prop_name, item) {
+      if (!(item instanceof Statement))
+        return ext[prop_name] = item;
+      ext[prop_name] = subclass(item);
+      ext[prop_name].defineClause = item.defineClause;
+      ext[prop_name].prototype.clauses = item.prototype.clauses.slice();
+    });
+
+    return ext;
   }
 
   function subclass(base) {
-    var cls = function () {
+    function cls() {
       if (!(this instanceof cls))
-        return construct(cls, arguments);
-
+        return applyNew(cls, arguments);
+      
       base.apply(this, arguments);
     }
-
     return inherits(cls, base);
   }
 
-  sql._extension = function () {
-    var xsql = subclass(sql);
-
-    for (var p in sql) {
-      if (sql.hasOwnProperty(p)) {
-        if (sql[p] instanceof Statement) {
-          xsql[p] = subclass(sql[p]);
-          xsql[p].defineClause = sql[p].defineClause;
-          xsql[p].prototype.clauses = sql[p].prototype.clauses.slice();
-        } else {
-          xsql[p] = sql[p];
-        }
-      }
-    }
-
-    return xsql;
+  // http://stackoverflow.com/a/8843181/194758
+  function applyNew(cls, args) {
+    args = _.toArray(args);
+    args.unshift(null);
+    return new (cls.bind.apply(cls, args));
   }
-
 
   if (is_common_js)
     module.exports = sql;
