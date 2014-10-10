@@ -3,9 +3,15 @@
 var is_common_js = typeof exports != 'undefined';
 var _ = is_common_js ? require('underscore') : window._;
 var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
-if (process && process.env.SQLBRICKS_EXTENSION == 'EMPTY') {
-  sql = sql._extension();
+
+if (is_common_js) {
+  var args = process.argv;
+  if (args[args.length - 1] == '--empty-extension') {
+    console.log('doctests configured with an empty extension');
+    sql = sql._extension();
+  }
 }
+
 var assert;
 if (is_common_js) {
   assert = require('assert');
