@@ -829,6 +829,20 @@ describe('SQL Bricks', function() {
         "DELETE FROM \"user\" WHERE first_name = 'Fred'")
     });
   });
+
+  describe('_extension()', function() {
+    it('should shield base', function() {
+      var ext = sql._extension();
+
+      ext.prop = 1;
+      assert.equal(sql.prop, undefined);
+
+      ext.select.prop = 1;
+      assert.equal(sql.select.returning, undefined);
+
+      assert(ext.select.prototype.clauses !== sql.select.prototype.clauses)
+    });
+  });
 });
 
 function check(stmt, expected) {
