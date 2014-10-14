@@ -956,14 +956,17 @@
     var ext = subclass(sql);
 
     _.forEach(_.keys(sql), function(prop_name) {
-      var item = sql[prop_name];
-      if (!(item instanceof Statement))
-        return ext[prop_name] = item;
-      
-      ext[prop_name] = subclass(item);
-      ext[prop_name].defineClause = item.defineClause;
-      ext[prop_name].prototype.clauses = item.prototype.clauses.slice();
+      ext[prop_name] = sql[prop_name];
     });
+
+    ['select', 'insert', 'update', 'delete'].forEach(function (stmt) {
+      var cls = sql[stmt];
+      ext[stmt] = subclass(cls);
+      ext[stmt].defineClause = cls.defineClause;
+      ext[stmt].prototype.clauses = cls.prototype.clauses.slice();
+    });
+    ext.insertInto = ext.insert;
+    ext.deleteFrom = ext.delete;
 
     return ext;
   }
