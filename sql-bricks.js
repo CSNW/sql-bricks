@@ -517,7 +517,10 @@
       return typeof arg != 'object' || arg instanceof val || arg instanceof sql;
     });
     if (flat_args) {
-      return [sql.equal(args[0], args[1])];
+      if (args[0] instanceof sql && args[1] == null)
+        return [args[0]];
+      else
+        return [sql.equal(args[0], args[1])];
     }
     else {
       var exprs = [];

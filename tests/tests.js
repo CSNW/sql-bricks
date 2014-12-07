@@ -106,6 +106,13 @@ describe('SQL Bricks', function() {
       }), 'SELECT * FROM "user" WHERE removed = $1 AND name = $2',
       [0, 'Fred Flintstone']);
     });
+    it('should generate WHERE clauses with arbitrary SQL', function() {
+      var stmt = select().from('time_limits');
+      stmt.where(sql(
+        "tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')"));
+      check(stmt,
+        "SELECT * FROM time_limits WHERE tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')");
+    });
     it('should not escape single quotes in the values returned by toParams()', function() {
       checkParams(update('user', {'name': "Muad'Dib"}),
         'UPDATE "user" SET name = $1',
