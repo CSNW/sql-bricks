@@ -13,10 +13,14 @@
   // it is also the main namespace for SQLBricks
   function sql(str) {
     if (!(this instanceof sql))
-      return new sql(str);
+      return applyNew(sql, arguments);
+
     this.str = str;
+    this.vals = _.toArray(arguments).slice(1);
   }
-  sql.prototype.toString = function toString() {
+  sql.prototype.toString = function toString(opts) {
+    if (opts && opts.parameterized)
+      opts.values = opts.values.concat(this.vals);
     return this.str;
   };
 

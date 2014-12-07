@@ -113,6 +113,16 @@ describe('SQL Bricks', function() {
       check(stmt,
         "SELECT * FROM time_limits WHERE tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')");
     });
+    it('should generate WHERE clauses with arbitrary SQL and parameters', function() {
+      var stmt = select().from('time_limits');
+      var time1 = '2014-12-06T22:35:00';
+      var time2 = '2014-12-06T22:36:00';
+      stmt.where(sql(
+        "tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')", time1, time2));
+      checkParams(stmt,
+        "SELECT * FROM time_limits WHERE tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')",
+        ['2014-12-06T22:35:00', '2014-12-06T22:36:00']);
+    });
     it('should not escape single quotes in the values returned by toParams()', function() {
       checkParams(update('user', {'name': "Muad'Dib"}),
         'UPDATE "user" SET name = $1',
