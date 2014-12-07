@@ -526,10 +526,10 @@
 
   function argsToExpressions(args) {
     var flat_args = _.all(args, function(arg) {
-      return typeof arg != 'object' || arg instanceof val || arg instanceof sql;
+      return typeof arg != 'object' || arg instanceof val || arg instanceof sql || arg == null;
     });
     if (flat_args) {
-      if (args[0] instanceof sql && args[1] == null)
+      if (args[0] instanceof sql && args.length == 1)
         return [args[0]];
       else
         return [sql.equal(args[0], args[1])];
