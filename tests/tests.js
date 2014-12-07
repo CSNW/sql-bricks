@@ -118,7 +118,7 @@ describe('SQL Bricks', function() {
       var time1 = '2014-12-06T22:35:00';
       var time2 = '2014-12-06T22:36:00';
       stmt.where(sql(
-        "tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')", time1, time2));
+        "tsrange(start_date_time, end_date_time, '[]') @> tsrange($, $, '[]')", time1, time2));
       checkParams(stmt,
         "SELECT * FROM time_limits WHERE tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')",
         ['2014-12-06T22:35:00', '2014-12-06T22:36:00']);

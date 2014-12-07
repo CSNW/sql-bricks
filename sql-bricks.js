@@ -19,9 +19,17 @@
     this.vals = _.toArray(arguments).slice(1);
   }
   sql.prototype.toString = function toString(opts) {
-    if (opts && opts.parameterized)
-      opts.values = opts.values.concat(this.vals);
-    return this.str;
+    var str = this.str;
+    if (opts && opts.parameterized) {
+      this.vals.forEach(function(val) {
+        opts.values.push(val);
+        if (opts.placeholder == '$%d')
+          str = str.replace(/\$(?!\d)/, '$' + opts.value_ix++);
+        else if (opts.placeholder == '?%d')
+          str = str.replace(/\?(?!\d)/, '?' + opts.value_ix++);
+      });
+    }
+    return str;
   };
 
   // val() wrapper allows a value (string/number/etc) where SQL (column/table/etc) is expected
@@ -756,7 +764,7 @@
       return '(' + val._toString(opts) + ')';
 
     if (val instanceof sql)
-      return val.toString();
+      return val.toString(opts);
 
     if (opts.parameterized) {
       opts.values.push(val);
