@@ -166,8 +166,6 @@
       <li>- <a href="#having">having</a></li>
       <li>- <a href="#union">(union, intersect, minus, except)[All]</a></li>
       <li>- <a href="#orderBy">orderBy</a></li>
-      <li>- <a href="#limit">limit</a></li>
-      <li>- <a href="#offset">offset</a></li>
       <li>- <a href="#forUpdate">forUpdate, noWait</a></li>
     </ul>
     <a class="toc_title" href="#insert">
@@ -437,16 +435,6 @@ select().from('person').where({'last_name': 'Flintstone'}).union()
         <span class="alias">Alias: <b>order</b></span>
         <br />
         <p>Sets or extends the list of columns in the <tt>ORDER BY</tt> clause. Columns can be passed as multiple arguments, a single comma-delimited string or an array.</p>
-      </p>
-      <p id="limit">
-        <b class="header">limit</b><code>sel.limit(count)</code>
-        <br />
-        <p>Adds a <tt>LIMIT</tt> clause.</p>
-      </p>
-      <p id="offset">
-        <b class="header">offset</b><code>sel.offset(position)</code>
-        <br />
-        <p>Adds an <tt>OFFSET</tt> clause.</p>
       </p>
       <p id="forUpdate">
         <b class="header">forUpdate, noWait</b><code>sel.forUpdate([tbl, ...]) / sel.noWait()</code>
