@@ -52,7 +52,7 @@ SQLBricks' only dependency is [Underscore.js](http://underscorejs.org/).
 In the browser:
 
 ```javascript
-var select = SqlBricks().select;
+var select = SqlBricks.select;
 
 select().from('person').where({last_name: 'Rubble'});
 // SELECT * FROM person WHERE last_name = 'Rubble'
@@ -61,7 +61,7 @@ select().from('person').where({last_name: 'Rubble'});
 In node:
 
 ```javascript
-var select = require('sql-bricks')().select;
+var select = require('sql-bricks').select;
 
 select().from('person').where({last_name: 'Rubble'});
 // SELECT * FROM person WHERE last_name = 'Rubble'
@@ -73,7 +73,7 @@ The [SQLBricks API](http://csnw.github.io/sql-bricks/) is comprehensive, support
 
 ```javascript
 // convenience variables (for node; for the browser: "var sql = SqlBricks;")
-var sql = require('sql-bricks')();
+var sql = require('sql-bricks');
 var select = sql.select, insert = sql.insert, update = sql.update;
 var or = sql.or, like = sql.like, lt = sql.lt;
 
