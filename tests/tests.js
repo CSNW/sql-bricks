@@ -756,9 +756,13 @@ describe('SQL Bricks', function() {
       check(select('desc').from('usr'),
         'SELECT "desc" FROM "user" usr');
     });
-    it('in JOINs', function() {
+    it('in JOIN ONs', function() {
       check(select().from('usr').join('psn', {'usr.order': 'psn.order'}),
-        'SELECT * FROM "user" usr INNER JOIN person psn ON usr."order" = psn."order"')
+        'SELECT * FROM "user" usr INNER JOIN person psn ON usr."order" = psn."order"');
+    });
+    it('in JOIN USINGs', function() {
+      check(select().from('usr').join('psn').using('order'),
+        'SELECT * FROM "user" usr INNER JOIN person psn USING ("order")');
     });
     it('in INSERT', function() {
       check(insert('user').values({'order': 1}),

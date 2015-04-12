@@ -109,6 +109,14 @@
     }
     return this;
   };
+  Select.prototype.using = function(columns) {
+    var last_join = this.joins[this.joins.length - 1];
+
+    if (_.isEmpty(last_join.on))
+      last_join.on = []; // Using _.isEmpty tolerates overwriting of empty {}.
+    last_join.on = _.union(last_join.on, argsToArray(arguments));
+    return this;
+  };
 
   Select.prototype.where = Select.prototype.and = function() {
     return this._addExpression(arguments, '_where');
@@ -481,6 +489,15 @@
         throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
     }
 
+    // Array value for on indicates join using "using", rather than "on".
+    if (_.isArray(on)) {
+      on = _.map(on, function (column) {
+        return handleColumn(column);
+      }).join(', ');
+      return this.type + ' JOIN ' + tbl + ' USING (' + on + ')';
+    }
+
+    // Join using "on".
     if (isExpr(on)) {
       on = on.toString(opts);
     }
