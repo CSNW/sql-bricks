@@ -544,6 +544,11 @@ describe('SQL Bricks', function() {
       check(select().from('usr').join('addr').on(eq('usr.addr_id', sql('addr.id'))),
         'SELECT * FROM "user" usr INNER JOIN address addr ON usr.addr_id = addr.id');
     });
+    it('should not proceed if .using() has already been used', function() {
+      assert.throws(function () {
+        select().from('t1').join('t2').using('id').on({'t1.t2_id':'t2.id'});
+      });
+    });
   });
 
   describe('.using()', function() {
@@ -561,6 +566,11 @@ describe('SQL Bricks', function() {
       check(select().from('usr').join('addr').using(['addr_id', 'contrived_id']),
         'SELECT * FROM "user" usr ' + 
         'INNER JOIN address addr USING (addr_id, contrived_id)');
+    });
+    it('should not proceed if .on() has already been used', function() {
+      assert.throws(function () {
+        select().from('t1').join('t2').on({'t1.t2_id':'t2.id'}).using('id');
+      });
     });
   });
 
