@@ -515,6 +515,10 @@ describe('SQL Bricks', function() {
       check(select().from('usr').join('addr', eq('usr.addr_id', sql('addr.id'))),
         'SELECT * FROM "user" usr INNER JOIN address addr ON usr.addr_id = addr.id');
     });
+    it('join() should accept an array for the on argument (for JOIN USING)', function() {
+      check(select().from('usr').join('addr', ['addr_id', 'country_id']),
+        'SELECT * FROM "user" usr INNER JOIN address addr USING (addr_id, country_id)');
+    });
   });
 
   describe('.on()', function() {
