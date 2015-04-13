@@ -162,6 +162,7 @@
       <li>- <a href="#join">join, leftJoin, rightJoin, fullJoin, crossJoin</a></li>
       <li>- <a href="#on">on</a></li>
       <li>- <a href="#using">using</a></li>
+      <li>- <a href="#join">naturalJoin, naturalLeftJoin, naturalRightJoin, naturalFullJoin, naturalCrossJoin</a></li>
       <li>- <a href="#selwhere">where</a></li>
       <li>- <a href="#groupBy">groupBy</a></li>
       <li>- <a href="#having">having</a></li>
@@ -399,6 +400,17 @@ select('*').from('person').join('address').using(['address_id', 'country_id']);
         <pre>
 select('*').from('person').join('address', ['address_id', 'country_id']);
 // SELECT * FROM person INNER JOIN address USING (address_id, country_id)
+</pre>
+      </p>
+      <p id="naturaljoin">
+        <b class="header">naturalJoin, naturalLeftJoin, naturalRightJoin, naturalFullJoin, naturalCrossJoin</b><br />
+        <code>sel.naturalJoin(tbl)</code><br />
+        <span class="alias">Aliases: <b>naturalInnerJoin, naturalLeftOuterJoin, naturalRightOuterJoin, naturalFullOuterJoin</b></span>
+        <br />
+        <p>Adds the specified natural join to the query. <b>tbl</b> can include an alias after a space or after the <tt>'AS'</tt> keyword (<tt>'my_table my_alias'</tt>).</p>
+        <pre>
+select().from('person').naturalJoin('address');
+// SELECT * FROM person NATURAL INNER JOIN address
 </pre>
       </p>
       <p id="selwhere">
