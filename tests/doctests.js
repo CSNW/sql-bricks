@@ -116,6 +116,10 @@ select('*').from('person').join('address').using('address_id, country_id');
 check(select('*').from('person').join('address').using(['address_id', 'country_id']), "SELECT * FROM person INNER JOIN address USING (address_id, country_id)");
 });
 
+it("select('*').from('person').join('address', ['address_id', 'country_id']);", function() {
+check(select('*').from('person').join('address', ['address_id', 'country_id']), "SELECT * FROM person INNER JOIN address USING (address_id, country_id)");
+});
+
 it("select('*').from('person').where('first_name', 'Fred');", function() {
 check(select('*').from('person').where('first_name', 'Fred'), "SELECT * FROM person WHERE first_name = 'Fred'");
 });
