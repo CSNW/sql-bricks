@@ -578,6 +578,50 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('natural joins', function() {
+    it('.naturalJoin() should accept a comma-delimited string', function() {
+      check(select().from('usr').naturalJoin('psn, addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL INNER JOIN person psn ' +
+        'NATURAL INNER JOIN address addr');
+    });
+    it('.naturalLeftJoin() should generate a natural left join', function() {
+      check(select().from('usr').naturalLeftJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL LEFT JOIN address addr');
+    });
+    it('.naturalLeftOuterJoin() should generate a natural left join', function() {
+      check(select().from('usr').naturalLeftOuterJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL LEFT JOIN address addr');
+    });
+    it('.naturalRightJoin() should generate a natural right join', function() {
+      check(select().from('usr').naturalRightJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL RIGHT JOIN address addr');
+    });
+    it('.naturalRightOuterJoin() should generate a natural right join', function() {
+      check(select().from('usr').naturalRightOuterJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL RIGHT JOIN address addr');
+    });
+    it('.naturalFullJoin() should generate a natural full join', function() {
+      check(select().from('usr').naturalFullJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL FULL JOIN address addr');
+    });
+    it('.naturalFullOuterJoin() should generate a natural full join', function() {
+      check(select().from('usr').naturalFullOuterJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL FULL JOIN address addr');
+    });
+    it('.naturalCrossJoin() should generate a natural cross join', function() {
+      check(select().from('usr').naturalCrossJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL CROSS JOIN address addr');
+    });
+  });
+
   describe('WHERE clauses', function() {
     it('should AND multiple where() criteria by default', function() {
       check(select().from('user').where({
