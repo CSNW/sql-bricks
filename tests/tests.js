@@ -509,7 +509,7 @@ describe('SQL Bricks', function() {
     it('.crossJoin() should generate a cross join', function() {
       check(select().from('usr').crossJoin('addr'),
         'SELECT * FROM "user" usr ' + 
-        'CROSS JOIN address addr ON usr.addr_fk = addr.pk');
+        'CROSS JOIN address addr');
     });
     it('join() should accept an expression for the on argument', function() {
       check(select().from('usr').join('addr', eq('usr.addr_id', sql('addr.id'))),
@@ -614,11 +614,6 @@ describe('SQL Bricks', function() {
       check(select().from('usr').naturalFullOuterJoin('addr'),
         'SELECT * FROM "user" usr ' + 
         'NATURAL FULL JOIN address addr');
-    });
-    it('.naturalCrossJoin() should generate a natural cross join', function() {
-      check(select().from('usr').naturalCrossJoin('addr'),
-        'SELECT * FROM "user" usr ' + 
-        'NATURAL CROSS JOIN address addr');
     });
   });
 
