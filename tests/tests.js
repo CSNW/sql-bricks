@@ -509,7 +509,7 @@ describe('SQL Bricks', function() {
     it('.crossJoin() should generate a cross join', function() {
       check(select().from('usr').crossJoin('addr'),
         'SELECT * FROM "user" usr ' + 
-        'CROSS JOIN address addr ON usr.addr_fk = addr.pk');
+        'CROSS JOIN address addr');
     });
     it('join() should accept an expression for the on argument', function() {
       check(select().from('usr').join('addr', eq('usr.addr_id', sql('addr.id'))),
@@ -575,6 +575,45 @@ describe('SQL Bricks', function() {
       assert.throws(function () {
         select().from('t1').join('t2').on({'t1.t2_id':'t2.id'}).using('id');
       });
+    });
+  });
+
+  describe('natural joins', function() {
+    it('.naturalJoin() should accept a comma-delimited string', function() {
+      check(select().from('usr').naturalJoin('psn, addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL INNER JOIN person psn ' +
+        'NATURAL INNER JOIN address addr');
+    });
+    it('.naturalLeftJoin() should generate a natural left join', function() {
+      check(select().from('usr').naturalLeftJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL LEFT JOIN address addr');
+    });
+    it('.naturalLeftOuterJoin() should generate a natural left join', function() {
+      check(select().from('usr').naturalLeftOuterJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL LEFT JOIN address addr');
+    });
+    it('.naturalRightJoin() should generate a natural right join', function() {
+      check(select().from('usr').naturalRightJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL RIGHT JOIN address addr');
+    });
+    it('.naturalRightOuterJoin() should generate a natural right join', function() {
+      check(select().from('usr').naturalRightOuterJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL RIGHT JOIN address addr');
+    });
+    it('.naturalFullJoin() should generate a natural full join', function() {
+      check(select().from('usr').naturalFullJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL FULL JOIN address addr');
+    });
+    it('.naturalFullOuterJoin() should generate a natural full join', function() {
+      check(select().from('usr').naturalFullOuterJoin('addr'),
+        'SELECT * FROM "user" usr ' + 
+        'NATURAL FULL JOIN address addr');
     });
   });
 

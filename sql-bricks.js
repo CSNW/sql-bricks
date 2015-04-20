@@ -90,6 +90,10 @@
     'leftJoin': 'LEFT', 'leftOuterJoin': 'LEFT',
     'rightJoin': 'RIGHT', 'rightOuterJoin': 'RIGHT',
     'fullJoin': 'FULL', 'fullOuterJoin': 'FULL',
+    'naturalJoin': 'NATURAL INNER', 'naturalInnerJoin': 'NATURAL INNER',
+    'naturalLeftJoin': 'NATURAL LEFT', 'naturalLeftOuterJoin': 'NATURAL LEFT',
+    'naturalRightJoin': 'NATURAL RIGHT', 'naturalRightOuterJoin': 'NATURAL RIGHT',
+    'naturalFullJoin': 'NATURAL FULL', 'naturalFullOuterJoin': 'NATURAL FULL',
     'crossJoin': 'CROSS'
   };
   Object.keys(join_methods).forEach(function(method) {
@@ -486,6 +490,13 @@
   };
   Join.prototype.toString = function toString(opts) {
     var on = this.on, tbl = handleTable(this.tbl, opts), left_tbl = handleTable(this.left_tbl, opts);
+
+    // Natural or cross join, no criteria needed.
+    // Debt: Determining whether join is natural/cross by reading the string is slightly hacky... but works.
+    if (/^(natural|cross)/i.test(this.type))
+      return this.type + ' JOIN ' + tbl;
+    
+    // Not a natural or cross, check for criteria.
     if (!on || _.isEmpty(on)) {
       if (sql._joinCriteria)
         on = this.autoGenerateOn(tbl, left_tbl);

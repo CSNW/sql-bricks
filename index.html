@@ -162,6 +162,7 @@
       <li>- <a href="#join">join, leftJoin, rightJoin, fullJoin, crossJoin</a></li>
       <li>- <a href="#on">on</a></li>
       <li>- <a href="#using">using</a></li>
+      <li>- <a href="#naturaljoin">naturalJoin, naturalLeftJoin, naturalRightJoin, naturalFullJoin</a></li>
       <li>- <a href="#selwhere">where</a></li>
       <li>- <a href="#groupBy">groupBy</a></li>
       <li>- <a href="#having">having</a></li>
@@ -360,6 +361,7 @@ update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPa
         <span class="alias">Aliases: <b>innerJoin, leftOuterJoin, rightOuterJoin, fullOuterJoin</b></span>
         <br />
         <p>Adds the specified join to the query. <b>tbl</b> can include an alias after a space or after the <tt>'AS'</tt> keyword (<tt>'my_table my_alias'</tt>). <b>onCriteria</b> is optional if a <a href="#joinCriteria">joinCriteria</a> function has been supplied.</p>
+        <p><i>Note: <b>crossJoin</b> will ignore any <b>onCriteria</b> argument, if supplied.</i></p>
         <pre>
 select().from('person').join('address', {'person.addr_id': 'address.id'});
 // SELECT * FROM person INNER JOIN address ON person.addr_id = address.id
@@ -399,6 +401,17 @@ select('*').from('person').join('address').using(['address_id', 'country_id']);
         <pre>
 select('*').from('person').join('address', ['address_id', 'country_id']);
 // SELECT * FROM person INNER JOIN address USING (address_id, country_id)
+</pre>
+      </p>
+      <p id="naturaljoin">
+        <b class="header">naturalJoin, naturalLeftJoin, naturalRightJoin, naturalFullJoin</b><br />
+        <code>sel.naturalJoin(tbl)</code><br />
+        <span class="alias">Aliases: <b>naturalInnerJoin, naturalLeftOuterJoin, naturalRightOuterJoin, naturalFullOuterJoin</b></span>
+        <br />
+        <p>Adds the specified natural join to the query. <b>tbl</b> can include an alias after a space or after the <tt>'AS'</tt> keyword (<tt>'my_table my_alias'</tt>).</p>
+        <pre>
+select().from('person').naturalJoin('address');
+// SELECT * FROM person NATURAL INNER JOIN address
 </pre>
       </p>
       <p id="selwhere">
