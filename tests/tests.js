@@ -515,9 +515,13 @@ describe('SQL Bricks', function() {
       check(select().from('usr').join('addr', eq('usr.addr_id', sql('addr.id'))),
         'SELECT * FROM "user" usr INNER JOIN address addr ON usr.addr_id = addr.id');
     });
+    it('join() should accept an array for the on argument (for JOIN USING)', function() {
+      check(select().from('usr').join('addr', ['addr_id', 'country_id']),
+        'SELECT * FROM "user" usr INNER JOIN address addr USING (addr_id, country_id)');
+    });
   });
 
-  describe('on()', function() {
+  describe('.on()', function() {
     it('should accept an object literal', function() {
       check(select().from('usr').join('addr').on({'usr.addr_id': 'addr.id'}),
         'SELECT * FROM "user" usr ' + 
@@ -543,6 +547,34 @@ describe('SQL Bricks', function() {
     it('should accept an expression', function() {
       check(select().from('usr').join('addr').on(eq('usr.addr_id', sql('addr.id'))),
         'SELECT * FROM "user" usr INNER JOIN address addr ON usr.addr_id = addr.id');
+    });
+    it('should not proceed if .using() has already been used', function() {
+      assert.throws(function () {
+        select().from('t1').join('t2').using('id').on({'t1.t2_id':'t2.id'});
+      });
+    });
+  });
+
+  describe('.using()', function() {
+    it('should accept a comma-delimited string', function() {
+      check(select().from('usr').join('addr').using('addr_id, contrived_id'),
+        'SELECT * FROM "user" usr ' + 
+        'INNER JOIN address addr USING (addr_id, contrived_id)');
+    });
+    it('should accept multiple arguments', function() {
+      check(select().from('usr').join('addr').using('addr_id', 'contrived_id'),
+        'SELECT * FROM "user" usr ' + 
+        'INNER JOIN address addr USING (addr_id, contrived_id)');
+    });
+    it('should accept an array literal', function() {
+      check(select().from('usr').join('addr').using(['addr_id', 'contrived_id']),
+        'SELECT * FROM "user" usr ' + 
+        'INNER JOIN address addr USING (addr_id, contrived_id)');
+    });
+    it('should not proceed if .on() has already been used', function() {
+      assert.throws(function () {
+        select().from('t1').join('t2').on({'t1.t2_id':'t2.id'}).using('id');
+      });
     });
   });
 
@@ -738,9 +770,13 @@ describe('SQL Bricks', function() {
       check(select('desc').from('usr'),
         'SELECT "desc" FROM "user" usr');
     });
-    it('in JOINs', function() {
+    it('in JOIN ONs', function() {
       check(select().from('usr').join('psn', {'usr.order': 'psn.order'}),
-        'SELECT * FROM "user" usr INNER JOIN person psn ON usr."order" = psn."order"')
+        'SELECT * FROM "user" usr INNER JOIN person psn ON usr."order" = psn."order"');
+    });
+    it('in JOIN USINGs', function() {
+      check(select().from('usr').join('psn').using('order'),
+        'SELECT * FROM "user" usr INNER JOIN person psn USING ("order")');
     });
     it('in INSERT', function() {
       check(insert('user').values({'order': 1}),

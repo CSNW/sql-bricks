@@ -161,6 +161,7 @@
       <li>- <a href="#selfrom">from</a></li>
       <li>- <a href="#join">join, leftJoin, rightJoin, fullJoin, crossJoin</a></li>
       <li>- <a href="#on">on</a></li>
+      <li>- <a href="#using">using</a></li>
       <li>- <a href="#selwhere">where</a></li>
       <li>- <a href="#groupBy">groupBy</a></li>
       <li>- <a href="#having">having</a></li>
@@ -374,6 +375,30 @@ select('*').from('person').innerJoin('address').on('person.addr_id', 'address.id
 
 select('*').from('person').join('address').on({'person.addr_id': 'address.id'});
 // SELECT * FROM person INNER JOIN address ON person.addr_id = address.id
+</pre>
+      </p>
+      <p id="using">
+        <b class="header">using</b><code>sel.using(columnList)</code>
+        <br />
+        <p>Joins using <tt>USING</tt> instead of <tt>ON</tt>. <b>columnList</b> can be passed in as one or more string arguments, a comma-delimited string, or an array.</p>
+
+        <pre>
+select('*').from('person').innerJoin('address').using('address_id');
+// SELECT * FROM person INNER JOIN address USING (address_id)
+
+select('*').from('person').join('address').using('address_id', 'country_id');
+// SELECT * FROM person INNER JOIN address USING (address_id, country_id)
+
+select('*').from('person').join('address').using('address_id, country_id');
+// SELECT * FROM person INNER JOIN address USING (address_id, country_id)
+
+select('*').from('person').join('address').using(['address_id', 'country_id']);
+// SELECT * FROM person INNER JOIN address USING (address_id, country_id)
+</pre>
+        <p><i>Note: <b>columnList</b> can also be passed as the second argument to <tt>join</tt> - in which case it must be specified <b>as an array</b> of one or more string values.</i></p>
+        <pre>
+select('*').from('person').join('address', ['address_id', 'country_id']);
+// SELECT * FROM person INNER JOIN address USING (address_id, country_id)
 </pre>
       </p>
       <p id="selwhere">

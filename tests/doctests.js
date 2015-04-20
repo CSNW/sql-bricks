@@ -88,6 +88,38 @@ select('*').from('person').innerJoin('address').on('person.addr_id', 'address.id
 check(select('*').from('person').join('address').on({'person.addr_id': 'address.id'}), "SELECT * FROM person INNER JOIN address ON person.addr_id = address.id");
 });
 
+it("select('*').from('person').innerJoin('address').using('address_id');", function() {
+check(select('*').from('person').innerJoin('address').using('address_id'), "SELECT * FROM person INNER JOIN address USING (address_id)");
+});
+
+it("select('*').from('person').join('address').using('address_id', 'country_id');", function() {
+select('*').from('person').innerJoin('address').using('address_id');
+
+check(select('*').from('person').join('address').using('address_id', 'country_id'), "SELECT * FROM person INNER JOIN address USING (address_id, country_id)");
+});
+
+it("select('*').from('person').join('address').using('address_id, country_id');", function() {
+select('*').from('person').innerJoin('address').using('address_id');
+
+select('*').from('person').join('address').using('address_id', 'country_id');
+
+check(select('*').from('person').join('address').using('address_id, country_id'), "SELECT * FROM person INNER JOIN address USING (address_id, country_id)");
+});
+
+it("select('*').from('person').join('address').using(['address_id', 'country_id']);", function() {
+select('*').from('person').innerJoin('address').using('address_id');
+
+select('*').from('person').join('address').using('address_id', 'country_id');
+
+select('*').from('person').join('address').using('address_id, country_id');
+
+check(select('*').from('person').join('address').using(['address_id', 'country_id']), "SELECT * FROM person INNER JOIN address USING (address_id, country_id)");
+});
+
+it("select('*').from('person').join('address', ['address_id', 'country_id']);", function() {
+check(select('*').from('person').join('address', ['address_id', 'country_id']), "SELECT * FROM person INNER JOIN address USING (address_id, country_id)");
+});
+
 it("select('*').from('person').where('first_name', 'Fred');", function() {
 check(select('*').from('person').where('first_name', 'Fred'), "SELECT * FROM person WHERE first_name = 'Fred'");
 });

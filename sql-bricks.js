@@ -99,14 +99,26 @@
   });
   Select.prototype.on = function(on) {
     var last_join = this.joins[this.joins.length - 1];
+    if (_.isArray(last_join.on) && !_.isEmpty(last_join.on))
+      throw new Error('Error adding clause ON: ' + last_join.left_tbl + ' JOIN ' + last_join.tbl + ' already has a USING clause.');
     if (isExpr(on)) {
       last_join.on = on;
     }
     else {
-      if (!last_join.on)
+      if (!last_join.on || (_.isArray(last_join.on))) // Instantiate object, including if it's an empty array from .using().
         last_join.on = {};
       _.extend(last_join.on, argsToObject(arguments));
     }
+    return this;
+  };
+  Select.prototype.using = function(columns) {
+    var last_join = this.joins[this.joins.length - 1];
+    if (!_.isEmpty(last_join.on) && !_.isArray(last_join.on))
+      throw new Error('Error adding clause USING: ' + last_join.left_tbl + ' JOIN ' + last_join.tbl + ' already has an ON clause.');
+
+    if (_.isEmpty(last_join.on))
+      last_join.on = []; // Using _.isEmpty tolerates overwriting of empty {}.
+    last_join.on = _.union(last_join.on, argsToArray(arguments));
     return this;
   };
 
@@ -481,6 +493,15 @@
         throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
     }
 
+    // Array value for on indicates join using "using", rather than "on".
+    if (_.isArray(on)) {
+      on = _.map(on, function (column) {
+        return handleColumn(column);
+      }).join(', ');
+      return this.type + ' JOIN ' + tbl + ' USING (' + on + ')';
+    }
+
+    // Join using "on".
     if (isExpr(on)) {
       on = on.toString(opts);
     }
