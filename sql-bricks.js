@@ -578,6 +578,7 @@
         this.expressions = this.expressions.concat(objToEquals(expr));
     }.bind(this));
   }
+  sql.Group = Group;
   Group.prototype.clone = function clone() {
     return new Group(this.op, _.invoke(this.expressions, 'clone'));
   };
@@ -599,6 +600,7 @@
     else
       this.expressions = [expr];
   }
+  sql.Not = Not;
   Not.prototype.clone = function clone() {
     return new Not(this.expressions[0].clone());
   };
@@ -638,6 +640,7 @@
     this.val = val;
     this.quantifier = quantifier || '';
   }
+  sql.Binary = Binary;
   Binary.prototype.clone = function clone() {
     return new Binary(this.op, this.col, this.val);
   };
@@ -652,6 +655,7 @@
     this.val = val;
     this.escape_char = escape_char;
   }
+  sql.Like = Like;
   Like.prototype.clone = function clone() {
     return new Like(this.col, this.val, this.escape_char);
   };
@@ -668,6 +672,7 @@
     this.val1 = val1;
     this.val2 = val2;
   }
+  sql.Between = Between;
   Between.prototype.clone = function clone() {
     return new Between(this.col, this.val1, this.val2);
   };
@@ -682,6 +687,7 @@
     this.op = op;
     this.col = col;
   }
+  sql.Unary = Unary;
   Unary.prototype.clone = function clone() {
     return new Unary(this.op, this.col);
   };
@@ -700,6 +706,7 @@
     this.col = col;
     this.list = list;
   }
+  sql.In = In;
   In.prototype.clone = function clone() {
     return new In(this.col, this.list.slice());
   };
@@ -718,6 +725,7 @@
   function Exists(subquery) {
     this.subquery = subquery;
   };
+  sql.Exists = Exists;
   Exists.prototype.clone = function clone() {
     return new Exists(this.subquery.clone());
   };
