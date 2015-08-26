@@ -13,11 +13,23 @@
   // it is also the main namespace for SQLBricks
   function sql(str) {
     if (!(this instanceof sql))
-      return new sql(str);
+      return applyNew(sql, arguments);
+
     this.str = str;
+    this.vals = _.toArray(arguments).slice(1);
   }
-  sql.prototype.toString = function toString() {
-    return this.str;
+  sql.prototype.toString = function toString(opts) {
+    var str = this.str;
+    if (opts && opts.parameterized) {
+      this.vals.forEach(function(val) {
+        opts.values.push(val);
+        if (opts.placeholder == '$%d')
+          str = str.replace(/\$(?!\d)/, '$' + opts.value_ix++);
+        else if (opts.placeholder == '?%d')
+          str = str.replace(/\?(?!\d)/, '?' + opts.value_ix++);
+      });
+    }
+    return str;
   };
 
   // val() wrapper allows a value (string/number/etc) where SQL (column/table/etc) is expected
@@ -546,10 +558,13 @@
 
   function argsToExpressions(args) {
     var flat_args = _.all(args, function(arg) {
-      return typeof arg != 'object' || arg instanceof val || arg instanceof sql;
+      return typeof arg != 'object' || arg instanceof val || arg instanceof sql || arg == null;
     });
     if (flat_args) {
-      return [sql.equal(args[0], args[1])];
+      if (args[0] instanceof sql && args.length == 1)
+        return [args[0]];
+      else
+        return [sql.equal(args[0], args[1])];
     }
     else {
       var exprs = [];
@@ -789,7 +804,7 @@
       return '(' + val._toString(opts) + ')';
 
     if (val instanceof sql)
-      return val.toString();
+      return val.toString(opts);
 
     if (opts.parameterized) {
       opts.values.push(val);

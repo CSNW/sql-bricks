@@ -106,6 +106,27 @@ describe('SQL Bricks', function() {
       }), 'SELECT * FROM "user" WHERE removed = $1 AND name = $2',
       [0, 'Fred Flintstone']);
     });
+    it('should generate WHERE clauses with arbitrary SQL', function() {
+      var stmt = select().from('time_limits');
+      stmt.where(sql(
+        "tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')"));
+      check(stmt,
+        "SELECT * FROM time_limits WHERE tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')");
+    });
+    it('should generate WHERE clauses with arbitrary SQL and parameters', function() {
+      var stmt = select().from('time_limits');
+      var time1 = '2014-12-06T22:35:00';
+      var time2 = '2014-12-06T22:36:00';
+      stmt.where(sql(
+        "tsrange(start_date_time, end_date_time, '[]') @> tsrange($, $, '[]')", time1, time2));
+      checkParams(stmt,
+        "SELECT * FROM time_limits WHERE tsrange(start_date_time, end_date_time, '[]') @> tsrange($1, $2, '[]')",
+        ['2014-12-06T22:35:00', '2014-12-06T22:36:00']);
+    });
+    it('should handle WHERE clauses with sql() and a null check', function() {
+      check(select().from('test').where(sql('my_col_val()'), null),
+        "SELECT * FROM test WHERE my_col_val() IS NULL");
+    });
     it('should not escape single quotes in the values returned by toParams()', function() {
       checkParams(update('user', {'name': "Muad'Dib"}),
         'UPDATE "user" SET name = $1',
