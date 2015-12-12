@@ -489,7 +489,7 @@
     return sql._joinCriteria(getTable(left_tbl), getAlias(left_tbl), getTable(tbl), getAlias(tbl));
   };
   Join.prototype.toString = function toString(opts) {
-    var on = this.on, tbl = handleTable(this.tbl, opts), left_tbl = handleTable(this.left_tbl, opts);
+    var on = this.on, tbl = handleTable(this.tbl, opts);
 
     // Natural or cross join, no criteria needed.
     // Debt: Determining whether join is natural/cross by reading the string is slightly hacky... but works.
@@ -498,10 +498,13 @@
     
     // Not a natural or cross, check for criteria.
     if (!on || _.isEmpty(on)) {
-      if (sql._joinCriteria)
+      if (sql._joinCriteria) {
+        var left_tbl = handleTable(this.left_tbl, opts);
         on = this.autoGenerateOn(tbl, left_tbl);
-      else
+      }
+      else {
         throw new Error('No join criteria supplied for "' + getAlias(tbl) + '" join');
+      }
     }
 
     // Array value for on indicates join using "using", rather than "on".
