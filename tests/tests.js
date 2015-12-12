@@ -145,6 +145,14 @@ describe('SQL Bricks', function() {
         'SELECT (SELECT last_name FROM "user" WHERE first_name = $1)',
         ['Fred']);
     });
+    it('should properly parameterize subqueries with a join', function() {
+      var values = {'first_name': 'Fred'};
+      var query = select().from(select().from('user').where(values).as('subuser'))
+        .join('other_table', {'other_table.id': 'subuser.id'});
+      checkParams(query,
+        'SELECT * FROM (SELECT * FROM "user" WHERE first_name = $1) subuser INNER JOIN other_table ON other_table.id = subuser.id',
+        ['Fred']);
+    });
     it('should properly parameterize subqueries in updates', function() {
       var addr_id_for_usr = select('id').from('address').where('usr_id', sql('"user".id')).and('active', true);
       checkParams(update('user').set('addr_id', addr_id_for_usr),
