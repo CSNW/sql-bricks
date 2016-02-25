@@ -17,18 +17,59 @@
 
     this.str = str;
     this.vals = _.toArray(arguments).slice(1);
+
+    // support passing a single array
+    if (_.isArray(this.vals[0]))
+      this.vals = this.vals[0];
   }
   sql.prototype.toString = function toString(opts) {
-    var str = this.str;
-    if (opts && opts.parameterized) {
-      this.vals.forEach(function(val) {
-        opts.values.push(val);
-        if (opts.placeholder == '$%d')
-          str = str.replace(/\$(?!\d)/, '$' + opts.value_ix++);
-        else if (opts.placeholder == '?%d')
-          str = str.replace(/\?(?!\d)/, '?' + opts.value_ix++);
-      });
+    function replacer(match, capture) {
+      // don't do any replacing if the user supplied no values
+      if (!opts.values.length)
+        return match;
+
+      var ix = capture ? parseInt(capture, 10) : opts.value_ix++;
+      var val = opts.values[ix - 1];
+      if (_.isUndefined(val))
+        throw new Error('Parameterized sql() (' + str + ') requires ' + ix + ' parameter(s) but only ' + opts.values.length + ' parameter(s) were supplied');
+      if (_.isObject(sql) && !_.isArray(sql) && sql == null)
+        return val.toString(opts);
+      else
+        return sql.convert(val);
     }
+
+    var str = this.str;
+    if (!opts)
+      opts = {};
+    if (!opts.values)
+      opts.values = [];
+    if (!opts.value_ix)
+      opts.value_ix = 1;
+
+    this.vals.forEach(function(val) {
+      opts.values.push(val);
+    });
+
+    // inject numbers into placeholders if numbers are required
+    if (opts.placeholder == '$%d')
+      str = str.replace(/\$(?!\d)/g, function() { return '$' + opts.value_ix++; });
+    else if (opts.placeholder == '?%d')
+      str = str.replace(/\?(?!\d)/g, function() { return '?' + opts.value_ix++; });
+
+    if (!opts.parameterized) {
+      // replace placeholders with inline values
+      if (opts.placeholder == '$%d')
+        str = str.replace(/\$(\d+)/g, replacer);
+      else if (opts.placeholder == '?%d')
+        str = str.replace(/\?(\d+)/g, replacer);
+      else if (opts.placeholder == '$')
+        str = str.replace(/\$/g, replacer);
+      else if (opts.placeholder == '?')
+        str = str.replace(/\?/g, replacer);
+      else
+        throw new Error('Unsupported placeholder: "' + opts.placeholder + '"');
+    }
+
     return str;
   };
 
@@ -419,11 +460,15 @@
     return {'text': sql, 'values': opts.values};
   };
 
-  Statement.prototype.toString = function toString() {
+  Statement.prototype.toString = function toString(opts) {
+    if (!opts)
+      opts = {};
+    _.defaults(opts, {'placeholder': '$%d'});
+
     if (this.prev_stmt)
-      return this.prev_stmt.toString();
+      return this.prev_stmt.toString(opts);
     else
-      return this._toString({}).trim();
+      return this._toString(opts).trim();
   };
 
   Statement.prototype._toString = function(opts) {
@@ -861,7 +906,10 @@
     if (expr instanceof val)
       return handleValue(expr.val, opts);
 
-    if (!(expr instanceof sql) && unquoted_regex.test(expr))
+    if (expr instanceof sql)
+      return expr.toString(opts);
+
+    if (unquoted_regex.test(expr))
       return quoteColOrTbl(expr);
     else
       return expr;

@@ -205,6 +205,10 @@ describe('SQL Bricks', function() {
         check(update('user', {'birthdate': new Date('1980-01-01T00:00:00Z')}),
           "UPDATE \"user\" SET birthdate = TIMESTAMP WITH TIME ZONE '1980-01-01 00:00:00.000+00:00'");
       });
+      it('should work with sql() SQL literal strings', function() {
+        check(select().from('person').where(sql('some_func($, $)', ['a', 'b'])),
+          "SELECT * FROM person WHERE some_func('a', 'b')");
+      });
       it('should support user-supplied conversions', function() {
         var orig_bool = sql.conversions.Boolean;
         sql.conversions.Boolean = function(bool) { return bool ? '1' : '0'; };
