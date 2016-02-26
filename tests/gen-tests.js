@@ -33,8 +33,12 @@ readme.match(/<pre>[^<]+<\/pre>/g).forEach(function(ex) {
     }
   });
 });
+
 var tmpl = fs.readFileSync(__dirname + '/doctests.tmpl', 'utf8');
-fs.writeFileSync(__dirname + '/doctests.js', tmpl.replace('{{tests}}', contents));
+
+// in str.replace() some $ combinations are special. To escape and just do a regular $, do $$
+// thus replace(/\$/g, '$$$$') replaces a single dollar sign with two dollar signs so they aren't misinterpreted in the other replace
+fs.writeFileSync(__dirname + '/doctests.js', tmpl.replace('{{tests}}', contents.replace(/\$/g, '$$$$')));
 
 function wrap(lines) {
   var last_line = lines[lines.length - 1];

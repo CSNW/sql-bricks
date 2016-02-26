@@ -50,6 +50,15 @@
       opts.values.push(val);
     });
 
+    // shift the placeholder indexes if there are already values
+    if (opts.value_ix > 1) {
+      var orig_val_ix = opts.value_ix;
+      if (opts.placeholder == '$%d')
+        str = str.replace(/\$(\d+)/g, function(match, capture) { opts.value_ix++; return '$' + (parseInt(capture, 10) + orig_val_ix - 1); });
+      else if (opts.placeholder == '?%d')
+        str = str.replace(/\?(\d+)/g, function(match, capture) { opts.value_ix++; return '?' + parseInt(capture, 10) + orig_val_ix - 1; });
+    }
+
     // inject numbers into placeholders if numbers are required
     if (opts.placeholder == '$%d')
       str = str.replace(/\$(?!\d)/g, function() { return '$' + opts.value_ix++; });
