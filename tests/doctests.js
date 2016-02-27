@@ -47,12 +47,12 @@ it("select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')}
 check(select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')}), "SELECT * FROM person WHERE billing_addr_id = mailing_addr_id");
 });
 
-it("select().where(sql('field @> $', { key: 'value' })).toParams()", function() {
-check(select().where(sql('field @> $', { key: 'value' })).toParams(), {"text": "SELECT * WHERE field @> $1", "values": [{"key": "value"}]});
+it("select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams()", function() {
+check(select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams(), {"text": "SELECT * WHERE field @> $1 and field @> $2", "values": [{"key": "value"}, {"key": "value2"}]});
 });
 
-it("select().where({name: 'Fred'}).and(sql('field @> $1', { key: 'value' })).toParams()", function() {
-check(select().where({name: 'Fred'}).and(sql('field @> $1', { key: 'value' })).toParams(), {"text": "SELECT * WHERE name = $1 AND field @> $2", "values": ["Fred", {"key": "value"}]});
+it("select().where({name: 'Fred'}).and(sql('f1 @> $2 and f2 @> $1', [{key: 'value' }, {key: 'value2'}])).toParams()", function() {
+check(select().where({name: 'Fred'}).and(sql('f1 @> $2 and f2 @> $1', [{key: 'value' }, {key: 'value2'}])).toParams(), {"text": "SELECT * WHERE name = $1 AND f1 @> $3 and f2 @> $2", "values": ["Fred", {"key": "value"}, {"key": "value2"}]});
 });
 
 it("select().from('person').where(sql.val('Fred'), sql('first_name'));", function() {
