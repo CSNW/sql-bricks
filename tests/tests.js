@@ -209,6 +209,10 @@ describe('SQL Bricks', function() {
         check(select().from('person').where(sql('some_func($, $)', ['a', 'b'])),
           "SELECT * FROM person WHERE some_func('a', 'b')");
       });
+      it('should escape single quotes when sql() SQL literal strings are used', function() {
+        check(select().from('person').where(sql('some_func($)', ["Muad'Dib"])),
+          "SELECT * FROM person WHERE some_func('Muad''Dib')");
+      });
       it('should support user-supplied conversions', function() {
         var orig_bool = sql.conversions.Boolean;
         sql.conversions.Boolean = function(bool) { return bool ? '1' : '0'; };
