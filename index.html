@@ -257,13 +257,25 @@ select().from('person')
       </p>
       
       <p id="sql">
-        <b class="header">sql</b><code>sql(str)</code>
+        <b class="header">sql</b><code>sql(str[, values])</code>
         <br />
         <p>The SQL Bricks namespace (saved to the local variable <tt>sql</tt> in these docs) can be called as a function to insert SQL into SQL Bricks somewhere that a value is expected (the right-hand side of <tt>WHERE</tt> criteria, or <tt>insert()</tt>/<tt>update()</tt> values):
 
         <pre>
 select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM person WHERE billing_addr_id = mailing_addr_id
+</pre>
+      </p>
+      <p>Multiple `values` can be passed in as separate arguments or as an array (this example uses the postgresql [jsonb contains operator](http://www.postgresql.org/docs/9.4/static/functions-json.html#FUNCTIONS-JSONB-OP-TABLE)):
+        <pre>
+select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams()
+// {"text": "SELECT * WHERE field @> $1 and field @> $2", "values": [{"key": "value"}, {"key": "value2"}]}
+</pre>
+      </p>
+      <p>Note that numbered params can be used in the literal SQL string and these refer to the position in the current `sql()` call, not the position in the statement as a whole:
+        <pre>
+select().where({name: 'Fred'}).and(sql('f1 @> $2 and f2 @> $1', [{key: 'value' }, {key: 'value2'}])).toParams()
+// {"text": "SELECT * WHERE name = $1 AND f1 @> $3 and f2 @> $2", "values": ["Fred", {"key": "value"}, {"key": "value2"}]}
 </pre>
       </p>
 
@@ -807,7 +819,7 @@ select('person.order AS person_order').from('person');
 
       <h2 id="contributing">Contributing</h2>
       <p>Before sending a pull request, please verify that <a href="browser-tests.html">all the existing tests</a> pass and add new tests for the changes you are making. The tests can be run in node with <tt>npm test</tt> (provided <tt>npm install</tt> has been run to install the dependencies) or they can be run in the browser with <tt>browser-tests.html</tt>. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.</p>
-      <p>Note that <b>pull requests for additional SQL dialects</b> or extensions beyond ANSI SQL, Postgres and SQLite will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork.</p>
+      <p>Note that <b>pull requests for additional SQL dialects</b> or extensions beyond ANSI SQL-92 will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork or a library that extends sql-bricks.</p>
       <p>Also, <b>pull requests for additional SQL statements</b> beyond the four CRUD statements (<tt>SELECT</tt>, <tt>UPDATE</tt>, <tt>INSERT</tt>, <tt>DELETE</tt>) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.</p>
 
       <h2 id="acknowledgments">Acknowledgments</h2>

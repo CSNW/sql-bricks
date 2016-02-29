@@ -47,6 +47,14 @@ it("select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')}
 check(select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')}), "SELECT * FROM person WHERE billing_addr_id = mailing_addr_id");
 });
 
+it("select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams()", function() {
+check(select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams(), {"text": "SELECT * WHERE field @> $1 and field @> $2", "values": [{"key": "value"}, {"key": "value2"}]});
+});
+
+it("select().where({name: 'Fred'}).and(sql('f1 @> $2 and f2 @> $1', [{key: 'value' }, {key: 'value2'}])).toParams()", function() {
+check(select().where({name: 'Fred'}).and(sql('f1 @> $2 and f2 @> $1', [{key: 'value' }, {key: 'value2'}])).toParams(), {"text": "SELECT * WHERE name = $1 AND f1 @> $3 and f2 @> $2", "values": ["Fred", {"key": "value"}, {"key": "value2"}]});
+});
+
 it("select().from('person').where(sql.val('Fred'), sql('first_name'));", function() {
 check(select().from('person').where(sql.val('Fred'), sql('first_name')), "SELECT * FROM person WHERE 'Fred' = first_name");
 });
@@ -308,7 +316,7 @@ check(select('person.order AS person_order').from('person'), "SELECT person.\"or
 });
 
 function check(actual, expected) {
-  if (_.isObject(actual))
+  if (_.isObject(actual) && _.isString(expected))
     assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);

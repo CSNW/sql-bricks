@@ -45,7 +45,7 @@ describe('SQL Bricks', function() {
 });
 
 function check(actual, expected) {
-  if (_.isObject(actual))
+  if (_.isObject(actual) && _.isString(expected))
     assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);
