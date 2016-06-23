@@ -7,7 +7,7 @@ SQL Bricks.js is a transparent, schemaless library for building and composing SQ
 - Supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for select/insert/update/delete with the exception of asc/desc/collate options for `orderBy()`, see [#73](https://github.com/CSNW/sql-bricks/issues/73) (postgres extensions are at https://github.com/Suor/sql-bricks-postgres, sqlite extensions are at https://github.com/CSNW/sql-bricks-sqlite)
 - Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
-- Single straightforward [source file](sql-bricks.js) (less than 1,000 lines), easy to understand & debug
+- Single straightforward [source file](sql-bricks.js) (~1,100 lines), easy to understand & debug
 
 
 Comparison with popular SQL-generation libraries:
@@ -19,7 +19,7 @@ library         | lines | files | schema       | language     | other notes
 [node-sql][3]   | 2600  |    59 | schema       | javascript   |
 [mongo-sql][4]  | 1700  |    49 | schemaless   | javascript   | 
 [gesundheit][5] | 1600  |    21 | schemaless   | coffeescript | uses Any-DB to wrap the DB driver
-[sql-bricks][6] |  900  |     1 | schemaless   | javascript   |
+[sql-bricks][6] |  1100  |     1 | schemaless   | javascript   |
 
 [1]: https://github.com/tgriesser/knex
 [2]: https://github.com/hiddentao/squel
