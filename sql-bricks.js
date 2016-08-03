@@ -2,6 +2,7 @@
   "use strict";
 
   var is_common_js = typeof exports != 'undefined';
+  var default_opts = { placeholder: '?' };
   
   var _;
   if (is_common_js)
@@ -40,7 +41,7 @@
 
     var str = this.str;
     if (!opts)
-      opts = {};
+      opts = default_opts;
     if (!opts.values)
       opts.values = [];
     if (!opts.value_ix)
@@ -655,6 +656,7 @@
     return new Group(this.op, _.invoke(this.expressions, 'clone'));
   };
   Group.prototype.toString = function toString(opts) {
+    opts = opts||default_opts;
     var sql = _.map(this.expressions, function(expr) {
       return expr.toString(opts);
     }).join(' ' + this.op + ' ');
@@ -827,7 +829,7 @@
   }
 
   function isExpr(expr) {
-    return expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like || expr instanceof Between || expr instanceof Exists;
+    return expr instanceof sql || expr instanceof Group || expr instanceof Not || expr instanceof Binary || expr instanceof Unary || expr instanceof In || expr instanceof Like || expr instanceof Between || expr instanceof Exists;
   }
 
   // raw objects default to equals

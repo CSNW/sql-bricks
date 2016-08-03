@@ -804,6 +804,16 @@ describe('SQL Bricks', function() {
         }
         return where;
       }
+
+      it('should support converting expressions to string', function() {
+        check(and({ this: 'test' }, $in('that', [ 'v1', 'v2' ])),
+          "(this = 'test' AND that IN ('v1', 'v2'))");
+      });
+
+      it('should support raw sql blocks in expressions', function() {
+        check(and({ this: 'test' }, sql('field is null')),
+          "(this = 'test' AND field is null)");
+      });
     });
   });
 
