@@ -814,6 +814,16 @@ describe('SQL Bricks', function() {
         check(and({ this: 'test' }, sql('field is null')),
           "(this = 'test' AND field is null)");
       });
+
+      it('should support converting ?-parameterized sql blocks to string', function() {
+        check(sql('field = ?', 123).toString({ placeholder: '?' }),
+          "field = 123");
+      });
+
+      it('should support converting default-parameterized sql blocks to string', function() {
+        check(sql('field = $1', 123),
+          "field = 123");
+      });
     });
   });
 

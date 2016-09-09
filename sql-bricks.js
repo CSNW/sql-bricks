@@ -24,12 +24,13 @@
       this.vals = this.vals[0];
   }
   sql.prototype.toString = function toString(opts) {
-    function replacer(match, capture) {
+    // replacer(match, [capture1, capture2, ...,] offset, string)
+    function replacer() {
       // don't do any replacing if the user supplied no values
       if (!opts.values.length)
-        return match;
+        return arguments[0];
 
-      var ix = capture ? parseInt(capture, 10) : opts.value_ix++;
+      var ix = arguments.length > 3 ? parseInt(arguments[1], 10) : opts.value_ix++;
       var val = opts.values[ix - 1];
       if (_.isUndefined(val))
         throw new Error('Parameterized sql() (' + str + ') requires ' + ix + ' parameter(s) but only ' + opts.values.length + ' parameter(s) were supplied');
@@ -41,7 +42,7 @@
 
     var str = this.str;
     if (!opts)
-      opts = default_opts;
+      opts = _.extend({}, default_opts);
     if (!opts.values)
       opts.values = [];
     if (!opts.value_ix)
@@ -656,7 +657,7 @@
     return new Group(this.op, _.invoke(this.expressions, 'clone'));
   };
   Group.prototype.toString = function toString(opts) {
-    opts = opts||default_opts;
+    opts = opts || _.extend({}, default_opts);
     var sql = _.map(this.expressions, function(expr) {
       return expr.toString(opts);
     }).join(' ' + this.op + ' ');
