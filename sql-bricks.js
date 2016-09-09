@@ -2,7 +2,7 @@
   "use strict";
 
   var is_common_js = typeof exports != 'undefined';
-  var default_opts = { placeholder: '?' };
+  var default_opts = { placeholder: '$%d' };
   
   var _;
   if (is_common_js)
@@ -464,7 +464,7 @@
     if (!opts)
       opts = {};
     _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
-    _.defaults(opts, {'placeholder': '$%d'});
+    _.defaults(opts, default_opts);
     var sql = this._toString(opts);
 
     return {'text': sql, 'values': opts.values};
@@ -473,7 +473,7 @@
   Statement.prototype.toString = function toString(opts) {
     if (!opts)
       opts = {};
-    _.defaults(opts, {'placeholder': '$%d'});
+    _.defaults(opts, default_opts);
 
     if (this.prev_stmt)
       return this.prev_stmt.toString(opts);
