@@ -180,6 +180,11 @@ describe('SQL Bricks', function() {
         'UPDATE "user" SET addr_id = (SELECT id FROM address WHERE usr_id = "user".id AND active = $1)',
         [true])
     });
+    it('should properly merge parameterized sub-expressions with $%d placeholders', function() {
+      checkParams(select().from('tbl').where(or(sql('a = $1', 444), sql('b = $1', 555), sql('c = $1', 666))),
+        'SELECT * FROM tbl WHERE a = $1 OR b = $2 OR c = $3',
+        [444, 555, 666]);
+    });
   });
 
   describe('value handling', function() {
