@@ -2,7 +2,7 @@
   "use strict";
 
   var is_common_js = typeof exports != 'undefined';
-  var default_opts = { placeholder: '?' };
+  var default_opts = { placeholder: '$%d' };
   
   var _;
   if (is_common_js)
@@ -24,12 +24,13 @@
       this.vals = this.vals[0];
   }
   sql.prototype.toString = function toString(opts) {
-    function replacer(match, capture) {
+    // replacer(match, [capture1, capture2, ...,] offset, string)
+    function replacer() {
       // don't do any replacing if the user supplied no values
       if (!opts.values.length)
-        return match;
+        return arguments[0];
 
-      var ix = capture ? parseInt(capture, 10) : opts.value_ix++;
+      var ix = arguments.length > 3 ? parseInt(arguments[1], 10) : opts.value_ix++;
       var val = opts.values[ix - 1];
       if (_.isUndefined(val))
         throw new Error('Parameterized sql() (' + str + ') requires ' + ix + ' parameter(s) but only ' + opts.values.length + ' parameter(s) were supplied');
@@ -41,7 +42,7 @@
 
     var str = this.str;
     if (!opts)
-      opts = default_opts;
+      opts = _.extend({}, default_opts);
     if (!opts.values)
       opts.values = [];
     if (!opts.value_ix)
@@ -53,11 +54,10 @@
 
     // shift the placeholder indexes if there are already values
     if (opts.value_ix > 1) {
-      var orig_val_ix = opts.value_ix;
       if (opts.placeholder == '$%d')
-        str = str.replace(/\$(\d+)/g, function(match, capture) { opts.value_ix++; return '$' + (parseInt(capture, 10) + orig_val_ix - 1); });
+        str = str.replace(/\$(\d+)/g, function(match, capture) { return '$' + (parseInt(capture, 10) + opts.value_ix - 1); });
       else if (opts.placeholder == '?%d')
-        str = str.replace(/\?(\d+)/g, function(match, capture) { opts.value_ix++; return '?' + parseInt(capture, 10) + orig_val_ix - 1; });
+        str = str.replace(/\?(\d+)/g, function(match, capture) { return '?' + parseInt(capture, 10) + opts.value_ix - 1; });
     }
 
     // inject numbers into placeholders if numbers are required
@@ -78,6 +78,8 @@
         str = str.replace(/\?/g, replacer);
       else
         throw new Error('Unsupported placeholder: "' + opts.placeholder + '"');
+    } else {
+      opts.value_ix += this.vals.length;
     }
 
     return str;
@@ -464,7 +466,7 @@
     if (!opts)
       opts = {};
     _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
-    _.defaults(opts, {'placeholder': '$%d'});
+    _.defaults(opts, default_opts);
     var sql = this._toString(opts);
 
     return {'text': sql, 'values': opts.values};
@@ -473,7 +475,7 @@
   Statement.prototype.toString = function toString(opts) {
     if (!opts)
       opts = {};
-    _.defaults(opts, {'placeholder': '$%d'});
+    _.defaults(opts, default_opts);
 
     if (this.prev_stmt)
       return this.prev_stmt.toString(opts);
@@ -656,7 +658,7 @@
     return new Group(this.op, _.invoke(this.expressions, 'clone'));
   };
   Group.prototype.toString = function toString(opts) {
-    opts = opts||default_opts;
+    opts = opts || _.extend({}, default_opts);
     var sql = _.map(this.expressions, function(expr) {
       return expr.toString(opts);
     }).join(' ' + this.op + ' ');
