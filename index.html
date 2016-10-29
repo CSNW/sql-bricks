@@ -308,6 +308,12 @@ var local_persons = active_persons.clone().where({'local': true});
         <b class="header">toString</b><code>stmt.toString()</code>
         <br />
         Returns the non-parameterized SQL for the statement. This is called implicitly by Javascript when using a Statement anywhere that a string is expected (string concatenation, <tt>Array.join()</tt>, etc).
+        <br />
+        While <tt>toString()</tt> is easy to use, it is not recommended in most cases because:
+        <ul><li>It doesn't provide <a href="https://en.wikipedia.org/wiki/SQL_injection#Parameterized_statements">robust protection</a> against SQL injection attacks (it just does basic escaping)</li>
+        <li>It doesn't provide as much support for complex data types (objects, arrays, etc, are "stringified" before being passed to your database driver, which then has to interpret them correctly)</li>
+        <li>It does not provide the same level of detail in error messages (see <a href="https://github.com/Suor/sql-bricks-postgres/issues/10">this issue</a>)</li></ul>
+        For the above reasons, it is usually better to use <tt>toParams()</tt>.
       </p>
 
       <p id="toParams">

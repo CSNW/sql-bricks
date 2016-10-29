@@ -53,19 +53,29 @@ In the browser:
 
 ```javascript
 var select = SqlBricks.select;
-
-select().from('person').where({last_name: 'Rubble'});
-// SELECT * FROM person WHERE last_name = 'Rubble'
 ```
 
 In node:
 
 ```javascript
 var select = require('sql-bricks').select;
-
-select().from('person').where({last_name: 'Rubble'});
-// SELECT * FROM person WHERE last_name = 'Rubble'
 ```
+
+A simple select via `.toString()` and `.toParams()`:
+
+```javascript
+select().from('person').where({last_name: 'Rubble'}).toString();
+// "SELECT * FROM person WHERE last_name = 'Rubble'"
+
+select().from('person').where({last_name: 'Rubble'}).toParams();
+// {"text": "SELECT * FROM person WHERE last_name = $1", "values": ["Rubble"]}
+```
+
+While `toString()` is slightly easier, `toParams()` is recommended because:
+
+* It provides [robust protection](https://en.wikipedia.org/wiki/SQL_injection#Parameterized_statements) against SQL injection attacks (toString() just does basic escaping)
+* It provides better support for complex data types (objects, arrays, etc, are passed directly to your database driver instead of being "stringified")
+* It provides more helpful error messages (see https://github.com/Suor/sql-bricks-postgres/issues/10)
 
 # Examples
 
