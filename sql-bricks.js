@@ -890,8 +890,7 @@
     'Undefined': function() { return 'null'; },
     'Number': function(num) { return num.toString(); },
     'Boolean': function(bool) { return bool.toString().toUpperCase(); },
-    'Date': function(dt) { return "TIMESTAMP WITH TIME ZONE '" + dt.toISOString().replace('T', ' ').replace('Z', '+00:00') + "'"; },
-    'Array': function(arr) { return '{' + arr.map(sql.convert).join(', ') + '}'; }
+    'Date': function(dt) { return "TIMESTAMP WITH TIME ZONE '" + dt.toISOString().replace('T', ' ').replace('Z', '+00:00') + "'"; }
   };
 
   function handleTables(tables, opts) {

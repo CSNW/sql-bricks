@@ -202,10 +202,6 @@ describe('SQL Bricks', function() {
     });
 
     describe('.toString() value conversions', function() {
-      it('should, by default, convert arrays to SQL Array syntax', function() {
-        check(update('user', {'name': ["Paul", "Muad'Dib"]}),
-          "UPDATE \"user\" SET name = {'Paul', 'Muad''Dib'}");
-      });
       it('should, by default, convert dates to SQL TIMESTAMP WITH TIME ZONE format', function() {
         check(update('user', {'birthdate': new Date('1980-01-01T00:00:00Z')}),
           "UPDATE \"user\" SET birthdate = TIMESTAMP WITH TIME ZONE '1980-01-01 00:00:00.000+00:00'");
