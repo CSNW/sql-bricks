@@ -23,6 +23,10 @@
     if (_.isArray(this.vals[0]))
       this.vals = this.vals[0];
   }
+  sql.setDefaultOpts = setDefaultOpts;
+  function setDefaultOpts(opts) {
+    default_opts = _.extend(default_opts, opts);
+  }
   sql.prototype.toString = function toString(opts) {
     // replacer(match, [capture1, capture2, ...,] offset, string)
     function replacer() {
@@ -76,6 +80,7 @@
         str = str.replace(/\$/g, replacer);
       else if (opts.placeholder == '?')
         str = str.replace(/\?/g, replacer);
+      else if (opts.placeholder == '') {}
       else
         throw new Error('Unsupported placeholder: "' + opts.placeholder + '"');
     } else {
