@@ -375,8 +375,9 @@
     return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
   });
   Insert.defineClause('values', function(opts) {
-    if (this._select)
+    if (this._select) {
       return this._select._toString(opts);
+    }
     else {
       var pickOrder = _.keys(this._values[0]);
       return 'VALUES ' + _.map(this._values, function(values) {
