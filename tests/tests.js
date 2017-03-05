@@ -200,6 +200,10 @@ describe('SQL Bricks', function() {
       check(select().from('user').where(sql.val('Fred'), sql('first_name')),
         "SELECT * FROM \"user\" WHERE 'Fred' = first_name");
     });
+    it('should support value objects with differing field orders', function() {
+      check(insert('user').values([{id: 1, name: 'Fred'}, {name: 'Barney', id: 2}]),
+        "INSERT INTO \"user\" (id, name) VALUES (1, 'Fred'), (2, 'Barney')")
+    })
 
     describe('.toString() value conversions', function() {
       it('should, by default, convert dates to SQL TIMESTAMP WITH TIME ZONE format', function() {

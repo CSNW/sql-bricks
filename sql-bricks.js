@@ -377,10 +377,12 @@
   Insert.defineClause('values', function(opts) {
     if (this._select)
       return this._select._toString(opts);
-    else
+    else {
+      var pickOrder = _.keys(this._values[0]);
       return 'VALUES ' + _.map(this._values, function(values) {
-        return '(' + handleValues(_.values(values), opts).join(', ') + ')';
+        return '(' + handleValues(_.values(_.pick(values, pickOrder)), opts).join(', ') + ')';
       }).join(', ');
+    }
   });
 
 
