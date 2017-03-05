@@ -220,6 +220,13 @@
     this._noWait = true;
     return this;
   };
+  Select.prototype.limit = function(p, n){
+    if(typeof(p) === 'number' && typeof(n) === 'number'){
+     this._limit = [p, n];
+    }
+    else throw new Error('Select.limit: bad input: ' + arguments);
+    return this;
+  };
 
   // TODO: Don't we need to keep track of the order of UNION, INTERSECT, etc, clauses?
   var compounds = {
@@ -295,7 +302,7 @@
 
   Select.defineClause('orderBy', '{{#if _orderBy}}ORDER BY {{columns _orderBy}}{{/if}}');
   Select.defineClause('forUpdate', '{{#if _forUpdate}}FOR UPDATE{{#if _of}} OF {{columns _of}}{{/if}}{{#if _noWait}} NO WAIT{{/if}}{{/if}}');
-
+  Select.defineClause('limit', '{{#if _limit}}LIMIT {{expression _limit}}{{/if}}');
 
   // INSERT statement
   sql.insert = sql.insertInto = inherits(Insert, Statement);
