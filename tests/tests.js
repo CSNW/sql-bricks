@@ -943,6 +943,11 @@ describe('SQL Bricks', function() {
       ins.clone().values({'last_name': 'Flintstone'});
       check(ins, "INSERT INTO \"user\" (first_name) VALUES ('Fred')");
     });
+    it('should clone $in subqueries', function() {
+      var sel = select().from('user').where($in('first_name', select('first_name').from('user')));
+      sel.clone().where('last_name', 'Flintstone');
+      check(sel, "SELECT * FROM \"user\" WHERE first_name IN (SELECT first_name FROM \"user\")");
+    });
   });
 
   describe('the AS keyword', function() {
