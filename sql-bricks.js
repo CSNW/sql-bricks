@@ -792,10 +792,8 @@
   }
   sql.In = In;
   In.prototype.clone = function clone() {
-    if (_.isArray(this.list))
-        return new In(this.col, this.list.slice());
-    else if (this.list instanceof Statement)
-        return new In(this.col, this.list.clone());
+    var list = (this.list instanceof Statement) ? this.list.clone() : _.clone(this.list);
+    return new In(this.col, list);
   };
   In.prototype.toString = function toString(opts) {
     var col_sql = handleColumn(this.col, opts);
