@@ -456,7 +456,7 @@ select('*').from('person').where({'last_name': 'Flintstone', 'first_name': 'Fred
 select('*').from('person').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
 // SELECT * FROM person WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
 </pre>
-        <p>If necessary, literal SQL can be passed in via <a href="#sql"><tt>sql()</tt></a>:</p>
+        <p>If necessary, literal SQL can be passed in via <a href="#sql"><tt>sql(str[, values...])</tt></a>:</p>
         <pre>
 var last_name = 'Flintstone';
 select('*').from('person').where(sql('LTRIM(last_name) = $', last_name));
