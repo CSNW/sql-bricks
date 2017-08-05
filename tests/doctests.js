@@ -150,6 +150,11 @@ it("select('*').from('person').where(or(like('last_name', 'Flint%'), {'first_nam
 check(select('*').from('person').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'})), "SELECT * FROM person WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'");
 });
 
+it("select('*').from('person').where(sql('LTRIM(last_name) = $', last_name));", function() {
+var last_name = 'Flintstone';
+check(select('*').from('person').where(sql('LTRIM(last_name) = $', last_name)), "SELECT * FROM person WHERE LTRIM(last_name) = 'Flintstone'");
+});
+
 it(".groupBy('city').having(lt('max(temp_lo)', 40))", function() {
 
 check(select('city', 'max(temp_lo)').from('weather')  .groupBy('city').having(lt('max(temp_lo)', 40)), "SELECT city, max(temp_lo) FROM weather GROUP BY city HAVING max(temp_lo) < 40");

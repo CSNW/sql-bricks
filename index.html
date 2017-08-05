@@ -266,7 +266,7 @@ select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM person WHERE billing_addr_id = mailing_addr_id
 </pre>
       </p>
-      <p>Multiple `values` can be passed in as separate arguments or as an array (this example uses the postgresql [jsonb contains operator](http://www.postgresql.org/docs/9.4/static/functions-json.html#FUNCTIONS-JSONB-OP-TABLE)):
+      <p>Multiple <b>values</b> can be passed in as separate arguments or as an array (this example uses the postgres <a href="http://www.postgresql.org/docs/9.4/static/functions-json.html#FUNCTIONS-JSONB-OP-TABLE">jsonb contains operator</a>, <tt>@&gt;</tt>):
         <pre>
 select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams()
 // {"text": "SELECT * WHERE field @> $1 and field @> $2", "values": [{"key": "value"}, {"key": "value2"}]}
@@ -436,7 +436,8 @@ select().from('person').naturalJoin('address');
         <b class="header">where</b><span class="alias">Alias: <b>and</b></span><br />
         <code>sel.where(column, value)</code><br />
         <code>sel.where(criteria)</code><br />
-        <code>sel.where(whereExpr)</code>
+        <code>sel.where(whereExpr)</code><br />
+        <code>sel.where(sql)</code>
         <p>Sets or extends the <tt>WHERE</tt> clause. If there already is a <tt>WHERE</tt> clause, the new criteria will be added to a top-level <tt>AND</tt> group.
         <pre>
 select('*').from('person').where('first_name', 'Fred');
@@ -454,6 +455,12 @@ select('*').from('person').where({'last_name': 'Flintstone', 'first_name': 'Fred
         <pre>
 select('*').from('person').where(or(like('last_name', 'Flint%'), {'first_name': 'Fred'}));
 // SELECT * FROM person WHERE last_name LIKE 'Flint%' OR first_name = 'Fred'
+</pre>
+        <p>If necessary, literal SQL can be passed in via <a href="#sql"><tt>sql()</tt></a>:</p>
+        <pre>
+var last_name = 'Flintstone';
+select('*').from('person').where(sql('LTRIM(last_name) = $', last_name));
+// SELECT * FROM person WHERE LTRIM(last_name) = 'Flintstone'
 </pre>
       </p>
       <p id="groupBy">
