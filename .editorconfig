@@ -1,0 +1,27 @@
+# for JetBrains editors in code style set checkboxes: Space>Within>'if' parentheses
+#  && unset checkbox Spaces>Before parentheses>in function expression
+
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+indent_brace_style = K&R
+curly_bracket_next_line = false
+spaces_around_operators = true
+spaces_around_brackets = both
+max_line_length = 120
+tab_width = 2
+indent_size = 2
+continuation_indent_size = 4
+indent_style = space
+insert_final_newline = true
+
+[{package.json,.babelrc}]
+tab_width = 2
+ident_size = 2
+continuation_indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
