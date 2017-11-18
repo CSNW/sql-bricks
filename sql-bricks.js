@@ -744,8 +744,8 @@
     return new Binary(this.op, this.col, this.val);
   };
   Binary.prototype.toString = function toString(opts) {
-    var sql = sql._handleColumn(this.col, opts);
-    return sql + ' ' + this.op + ' ' + this.quantifier + sql._handleValue(this.val, opts);
+    var _sql = sql._handleColumn(this.col, opts);
+    return _sql + ' ' + this.op + ' ' + this.quantifier + sql._handleValue(this.val, opts);
   };
 
   sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };
@@ -761,10 +761,10 @@
     return new Like(this.col, this.val, this.escape_char);
   };
   Like.prototype.toString = function toString(opts) {
-    var sql = sql._handleColumn(this.col, opts) + ' LIKE ' + sql._handleValue(this.val, opts);
+    var _sql = sql._handleColumn(this.col, opts) + ' LIKE ' + sql._handleValue(this.val, opts);
     if ( this.escape_char )
-      sql += " ESCAPE '" + this.escape_char + "'";
-    return sql;
+      _sql += " ESCAPE '" + this.escape_char + "'";
+    return _sql;
   };
 
   sql.between = function between(col, val1, val2) { return new Between(col, val1, val2); };
@@ -818,13 +818,13 @@
   };
   In.prototype.toString = function toString(opts) {
     var col_sql = sql._handleColumn(this.col, opts);
-    var sql;
+    var _sql;
     if ( _.isArray(this.list) )
-      sql = sql._handleValues(this.list, opts).join(', ');
+      _sql = sql._handleValues(this.list, opts).join(', ');
     else if ( this.list instanceof Statement )
-      sql = this.list._toString(opts);
+      _sql = this.list._toString(opts);
 
-    return col_sql + ' IN (' + sql + ')';
+    return col_sql + ' IN (' + _sql + ')';
   };
 
   sql.exists = function(subquery) { return new Exists(subquery); };
@@ -999,7 +999,7 @@
   };
 
   function expandAlias(tbl) {
-    return typeof tbl == 'string' && tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
+    return typeof tbl === 'string' && tbl in sql._aliases ? sql._aliases[tbl] + ' ' + tbl : tbl;
   }
 
   sql.joinCriteria = function(fn) {
