@@ -1043,12 +1043,12 @@
     var m;
     while (m = tmpl_re.exec(str)) {
       var is_block = m[1];
-      var is_start = m[1] == '#',
-          fn_name = m[2],
-          helper = sql.templ.helpers[fn_name],
-          attr;
+      var is_start = m[1] === '#',
+          fn_name, helper, attr;
       if ( m[3] ) {
         attr = m[3];
+        fn_name = m[2];
+        helper = sql.templ.helpers[fn_name];
       }
       else {
         attr = m[2];
