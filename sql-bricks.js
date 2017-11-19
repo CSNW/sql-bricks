@@ -93,6 +93,30 @@
     return str;
   };
 
+   // provided for browser support, based on https://gist.github.com/prust/5936064
+   sql.inherits = function(ctor, superCtor) {
+       function noop() {}
+
+       if ( Object.create ) {
+           ctor.super_ = superCtor;
+           ctor.prototype = Object.create(superCtor.prototype, {
+               constructor: {
+                   value: ctor,
+                   enumerable: false,
+                   writable: true,
+                   configurable: true
+               }
+           });
+       }
+       else {
+           noop.prototype = superCtor.prototype;
+           ctor.super_ = superCtor;
+           ctor.prototype = new noop;
+           ctor.prototype.constructor = ctor;
+       }
+       return ctor;
+   };
+
   // val() wrapper allows a value (string/number/etc) where SQL (column/table/etc) is expected
   sql.val = val;
 
@@ -1069,30 +1093,6 @@
     'table': sql._handleTable,
     'tables': sql._handleTables,
     'expression': sql._handleExpression
-  };
-
-  // provided for browser support, based on https://gist.github.com/prust/5936064
-  sql.inherits = function(ctor, superCtor) {
-    function noop() {}
-
-    if ( Object.create ) {
-      ctor.super_ = superCtor;
-      ctor.prototype = Object.create(superCtor.prototype, {
-        constructor: {
-          value: ctor,
-          enumerable: false,
-          writable: true,
-          configurable: true
-        }
-      });
-    }
-    else {
-      noop.prototype = superCtor.prototype;
-      ctor.super_ = superCtor;
-      ctor.prototype = new noop;
-      ctor.prototype.constructor = ctor;
-    }
-    return ctor;
   };
 
   sql._extension = function() {
