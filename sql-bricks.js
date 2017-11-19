@@ -1043,13 +1043,15 @@
     var m;
     while (m = tmpl_re.exec(str)) {
       var is_block = m[1];
-      var is_start = m[1] == '#';
+      var is_start = m[1] == '#',
+          fn_name = m[2],
+          helper = sql.templ.helpers[fn_name],
+          attr;
       if ( m[3] ) {
-        var fn_name = m[2], attr = m[3];
-        var helper = sql.templ.helpers[fn_name];
+        attr = m[3];
       }
       else {
-        var attr = m[2];
+        attr = m[2];
       }
       var val = ctx[attr];
       result += str.slice(lastIndex, m.index);
