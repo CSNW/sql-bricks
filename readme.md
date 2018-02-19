@@ -1,4 +1,4 @@
-# SQL Bricks.js
+# SQL Bricks.js 
 
 [![Build Status](https://travis-ci.org/CSNW/sql-bricks.png?branch=master)](https://travis-ci.org/CSNW/sql-bricks)
 
