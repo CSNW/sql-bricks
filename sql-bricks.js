@@ -100,13 +100,9 @@
 
   // mechanism to easily define clauses for SQL statements
   [Select, Insert, Update, Delete].forEach(function(stmt) {
-    stmt.defineClause = function(clause_id, template, opts) {
+    stmt.defineClause = function(clause_id, templ_fn, opts) {
       opts = opts || {};
       var clauses = this.prototype.clauses = this.prototype.clauses || [];
-
-      var templ_fn = template;
-      if (typeof templ_fn != 'function')
-        templ_fn = function(opts) { return templ(template, this, opts); };
       this.prototype[clause_id + 'ToString'] = templ_fn;
       
       var index;
@@ -268,19 +264,34 @@
     return Select.super_.prototype._toString.apply(this, arguments);
   };
 
-  Select.defineClause('select', 'SELECT {{#if _distinct}}DISTINCT {{/if}}{{#if _columns}}{{columns _columns}}{{/if}}');
-  Select.defineClause('into', '{{#if _into}}INTO {{#if _temp}}TEMP {{/if}}{{table _into}}{{/if}}');
+  Select.defineClause('select', function(opts) {
+    return `SELECT ${this._distinct ? 'DISTINCT ' : ''}` +
+      (this._columns ? handleColumns(this._columns, opts) : '');
+  });
+  Select.defineClause('into', function(opts) {
+    if (this._into)
+      return `INTO ${this._temp ? 'TEMP ' : ''}${handleTable(this._into, opts)}`;
+  });
   Select.defineClause('from', function(opts) {
     if (!this._from)
       return;
-    var result = 'FROM ' + handleTables(this._from, opts);
+    var result = `FROM ${handleTables(this._from, opts)}`;
     if (this.joins)
-      result += ' ' + _.invoke(this.joins, 'toString', opts).join(' ');
+      result += ` ${_.invoke(this.joins, 'toString', opts).join(' ')}`;
     return result;
   });
-  Select.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
-  Select.defineClause('groupBy', '{{#if _groupBy}}GROUP BY {{columns _groupBy}}{{/if}}');
-  Select.defineClause('having', '{{#if _having}}HAVING {{expression _having}}{{/if}}');
+  Select.defineClause('where', function(opts) {
+    if (this._where)
+      return `WHERE ${handleExpression(this._where, opts)}`;
+  });
+  Select.defineClause('groupBy', function(opts) {
+    if (this._groupBy)
+      return `GROUP BY ${handleColumns(this._groupBy, opts)}`;
+  });
+  Select.defineClause('having', function(opts) {
+    if (this._having)
+      return `HAVING ${handleExpression(this._having, opts)}`;
+  });
 
   _.forEach(compounds, function(sql_keyword, clause_id) {
     Select.defineClause(clause_id, function(opts) {
@@ -293,8 +304,15 @@
     });
   });
 
-  Select.defineClause('orderBy', '{{#if _orderBy}}ORDER BY {{columns _orderBy}}{{/if}}');
-  Select.defineClause('forUpdate', '{{#if _forUpdate}}FOR UPDATE{{#if _of}} OF {{columns _of}}{{/if}}{{#if _noWait}} NO WAIT{{/if}}{{/if}}');
+  Select.defineClause('orderBy', function(opts) {
+    if (this._orderBy)
+      return `ORDER BY ${handleColumns(this._orderBy, opts)}`;
+  });
+  Select.defineClause('forUpdate', function(opts) {
+    if (this._forUpdate)
+      return `FOR UPDATE${this._of ? ` OF ${handleColumns(this._of, opts)}` : ''}` +
+        (this._noWait ? ' NO WAIT' : '');
+  });
 
 
   // INSERT statement
@@ -368,11 +386,13 @@
     return this._select;
   };
 
-  Insert.defineClause('insert', 'INSERT');
-  Insert.defineClause('into', '{{#if _table}}INTO {{table _table}}{{/if}}');
+  Insert.defineClause('insert', function() { return 'INSERT'; });
+  Insert.defineClause('into', function(opts) {
+    if (this._table) return `INTO ${handleTable(this._table, opts)}`;
+  });
   Insert.defineClause('columns', function(opts) {
-    if (!this._values) return '';
-    return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
+    if (this._values)
+      return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
   });
   Insert.defineClause('values', function(opts) {
     if (this._select) {
@@ -406,14 +426,21 @@
 
   Update.prototype.where = Update.prototype.and = Select.prototype.where;
 
-  Update.defineClause('update', 'UPDATE');
-  Update.defineClause('table', '{{table _table}}');
+  Update.defineClause('update', function() {
+    return 'UPDATE';
+  });
+  Update.defineClause('table', function(opts) {
+    return handleTable(this._table, opts);
+  });
   Update.defineClause('set', function(opts) {
     return 'SET ' + _.map(this._values, function(value, key) {
       return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
     }).join(', ');
   });
-  Update.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
+  Update.defineClause('where', function(opts) {
+    if (this._where)
+      return `WHERE ${handleExpression(this._where, opts)}`;
+  });
 
 
   // DELETE statement
@@ -433,8 +460,13 @@
   };
   Delete.prototype.where = Delete.prototype.and = Select.prototype.where;
 
-  Delete.defineClause('delete', 'DELETE FROM {{table _from}}');
-  Delete.defineClause('where', '{{#if _where}}WHERE {{expression _where}}{{/if}}');
+  Delete.defineClause('delete', function(opts) {
+    return `DELETE FROM ${handleTable(this._from, opts)}`;
+  });
+  Delete.defineClause('where', function(opts) {
+    if (this._where)
+      return `WHERE ${handleExpression(this._where, opts)}`;
+  });
 
 
   // base statement
@@ -991,70 +1023,6 @@
     sql._joinCriteria = fn;
   };
 
-
-  // uber-simple mini-templating language to make it easy to define clauses
-  // handlebars-like syntax, supports helpers and nested blocks
-  // does not support context changes, the dot operator on properties or HTML escaping
-  function templ(str, ctx, opts) {
-    var result = '';
-    var lastIndex = 0;
-
-    var tmpl_re = /\{\{([#\/])?(\w+) ?(\w+)?\}\}/g;
-    var m;
-    while (m = tmpl_re.exec(str)) {
-      var is_block = m[1];
-      var is_start = m[1] == '#';
-      if (m[3]) {
-        var fn_name = m[2], attr = m[3];
-        var helper = templ.helpers[fn_name];
-      }
-      else {
-        var attr = m[2];
-      }
-      var val = ctx[attr];
-      result += str.slice(lastIndex, m.index);
-
-      if (is_block) {
-        if (is_start) {
-          var end_re = new RegExp("\\{\\{([#/])" + fn_name + ' ?(\\w+)?\\}\\}', 'g');
-          end_re.lastIndex = tmpl_re.lastIndex;
-          // incr & decr level 'til we find the end block that matches this start block
-          var level = 1;
-          while (level) {
-            var end_m = end_re.exec(str);
-            if (!end_m)
-              throw new Error('End not found for block ' + fn_name);
-            if (end_m[1] == '#')
-              level++;
-            else
-              level--;
-          }
-          var contents = str.slice(tmpl_re.lastIndex, end_m.index);
-          result += helper.call(ctx, val, opts, contents, ctx);
-          lastIndex = tmpl_re.lastIndex = end_re.lastIndex;
-        }
-      }
-      else {
-        if (fn_name)
-          result += helper.call(ctx, val, opts);
-        else
-          result += val;
-        lastIndex = tmpl_re.lastIndex;
-      }
-    }
-    result += str.slice(lastIndex);
-    return result;
-  }
-  sql.templ = templ;
-
-  templ.helpers = {
-    'if': function(val, opts, contents, ctx) { return val ? templ(contents, ctx, opts) : ''; },
-    'ifNotNull': function(val, opts, contents, ctx) { return val != null ? templ(contents, ctx, opts) : ''; },
-    'columns': handleColumns,
-    'table': handleTable,
-    'tables': handleTables,
-    'expression': handleExpression
-  };
 
   // provided for browser support, based on https://gist.github.com/prust/5936064
   function inherits(ctor, superCtor) {
