@@ -58,34 +58,6 @@ sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
 });
 
 describe('SQL Bricks', function() {
-  describe('mini-templating lang', function() {
-    it('should find content of if', function() {
-      var result = sql.templ('{{#if test}}Hi there!{{/if}}', {'test': true});
-      assert.equal(result, 'Hi there!');
-    });
-    it('should display content on both sides of it', function() {
-      var result = sql.templ('before{{#if test}}inside{{/if}}after', {'test': false});
-      assert.equal(result, 'beforeafter');
-    });
-    it('should handle multiple values', function() {
-      var result = sql.templ('before{{val}}between{{val2}}after', {'val': 'value 1', 'val2': 'value 2'});
-      assert.equal(result, 'beforevalue 1betweenvalue 2after');
-    });
-    it('should handle multiple if chunks', function() {
-      var result = sql.templ('before{{#if test}}first{{/if}}between{{#if test}}second{{/if}}after', {'test': true});
-      assert.equal(result, 'beforefirstbetweensecondafter');
-    });
-    it('should throw on mismatched if', function() {
-      assert.throws(function() {
-        sql.templ('{{#if test}}Hi there!', {'test': true});
-      });
-    });
-    it('should handle nested if', function() {
-      var result = sql.templ('{{#if oneThing}} and {{#if anotherThing}}Test{{/if}}{{/if}}', {'oneThing': true, 'anotherThing': true});
-      assert.equal(result, ' and Test');
-    });
-  });
-
   describe('parameterized sql', function() {
     it('should generate for insert statements', function() {
       var values = {'first_name': 'Fred', 'last_name': 'Flintstone'};
