@@ -100,15 +100,15 @@
 
   // mechanism to easily define clauses for SQL statements
   [Select, Insert, Update, Delete].forEach(function(stmt) {
-    stmt.defineClause = function(clause_id, templ_fn, opts) {
+    stmt.defineClause = function(clause_id, render_fn, opts) {
       opts = opts || {};
-      templ_fn.clause_id = clause_id;
+      render_fn.clause_id = clause_id;
       this.prototype.clauses = this.prototype.clauses || [];
       
       var index;
       if (opts.after || opts.before) {
-        index = _.findIndex(this.prototype.clauses, function(templ_fn) {
-          return templ_fn.clause_id == (opts.after || opts.before);
+        index = _.findIndex(this.prototype.clauses, function(render_fn) {
+          return render_fn.clause_id == (opts.after || opts.before);
         });
         if (index == -1)
           throw new Error('Error adding clause ' + clause_id + ': dependent clause "' + opts.after + '" not found');
@@ -119,7 +119,7 @@
       else {
         index = this.prototype.clauses.length;
       }
-      this.prototype.clauses.splice(index, 0, templ_fn);
+      this.prototype.clauses.splice(index, 0, render_fn);
     };
   });
 
