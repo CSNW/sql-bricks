@@ -102,12 +102,14 @@
   [Select, Insert, Update, Delete].forEach(function(stmt) {
     stmt.defineClause = function(clause_id, templ_fn, opts) {
       opts = opts || {};
-      var clauses = this.prototype.clauses = this.prototype.clauses || [];
-      this.prototype[clause_id + 'ToString'] = templ_fn;
+      templ_fn.clause_id = clause_id;
+      this.prototype.clauses = this.prototype.clauses || [];
       
       var index;
       if (opts.after || opts.before) {
-        index = clauses.indexOf(opts.after || opts.before);
+        index = _.findIndex(this.prototype.clauses, function(templ_fn) {
+          return templ_fn.clause_id == (opts.after || opts.before);
+        });
         if (index == -1)
           throw new Error('Error adding clause ' + clause_id + ': dependent clause "' + opts.after + '" not found');
         
@@ -115,9 +117,9 @@
           index++;
       }
       else {
-        index = clauses.length;
+        index = this.prototype.clauses.length;
       }
-      clauses.splice(index, 0, clause_id);
+      this.prototype.clauses.splice(index, 0, templ_fn);
     };
   });
 
@@ -524,13 +526,9 @@
   };
 
   Statement.prototype._toString = function(opts) {
-    var result = '';
-    this.clauses.forEach(function(clause) {
-      var rlt = this[clause + 'ToString'](opts);
-      if (rlt)
-        result += rlt + ' ';
-    }.bind(this));
-    return result.trim();
+    return _.compact(this.clauses.map(function(clause) {
+      return clause.call(this, opts)
+    }.bind(this))).join(' ');
   };
 
   Statement.prototype._add = function _add(arr, name) {
