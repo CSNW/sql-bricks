@@ -3,7 +3,7 @@
 
   var is_common_js = typeof exports != 'undefined';
   var default_opts = { placeholder: '$%d' };
-  
+
   var _;
   if (is_common_js)
     _ = require('underscore');
@@ -108,13 +108,13 @@
       if (typeof templ_fn != 'function')
         templ_fn = function(opts) { return templ(template, this, opts); };
       this.prototype[clause_id + 'ToString'] = templ_fn;
-      
+
       var index;
       if (opts.after || opts.before) {
         index = clauses.indexOf(opts.after || opts.before);
         if (index == -1)
           throw new Error('Error adding clause ' + clause_id + ': dependent clause "' + opts.after + '" not found');
-        
+
         if (opts.after)
           index++;
       }
@@ -294,7 +294,7 @@
   });
 
   Select.defineClause('orderBy', '{{#if _orderBy}}ORDER BY {{columns _orderBy}}{{/if}}');
-  Select.defineClause('forUpdate', '{{#if _forUpdate}}FOR UPDATE{{#if _of}} OF {{columns _of}}{{/if}}{{#if _noWait}} NO WAIT{{/if}}{{/if}}');
+  Select.defineClause('forUpdate', '{{#if _forUpdate}}FOR UPDATE{{#if _of}} OF {{columns _of}}{{/if}}{{#if _noWait}} NOWAIT{{/if}}{{/if}}');
 
 
   // INSERT statement
@@ -572,7 +572,7 @@
     // Debt: Determining whether join is natural/cross by reading the string is slightly hacky... but works.
     if (/^(natural|cross)/i.test(this.type))
       return this.type + ' JOIN ' + tbl;
-    
+
     // Not a natural or cross, check for criteria.
     if (!on || _.isEmpty(on)) {
       if (sql._joinCriteria) {
@@ -802,7 +802,7 @@
       sql = handleValues(this.list, opts).join(', ');
     else if (this.list instanceof Statement)
       sql = this.list._toString(opts);
-    
+
     return col_sql + ' IN (' + sql + ')';
   };
 
@@ -958,7 +958,7 @@
 
   // auto-quote tbl & col names if they have caps or are reserved words
   sql._autoQuoteChar = '"';
-  
+
   function autoQuote(str) {
     if (/^\w+$/.test(str) && (/[A-Z]/.test(str) || str in reserved))
       return sql._autoQuoteChar + str + sql._autoQuoteChar;
@@ -1104,7 +1104,7 @@
     function cls() {
       if (!(this instanceof cls))
         return applyNew(cls, arguments);
-      
+
       base.apply(this, arguments);
     }
     return inherits(cls, base);
