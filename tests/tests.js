@@ -374,9 +374,9 @@ describe('SQL Bricks', function() {
       check(select().from('user').forUpdate().of('user'),
         'SELECT * FROM "user" FOR UPDATE OF "user"');
     });
-    it('should support FOR UPDATE OF ... NO WAIT', function() {
+    it('should support FOR UPDATE OF ... NOWAIT', function() {
       check(select().from('user').forUpdate().of('user').noWait(),
-        'SELECT * FROM "user" FOR UPDATE OF "user" NO WAIT');
+        'SELECT * FROM "user" FOR UPDATE OF "user" NOWAIT');
     });
   });
 
