@@ -4,11 +4,13 @@
 
 SQL Bricks.js is a transparent, schemaless library for building and composing SQL statements.
 
-- Supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for select/insert/update/delete with the exception of asc/desc/collate options for `orderBy()`, see [#73](https://github.com/CSNW/sql-bricks/issues/73) (postgres extensions are at https://github.com/Suor/sql-bricks-postgres, sqlite extensions are at https://github.com/CSNW/sql-bricks-sqlite)
+- The core library supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for `SELECT`, `INSERT`, `UPDATE` and `DELETE` (with the exception of asc/desc/collate options for `orderBy()`, see [#73](https://github.com/CSNW/sql-bricks/issues/73))
+  - Postgres extensions are at https://github.com/Suor/sql-bricks-postgres
+  - SQLite extensions are at https://github.com/CSNW/sql-bricks-sqlite
+  - MySQL extensions are at https://github.com/tamarzil/mysql-bricks
 - Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
-- Single straightforward [source file](sql-bricks.js) (~1,100 lines), easy to understand & debug
-
+- Single [source file](sql-bricks.js) (~1,100 lines)
 
 Comparison with popular SQL-generation libraries:
 
@@ -30,6 +32,15 @@ library         | lines | files | schema       | language     | other notes
 
 # Related Libraries
 
+* [mysql-bricks](https://github.com/tamarzil/mysql-bricks) adds mysql-dialect extensions:
+  * `INSERT ... ON DUPLICATE KEY UPDATE ...`
+  * `INSERT IGNORE ...`
+  * `LIMIT (SELECT / UPDATE / DELETE)`
+  * `OFFSET`
+  * `ORDER BY (UPDATE / DELETE)`
+* [sql-bricks-sqlite](https://github.com/CSNW/sql-bricks-sqlite) adds sqlite-dialect extensions:
+  * `LIMIT` and `OFFSET`
+  * `OR REPLACE`, `OR ABORT`, `OR ROLLBACK`, `OR FAIL`
 * [sql-bricks-postgres](https://github.com/Suor/sql-bricks-postgres) adds postgres-dialect extensions:
   * `LIMIT` and `OFFSET`
   * `RETURNING`
@@ -41,9 +52,6 @@ library         | lines | files | schema       | language     | other notes
   * transactions
   * query execution
   * data accessors
-* [sql-bricks-sqlite](https://github.com/CSNW/sql-bricks-sqlite) adds sqlite-dialect extensions:
-  * `LIMIT` and `OFFSET`
-  * `OR REPLACE`, `OR ABORT`, `OR ROLLBACK`, `OR FAIL`
 
 # Use
 
