@@ -6,29 +6,27 @@ SQL Bricks.js is a transparent, schemaless library for building and composing SQ
 
 - The core library supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for `SELECT`, `INSERT`, `UPDATE` and `DELETE` (with the exception of asc/desc/collate options for `orderBy()`, see [#73](https://github.com/CSNW/sql-bricks/issues/73))
   - Postgres extensions are at https://github.com/Suor/sql-bricks-postgres
-  - SQLite extensions are at https://github.com/CSNW/sql-bricks-sqlite
   - MySQL extensions are at https://github.com/tamarzil/mysql-bricks
+  - SQLite extensions are at https://github.com/CSNW/sql-bricks-sqlite
 - Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
 - Single [source file](sql-bricks.js) (~1,100 lines)
 
-Comparison with popular SQL-generation libraries:
+Comparison with other SQL-generation JS libraries:
 
-library         | lines | files | schema       | language     | other notes  
---------------- | ----- | ----- | ------------ | --------     | --------------
-[Knex][1]       | 3500  |    30 | schema       | javascript   | transactions, migrations, promises, connection pooling
-[Squel][2]      | 1000  |     3 | schemaless   | coffeescript | 
-[node-sql][3]   | 2600  |    59 | schema       | javascript   |
-[mongo-sql][4]  | 1700  |    49 | schemaless   | javascript   | 
-[gesundheit][5] | 1600  |    21 | schemaless   | coffeescript | uses Any-DB to wrap the DB driver
-[sql-bricks][6] |  1100  |     1 | schemaless   | javascript   |
+library         | lines | files | schema     | other notes  
+--------------- | ----- | ----- | ---------- | --------------
+[Knex][1]       | 20k   |   ~50 | schema     | transactions, migrations, promises, connection pooling
+[Squel][2]      | 1.7k  |     1 | schemaless |
+[node-sql][3]   | 2.6k  |   ~60 | schema     |
+[mongo-sql][4]  | 1.7k  |   ~50 | schemaless |
+[sql-bricks][5] | 1.1k  |     1 | schemaless |
 
 [1]: https://github.com/tgriesser/knex
 [2]: https://github.com/hiddentao/squel
 [3]: https://github.com/brianc/node-sql
 [4]: https://github.com/goodybag/mongo-sql
-[5]: https://github.com/BetSmartMedia/gesundheit
-[6]: https://github.com/CSNW/sql-bricks
+[5]: https://github.com/CSNW/sql-bricks
 
 # Related Libraries
 
@@ -135,6 +133,6 @@ update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPa
 // {"text": "UPDATE person SET first_name = ? WHERE last_name = ?", "values": ["Fred", "Flintstone"]}
 ```
 
-Documentation: http://csnw.github.io/sql-bricks
+Full documentation: http://csnw.github.io/sql-bricks
 
 License: [MIT](LICENSE.md)
