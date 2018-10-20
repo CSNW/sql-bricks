@@ -313,7 +313,7 @@
   Select.defineClause('forUpdate', function(opts) {
     if (this._forUpdate)
       return `FOR UPDATE${this._of ? ` OF ${handleColumns(this._of, opts)}` : ''}` +
-        (this._noWait ? ' NO WAIT' : '');
+        (this._noWait ? ' NOWAIT' : '');
   });
 
 

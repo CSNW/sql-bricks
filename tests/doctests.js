@@ -166,7 +166,7 @@ check(select().from('person').where({'last_name': 'Flintstone'}).union()  .sele
 });
 
 it("select('addr_id').from('person').forUpdate().of('addr_id').noWait();", function() {
-check(select('addr_id').from('person').forUpdate().of('addr_id').noWait(), "SELECT addr_id FROM person FOR UPDATE OF addr_id NO WAIT");
+check(select('addr_id').from('person').forUpdate().of('addr_id').noWait(), "SELECT addr_id FROM person FOR UPDATE OF addr_id NOWAIT");
 });
 
 it("insert('person', {'first_name': 'Fred', 'last_name': 'Flintstone'});", function() {
