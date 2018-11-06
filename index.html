@@ -495,10 +495,10 @@ select().from('person').where({'last_name': 'Flintstone'}).union()
       <p id="forUpdate">
         <b class="header">forUpdate, noWait</b><code>sel.forUpdate([tbl, ...]) / sel.noWait()</code>
         <br />
-        <p>Add the <tt>FOR UPDATE</tt> clause to lock all selected records from all tables in the select (or just the tables specified), along with an optional <tt>NO WAIT</tt> at the end:</p>
+        <p>Add the <tt>FOR UPDATE</tt> clause to lock all selected records from all tables in the select (or just the tables specified), along with an optional <tt>NOWAIT</tt> at the end:</p>
         <pre>
 select('addr_id').from('person').forUpdate().of('addr_id').noWait();
-// SELECT addr_id FROM person FOR UPDATE OF addr_id NO WAIT
+// SELECT addr_id FROM person FOR UPDATE OF addr_id NOWAIT
 </pre>
       </p>
       
