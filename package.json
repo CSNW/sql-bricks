@@ -10,6 +10,7 @@
     "test": "mocha tests/tests.js tests/doctests.js && mocha tests/tests.js tests/doctests.js --empty-extension"
   },
   "main": "sql-bricks.js",
+  "types": "sql-bricks.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/CSNW/sql-bricks.git"
