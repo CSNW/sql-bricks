@@ -1,0 +1,5 @@
+Before sending a pull request, please verify that [all the existing tests](http://csnw.github.io/sql-bricks/browser-tests.html) pass and add new tests for the changes you are making. The tests can be run in node with `npm test` (provided `npm install` has been run to install the dependencies) or they can be run in the browser with `browser-tests.html`. All of the examples in the documentation are run as tests, in addition to the tests in tests.js.
+
+Note that **pull requests for additional SQL dialects** or extensions beyond ANSI SQL-92 will probably not be merged. If you would like support for a different dialect, you are welcome to maintain a dialect-specific fork or a library that extends sql-bricks.
+
+Also, **pull requests for additional SQL statements** beyond the four CRUD statements (`SELECT`, `UPDATE`, `INSERT`, `DELETE`) will probably not be merged. Other SQL statements do not benefit as much from re-use and composition; the goal being to keep SQL Bricks small, sharp and low-maintenance.
