@@ -35,7 +35,7 @@
     "underscore": "1.4.x"
   },
   "devDependencies": {
-    "mocha": "1.13.x"
+    "mocha": "^6.2.2"
   },
   "license": "MIT",
   "testling": {
