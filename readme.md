@@ -50,6 +50,10 @@ library         | lines | files | schema     | other notes
   * transactions
   * query execution
   * data accessors
+* [A Layer Above Database Connectors](https://github.com/paleo/ladc) adds:
+  * A common way to access to relational databases (SQLite & Postgres as of Oct 2019)
+  * A pool of connections in order to allow transactions in an asynchronous context;
+  * A way to augment your connector with your SQL query builder (has a sql-bricks plugin)
 
 # Use
 
