@@ -2,7 +2,6 @@
 
 var is_common_js = typeof exports != 'undefined';
 
-var _ = is_common_js ? require('underscore') : window._;
 var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
 
 if (is_common_js) {
@@ -26,7 +25,21 @@ else {
     if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
   assert.deepEqual = function(actual, expected) {
-    if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    var actual_keys = Object.keys(actual), expected_keys = Object.keys(expected);
+    var has_error = false;
+    if (actual_keys.length != expected_keys.length) 
+      has_error = true;
+    
+    actual_keys.forEach(function(key) {
+      if (actual[key] != expected[key]) has_error = true;
+    });
+
+    expected_keys.forEach(function(key) {
+      if (actual[key] != expected[key]) has_error = true;
+    });
+
+    if (has_error)
+      throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
   assert.throws = function(fn) {
     try {
@@ -48,7 +61,10 @@ var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
-var table_to_alias = _.invert(alias_expansions);
+var table_to_alias = {};
+Object.keys(alias_expansions).forEach(function(key) {
+  table_to_alias[alias_expansions[key]] = key;
+});
 sql.aliasExpansions(alias_expansions);
 
 sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
@@ -240,6 +256,7 @@ describe('SQL Bricks', function() {
       'INNER JOIN address addr ON usr.addr_fk = addr.pk');
   });
   it('should handle unions', function() {
+    console.log()
   	check(select().from('usr').where({'name': 'Roy'})
   		.union(select().from('usr').where({'name': 'Moss'}))
   		.union(select().from('usr').where({'name': 'The elders of the internet'})), 
@@ -773,7 +790,7 @@ describe('SQL Bricks', function() {
         for (var col in criteria) {
           var val = criteria[col];
           var expr;
-          if (_.isArray(val))
+          if (val instanceof Array)
             expr = or(val.map(function(val) { return eq(col, val); }));
           else
             expr = eq(col, val);

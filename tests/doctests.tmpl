@@ -1,7 +1,6 @@
 (function() {
 
 var is_common_js = typeof exports != 'undefined';
-var _ = is_common_js ? require('underscore') : window._;
 var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
 
 if (is_common_js) {
@@ -22,7 +21,21 @@ else {
       if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
     },
     'deepEqual': function(actual, expected) {
-      if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+      var actual_keys = Object.keys(actual), expected_keys = Object.keys(expected);
+      var has_error = false;
+      if (actual_keys.length != expected_keys.length) 
+        has_error = true;
+      
+      actual_keys.forEach(function(key) {
+        if (actual[key] != expected[key]) has_error = true;
+      });
+
+      expected_keys.forEach(function(key) {
+        if (actual[key] != expected[key]) has_error = true;
+      });
+
+      if (has_error)
+        throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
     }
   };
 }
@@ -38,6 +51,14 @@ describe('SQL Bricks', function() {
   describe('documentation examples', function() {
 
 
+function invert(obj) {
+  var inverted_obj = {};
+  Object.keys(obj).forEach(function(key) {
+    inverted_obj[obj[key]] = key;
+  });
+  return inverted_obj; 
+}
+
 {{tests}}
 
 
@@ -45,7 +66,7 @@ describe('SQL Bricks', function() {
 });
 
 function check(actual, expected) {
-  if (_.isObject(actual) && _.isString(expected))
+  if (typeof actual == 'object' && typeof expected == 'string')
     assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);

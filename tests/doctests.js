@@ -1,7 +1,6 @@
 (function() {
 
 var is_common_js = typeof exports != 'undefined';
-var _ = is_common_js ? require('underscore') : window._;
 var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
 
 if (is_common_js) {
@@ -22,7 +21,21 @@ else {
       if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
     },
     'deepEqual': function(actual, expected) {
-      if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+      var actual_keys = Object.keys(actual), expected_keys = Object.keys(expected);
+      var has_error = false;
+      if (actual_keys.length != expected_keys.length) 
+        has_error = true;
+      
+      actual_keys.forEach(function(key) {
+        if (actual[key] != expected[key]) has_error = true;
+      });
+
+      expected_keys.forEach(function(key) {
+        if (actual[key] != expected[key]) has_error = true;
+      });
+
+      if (has_error)
+        throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
     }
   };
 }
@@ -37,6 +50,14 @@ var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
 describe('SQL Bricks', function() {
   describe('documentation examples', function() {
 
+
+function invert(obj) {
+  var inverted_obj = {};
+  Object.keys(obj).forEach(function(key) {
+    inverted_obj[obj[key]] = key;
+  });
+  return inverted_obj; 
+}
 
 it(".where(or({last_name: 'Rubble'}, $in('first_name', ['Fred', 'Wilma', 'Pebbles'])));", function() {
 
@@ -269,7 +290,7 @@ check(select().from('psn').join('addr', {'psn.addr_id': 'addr.id'}), "SELECT * F
 
 it("select().from('person').join('address');", function() {
 var alias_expansions = {'psn': 'person', 'addr': 'address', 'zip': 'zipcode', 'usr': 'user'};
-var table_to_alias = _.invert(alias_expansions);
+var table_to_alias = invert(alias_expansions);
 sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
   criteria[left_alias + '.' + table_to_alias[right_tbl] + '_id'] = right_alias + '.id';
@@ -321,7 +342,7 @@ check(select('person.order AS person_order').from('person'), "SELECT person.\"or
 });
 
 function check(actual, expected) {
-  if (_.isObject(actual) && _.isString(expected))
+  if (typeof actual == 'object' && typeof expected == 'string')
     assert.equal(actual.toString(), expected);
   else
     assert.deepEqual(actual, expected);

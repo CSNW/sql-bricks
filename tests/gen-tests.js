@@ -1,12 +1,14 @@
 var fs = require('fs');
-var _ = require('underscore');
 
 var comment = '// ';
 var readme = fs.readFileSync(__dirname + '/../index.html', 'utf8');
 var contents = '';
 readme.match(/<pre>[^<]+<\/pre>/g).forEach(function(ex) {
   ex = ex.slice('<pre>'.length, -'</pre>'.length);
-  var lines = _.compact(ex.split('\n'));
+  var lines = [];
+  ex.split('\n').forEach(function(line) {
+    if (line) lines.push(line);
+  });
   lines.forEach(function(line, ix) {
     line = line.trim();
     var next_line = (lines[ix + 1] || '').trim();
@@ -45,9 +47,12 @@ function wrap(lines) {
   var match = /var (\w+) =/.exec(last_line);
   if (match)
     lines.push(match[1] + ';');
-  lines = _.compact(lines);
-  lines = _.reject(lines, isComment);
-  return lines;
+
+  var processed_lines = [];
+  lines.forEach(function(line) {
+    if (line && !isComment(line)) processed_lines.push(line);
+  });
+  return processed_lines;
 }
 function isComment(str) {
   return str.slice(0, comment.length) == comment;
@@ -62,6 +67,6 @@ function getExpected(lines, ix) {
     ix--;
   }
   comments.reverse();
-  comments = _.invoke(comments, 'trim');
+  comments = comments.map(function(comment) { return comment.trim(); });
   return comments.join(' ');
 }
