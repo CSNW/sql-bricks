@@ -256,7 +256,6 @@ describe('SQL Bricks', function() {
       'INNER JOIN address addr ON usr.addr_fk = addr.pk');
   });
   it('should handle unions', function() {
-    console.log()
   	check(select().from('usr').where({'name': 'Roy'})
   		.union(select().from('usr').where({'name': 'Moss'}))
   		.union(select().from('usr').where({'name': 'The elders of the internet'})), 
