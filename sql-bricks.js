@@ -62,7 +62,7 @@
     arr.forEach(function(val, index) {
       if (fn(val)) {
         arr_index = index;
-        break;
+        return;
       }
     });
     return index;
