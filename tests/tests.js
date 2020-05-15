@@ -948,6 +948,15 @@ describe('SQL Bricks', function() {
       sel.clone().where('last_name', 'Flintstone');
       check(sel, "SELECT * FROM \"user\" WHERE first_name IN (SELECT first_name FROM \"user\")");
     });
+    it('should clone parameterized sub-expressions', function() {
+      checkParams(select().from('tbl').where(or(sql('a = $1', 444), sql('b = $1', 555), sql('c = $1', 666))).clone(),
+        'SELECT * FROM tbl WHERE a = $1 OR b = $2 OR c = $3',
+        [444, 555, 666]);
+    });
+    it('should clone non-parameterized sub-expressions', function() {
+      check(select().from('tbl').where(or(sql('a = 444'), sql('b = 555'), sql('c = 666'))).clone(),
+        'SELECT * FROM tbl WHERE a = 444 OR b = 555 OR c = 666');
+    });
   });
 
   describe('the AS keyword', function() {
