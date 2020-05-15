@@ -23,6 +23,10 @@
     if (_.isArray(this.vals[0]))
       this.vals = this.vals[0];
   }
+  sql.prototype.clone = function clone() {
+    var args = [this.str].concat(this.vals);
+    return sql.apply(null, args);
+  };
   sql.setDefaultOpts = setDefaultOpts;
   function setDefaultOpts(opts) {
     default_opts = _.extend(default_opts, opts);
