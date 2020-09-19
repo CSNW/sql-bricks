@@ -759,8 +759,8 @@
     return new Binary(this.op, this.col, this.val);
   };
   Binary.prototype.toString = function toString(opts) {
-    var sql = handleColumn(this.col, opts);
-    return sql + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
+    var res = handleColumn(this.col, opts);
+    return res + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
   }
 
   sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };
@@ -774,10 +774,10 @@
     return new Like(this.col, this.val, this.escape_char);
   };
   Like.prototype.toString = function toString(opts) {
-    var sql = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
+    var res = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
     if (this.escape_char)
-      sql += " ESCAPE '" + this.escape_char + "'";
-    return sql;
+      res += " ESCAPE '" + this.escape_char + "'";
+    return res;
   }
 
   sql.between = function between(col, val1, val2) { return new Between(col, val1, val2); };
@@ -827,13 +827,13 @@
   };
   In.prototype.toString = function toString(opts) {
     var col_sql = handleColumn(this.col, opts);
-    var sql;
+    var res;
     if (_.isArray(this.list))
-      sql = handleValues(this.list, opts).join(', ');
+      res = handleValues(this.list, opts).join(', ');
     else if (this.list instanceof Statement)
-      sql = this.list._toString(opts);
+      res = this.list._toString(opts);
     
-    return col_sql + ' IN (' + sql + ')';
+    return col_sql + ' IN (' + res + ')';
   };
 
   sql.exists = function(subquery) { return new Exists(subquery); }
@@ -933,24 +933,39 @@
   };
 
   function handleTables(tables, opts) {
-    return tables.map(function(tbl) { return handleTable(tbl, opts); }).join(', ');
+	var foo = tables.map(function(tbl) { return handleTable(tbl, opts); }).join(', ');
+    return foo;
   }
   sql._handleTables = handleTables;
 
   function handleTable(table, opts) {
-    return handleColumn(expandAlias(table), opts);
+	if (typeof table === 'string') {
+	  return sql._prepareTableIdentifier(table, opts);
+	}
+    return prepareTableIdentifier(table, opts);
   }
-  sql._handleTable = handleTable;
+
+  function prepareTableIdentifier(table, opts) {
+    return prepareColumnIdentifier(expandAlias(table), opts);
+  }
+  sql._prepareTableIdentifier = prepareTableIdentifier;
 
   function handleColumns(cols, opts) {
     return cols.map(function(col) { return handleColumn(col, opts); }).join(', ');
   }
   sql._handleColumns = handleColumns;
 
+  var function_regex = /\(/g;
+  function handleColumn(expr, opts) {
+	if (typeof expr === 'string' && !function_regex.test(expr)) {
+	  return sql._prepareColumnIdentifier(expr, opts);
+	}
+	return prepareColumnIdentifier(expr, opts);
+  }
   // handles prefixes before a '.' and suffixes after a ' '
   // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
   var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
-  function handleColumn(expr, opts) {
+  function prepareColumnIdentifier(expr, opts) {
     if (expr instanceof Statement)
       return expr._toNestedString(opts);
 
@@ -965,7 +980,7 @@
     else
       return expr;
   }
-  sql._handleColumn = handleColumn;
+  sql._prepareColumnIdentifier = prepareColumnIdentifier;
 
   function quoteColOrTbl(expr) {
     var prefix = '';
