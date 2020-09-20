@@ -933,15 +933,14 @@
   };
 
   function handleTables(tables, opts) {
-	var foo = tables.map(function(tbl) { return handleTable(tbl, opts); }).join(', ');
-    return foo;
+    return tables.map(function(tbl) { return handleTable(tbl, opts); }).join(', ');
   }
   sql._handleTables = handleTables;
 
   function handleTable(table, opts) {
-	if (typeof table === 'string') {
-	  return sql._prepareTableIdentifier(table, opts);
-	}
+    if (typeof table === 'string') {
+      return sql._prepareTableIdentifier(table, opts);
+    }
     return prepareTableIdentifier(table, opts);
   }
 
@@ -957,10 +956,10 @@
 
   var function_regex = /\(/g;
   function handleColumn(expr, opts) {
-	if (typeof expr === 'string' && !function_regex.test(expr)) {
-	  return sql._prepareColumnIdentifier(expr, opts);
-	}
-	return prepareColumnIdentifier(expr, opts);
+    if (typeof expr === 'string' && !function_regex.test(expr)) {
+      return sql._prepareColumnIdentifier(expr, opts);
+    }
+    return prepareColumnIdentifier(expr, opts);
   }
   // handles prefixes before a '.' and suffixes after a ' '
   // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
