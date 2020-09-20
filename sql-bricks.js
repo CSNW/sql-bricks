@@ -759,8 +759,8 @@
     return new Binary(this.op, this.col, this.val);
   };
   Binary.prototype.toString = function toString(opts) {
-    var res = handleColumn(this.col, opts);
-    return res + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
+    var sql = handleColumn(this.col, opts);
+    return sql + ' ' + this.op + ' ' + this.quantifier + handleValue(this.val, opts);
   }
 
   sql.like = function like(col, val, escape_char) { return new Like(col, val, escape_char); };
@@ -774,10 +774,10 @@
     return new Like(this.col, this.val, this.escape_char);
   };
   Like.prototype.toString = function toString(opts) {
-    var res = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
+    var sql = handleColumn(this.col, opts) + ' LIKE ' + handleValue(this.val, opts);
     if (this.escape_char)
-      res += " ESCAPE '" + this.escape_char + "'";
-    return res;
+      sql += " ESCAPE '" + this.escape_char + "'";
+    return sql;
   }
 
   sql.between = function between(col, val1, val2) { return new Between(col, val1, val2); };
@@ -827,13 +827,13 @@
   };
   In.prototype.toString = function toString(opts) {
     var col_sql = handleColumn(this.col, opts);
-    var res;
+    var sql;
     if (_.isArray(this.list))
-      res = handleValues(this.list, opts).join(', ');
+      sql = handleValues(this.list, opts).join(', ');
     else if (this.list instanceof Statement)
-      res = this.list._toString(opts);
+      sql = this.list._toString(opts);
     
-    return col_sql + ' IN (' + res + ')';
+    return col_sql + ' IN (' + sql + ')';
   };
 
   sql.exists = function(subquery) { return new Exists(subquery); }
