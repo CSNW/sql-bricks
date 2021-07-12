@@ -58,14 +58,12 @@
   };
 
   function findIndex(arr, fn) {
-    var arr_index = -1;
-    arr.forEach(function(val, index) {
+    for (var i = 0; i < arr.length; i++) {
       if (fn(val)) {
-        arr_index = index;
-        return;
+        return i;
       }
-    });
-    return index;
+    }
+    return -1;
   }
 
   function isEmpty(obj) {
