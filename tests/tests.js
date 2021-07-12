@@ -24,21 +24,22 @@ else {
   assert.equal = function(actual, expected) {
     if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
-  assert.deepEqual = function(actual, expected) {
+  assert._eq = function(actual, expected) {
+    if (typeof actual != 'object') return actual === expected;
+
     var actual_keys = Object.keys(actual), expected_keys = Object.keys(expected);
-    var has_error = false;
-    if (actual_keys.length != expected_keys.length) 
-      has_error = true;
-    
+    if (actual_keys.length != expected_keys.length)
+      return false;
+
+    var result = true;
     actual_keys.forEach(function(key) {
-      if (actual[key] != expected[key]) has_error = true;
+      if (!assert._eq(actual[key], expected[key])) result = false;
     });
 
-    expected_keys.forEach(function(key) {
-      if (actual[key] != expected[key]) has_error = true;
-    });
-
-    if (has_error)
+    return result;
+  };
+  assert.deepEqual = function(actual, expected) {
+    if (!assert._eq(actual, expected))
       throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
   assert.throws = function(fn) {
