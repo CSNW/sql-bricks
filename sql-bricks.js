@@ -3,12 +3,79 @@
 
   var is_common_js = typeof exports != 'undefined';
   var default_opts = { placeholder: '$%d' };
-  
-  var _;
-  if (is_common_js)
-    _ = require('underscore');
-  else
-    _ = window._;
+
+  function toArray(obj) {
+    return Object.keys(obj).map(function(key) {
+      return obj[key];
+    });
+  }
+
+  function extend(obj) {
+    var other_objs = arguments;
+    delete other_objs['0'];
+
+    Object.keys(other_objs).forEach(function(arg_num) {
+      var other_obj = other_objs[arg_num];
+      Object.keys(other_obj).forEach(function(key) {
+        obj[key] = other_obj[key];
+      });
+    });
+    return obj;
+  }
+
+  function cloneObj(obj) {
+    if (types.isArray(obj))
+      return [].concat(arr);
+    else
+      return extend({}, obj);
+  }
+
+  var types = {
+    isObject: function isObject(val) {
+      return typeof val == 'object';
+    },
+    isArray: function isArray(val) {
+      return val instanceof Array;
+    },
+    isUndefined: function isUndefined(val) {
+      return typeof val == 'undefined';
+    },
+    isNull: function isNull(val) {
+      return val === null;
+    },
+    isNumber: function isNumber(val) {
+      return typeof val == 'number';
+    },
+    isString: function isString(val) {
+      return typeof val == 'string';
+    },
+    isBoolean: function isBoolean(val) {
+      return typeof val == 'boolean';
+    },
+    isDate: function isDate(val) {
+      return val instanceof Date;
+    }
+  };
+
+  function findIndex(arr, fn) {
+    for (var i = 0; i < arr.length; i++) {
+      if (fn(val)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function isEmpty(obj) {
+    return types.isUndefined(obj) || obj === null || Object.keys(obj).length == 0;
+  }
+
+  function applyDefaults(opts) {
+    Object.keys(default_opts).forEach(function(key) {
+      if (!opts[key]) opts[key] = default_opts[key];
+    });
+    return opts;
+  }
 
   // sql() wrapper allows SQL (column/table/etc) where a value (string/number/etc) is expected
   // it is also the main namespace for SQLBricks
@@ -17,15 +84,15 @@
       return applyNew(sql, arguments);
 
     this.str = str;
-    this.vals = _.toArray(arguments).slice(1);
+    this.vals = toArray(arguments).slice(1);
 
     // support passing a single array
-    if (_.isArray(this.vals[0]))
+    if (types.isArray(this.vals[0]))
       this.vals = this.vals[0];
   }
   sql.setDefaultOpts = setDefaultOpts;
   function setDefaultOpts(opts) {
-    default_opts = _.extend(default_opts, opts);
+    default_opts = extend(default_opts, opts);
   }
   sql.prototype.toString = function toString(opts) {
     // replacer(match, [capture1, capture2, ...,] offset, string)
@@ -36,9 +103,9 @@
 
       var ix = arguments.length > 3 ? parseInt(arguments[1], 10) : opts.value_ix++;
       var val = opts.values[ix - 1];
-      if (_.isUndefined(val))
+      if (types.isUndefined(val))
         throw new Error('Parameterized sql() (' + str + ') requires ' + ix + ' parameter(s) but only ' + opts.values.length + ' parameter(s) were supplied');
-      if (_.isObject(sql) && !_.isArray(sql) && sql == null)
+      if (types.isObject(sql) && !types.isArray(sql) && sql == null)
         return val.toString(opts);
       else
         return sql.convert(val);
@@ -46,7 +113,7 @@
 
     var str = this.str;
     if (!opts)
-      opts = _.extend({}, default_opts);
+      opts = extend({}, default_opts);
     if (!opts.values)
       opts.values = [];
     if (!opts.value_ix)
@@ -107,7 +174,7 @@
       
       var index;
       if (opts.after || opts.before) {
-        index = _.findIndex(this.prototype.clauses, function(render_fn) {
+        index = findIndex(this.prototype.clauses, function(render_fn) {
           return render_fn.clause_id == (opts.after || opts.before);
         });
         if (index == -1)
@@ -171,26 +238,31 @@
   });
   Select.prototype.on = function(on) {
     var last_join = this.joins[this.joins.length - 1];
-    if (_.isArray(last_join.on) && !_.isEmpty(last_join.on))
+    if (types.isArray(last_join.on) && !isEmpty(last_join.on))
       throw new Error('Error adding clause ON: ' + last_join.left_tbl + ' JOIN ' + last_join.tbl + ' already has a USING clause.');
     if (isExpr(on)) {
       last_join.on = on;
     }
     else {
-      if (!last_join.on || (_.isArray(last_join.on))) // Instantiate object, including if it's an empty array from .using().
+      if (!last_join.on || (types.isArray(last_join.on))) // Instantiate object, including if it's an empty array from .using().
         last_join.on = {};
-      _.extend(last_join.on, argsToObject(arguments));
+      extend(last_join.on, argsToObject(arguments));
     }
     return this;
   };
   Select.prototype.using = function(columns) {
     var last_join = this.joins[this.joins.length - 1];
-    if (!_.isEmpty(last_join.on) && !_.isArray(last_join.on))
+    if (!isEmpty(last_join.on) && !types.isArray(last_join.on))
       throw new Error('Error adding clause USING: ' + last_join.left_tbl + ' JOIN ' + last_join.tbl + ' already has an ON clause.');
 
-    if (_.isEmpty(last_join.on))
+    if (isEmpty(last_join.on))
       last_join.on = []; // Using _.isEmpty tolerates overwriting of empty {}.
-    last_join.on = _.union(last_join.on, argsToArray(arguments));
+
+    var argsArray = argsToArray(arguments);
+    argsArray.forEach(function(key) {
+      if (last_join.on.indexOf(key) == -1) last_join.on.push(key);
+    });
+
     return this;
   };
 
@@ -225,7 +297,7 @@
     'intersect': 'INTERSECT', 'intersectAll': 'INTERSECT ALL',
     'except': 'EXCEPT', 'exceptAll': 'EXCEPT ALL'
   };
-  _.forEach(compounds, function(value, key) {
+  Object.keys(compounds).forEach(function(key) {
     Select.prototype[key] = function() {
       var stmts = argsToArray(arguments);
       if (!stmts.length) {
@@ -278,8 +350,11 @@
     if (!this._from)
       return;
     var result = `FROM ${handleTables(this._from, opts)}`;
-    if (this.joins)
-      result += ` ${_.invoke(this.joins, 'toString', opts).join(' ')}`;
+    if (this.joins) {
+      result += ' ' + this.joins.map(function(join) {
+        return join.toString(opts);
+      }.bind(this)).join(' ');
+    }
     return result;
   });
   Select.defineClause('where', function(opts) {
@@ -295,7 +370,8 @@
       return `HAVING ${handleExpression(this._having, opts)}`;
   });
 
-  _.forEach(compounds, function(sql_keyword, clause_id) {
+  Object.keys(compounds).forEach(function(clause_id) {
+    var sql_keyword = compounds[clause_id];
     Select.defineClause(clause_id, function(opts) {
       var arr = this['_' + clause_id];
       if (arr) {
@@ -321,10 +397,10 @@
   sql.insert = sql.insertInto = inherits(Insert, Statement);
   function Insert(tbl, values) {
     if (!(this instanceof Insert)) {
-      if (typeof values == 'object' && !_.isArray(values))
+      if (typeof values == 'object' && !types.isArray(values))
         return new Insert(tbl, values);
       else
-        return new Insert(tbl, argsToArray(_.toArray(arguments).slice(1)));
+        return new Insert(tbl, argsToArray(toArray(arguments).slice(1)));
     }
 
     Insert.super_.call(this, 'insert');
@@ -336,14 +412,14 @@
       this._table = tbl;
 
     if (values) {
-      if (isPlainObject(values) || (_.isArray(values) && isPlainObject(values[0]))) {
+      if (isPlainObject(values) || (types.isArray(values) && isPlainObject(values[0]))) {
         this.values(values);
       }
       else if (values.length) {
         this._split_keys_vals_mode = true;
         this._values = [{}];
-        var val_arr = argsToArray(_.toArray(arguments).slice(1));
-        _.forEach(val_arr, function(key) {
+        var val_arr = argsToArray(toArray(arguments).slice(1));
+        val_arr.forEach(function(key) {
           this._values[0][key] = null;
         }.bind(this));
       }
@@ -353,23 +429,23 @@
   Insert.prototype.values = function values() {
     if (this._split_keys_vals_mode) {
       var outer_arr;
-      if (_.isArray(arguments[0]) && _.isArray(arguments[0][0]))
+      if (types.isArray(arguments[0]) && types.isArray(arguments[0][0]))
         outer_arr = arguments[0];
       else
         outer_arr = [argsToArray(arguments)];
 
-      var keys = _.keys(this._values[0]);
-      _.forEach(outer_arr, function(args, outer_ix) {
+      var keys = Object.keys(this._values[0]);
+      outer_arr.forEach(function(args, outer_ix) {
         if (!this._values[outer_ix])
           this._values[outer_ix] = {};
 
-        _.forEach(keys, function(key, ix) {
+        keys.forEach(function(key, ix) {
           this._values[outer_ix][key] = args[ix];
         }.bind(this));
       }.bind(this));
     }
     else {
-      if (_.isArray(arguments[0]) && isPlainObject(arguments[0][0])) {
+      if (types.isArray(arguments[0]) && isPlainObject(arguments[0][0])) {
         if (!this._values)
           this._values = [];
         this._values = this._values.concat(arguments[0]);
@@ -377,7 +453,7 @@
       else {
         if (!this._values)
           this._values = [{}];
-        _.extend(this._values[0], argsToObject(arguments));
+        extend(this._values[0], argsToObject(arguments));
       }
     }
     return this;
@@ -394,16 +470,19 @@
   });
   Insert.defineClause('columns', function(opts) {
     if (this._values)
-      return '(' + handleColumns(_.keys(this._values[0]), opts) + ')';
+      return '(' + handleColumns(Object.keys(this._values[0]), opts) + ')';
   });
   Insert.defineClause('values', function(opts) {
     if (this._select) {
       return this._select._toString(opts);
     }
     else {
-      var pickOrder = _.keys(this._values[0]);
-      return 'VALUES ' + _.map(this._values, function(values) {
-        return '(' + handleValues(_.values(_.pick(values, pickOrder)), opts).join(', ') + ')';
+      var pickOrder = Object.keys(this._values[0]);
+      return 'VALUES ' + this._values.map(function(values) {
+        var pickValues = pickOrder.map(function(key) {
+          return values[key];
+        });
+        return '(' + handleValues(pickValues, opts).join(', ') + ')';
       }).join(', ');
     }
   });
@@ -413,7 +492,7 @@
   sql.update = inherits(Update, Statement);
   function Update(tbl, values) {
     if (!(this instanceof Update))
-      return new Update(tbl, argsToObject(_.toArray(arguments).slice(1)));
+      return new Update(tbl, argsToObject(toArray(arguments).slice(1)));
 
     Update.super_.call(this, 'update');
     this._table = tbl;
@@ -435,9 +514,9 @@
     return handleTable(this._table, opts);
   });
   Update.defineClause('set', function(opts) {
-    return 'SET ' + _.map(this._values, function(value, key) {
-      return handleColumn(key, opts) + ' = ' + handleValue(value, opts);
-    }).join(', ');
+    return 'SET ' + Object.keys(this._values).map(function(key) {
+      return handleColumn(key, opts) + ' = ' + handleValue(this._values[key], opts);
+    }.bind(this)).join(', ');
   });
   Update.defineClause('where', function(opts) {
     if (this._where)
@@ -479,23 +558,24 @@
 
   // TODO: this seems to not handle... a *lot* of properties
   Statement.prototype.clone = function clone() {
-    var ctor = _.find([Select, Insert, Update, Delete], function(ctor) {
-      return this instanceof ctor;
+    var ctor;
+    [Select, Insert, Update, Delete].forEach(function(fn) {
+      if (this instanceof fn) ctor = fn;
     }.bind(this));
 
-    var stmt = _.extend(new ctor(), this);
+    var stmt = extend(new ctor(), this);
     if (stmt._where)
       stmt._where = stmt._where.clone();
     if (stmt.joins)
       stmt.joins = stmt.joins.slice();
     if (stmt._values) {
-      if (_.isArray(stmt._values)) {
-        stmt._values = _.map(stmt._values, function(val) {
-          return _.clone(val);
+      if (types.isArray(stmt._values)) {
+        stmt._values = stmt._values.map(function(val) {
+          return cloneObj(val);
         });
       }
       else {
-        stmt._values = _.clone(stmt._values);
+        stmt._values = cloneObj(stmt._values);
       }
     }
     return stmt;
@@ -507,8 +587,8 @@
 
     if (!opts)
       opts = {};
-    _.extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
-    _.defaults(opts, default_opts);
+    extend(opts, {'parameterized': true, 'values': [], 'value_ix': 1});
+    opts = applyDefaults(opts);
     var sql = this._toString(opts);
 
     return {'text': sql, 'values': opts.values};
@@ -517,7 +597,7 @@
   Statement.prototype.toString = function toString(opts) {
     if (!opts)
       opts = {};
-    _.defaults(opts, default_opts);
+    opts = applyDefaults(opts);
 
     if (this.prev_stmt)
       return this.prev_stmt.toString(opts);
@@ -526,9 +606,12 @@
   };
 
   Statement.prototype._toString = function(opts) {
-    return _.compact(this.clauses.map(function(clause) {
-      return clause.call(this, opts)
-    }.bind(this))).join(' ');
+    var clauses = [];
+    this.clauses.forEach(function(clause) {
+      var clause = clause.call(this, opts);
+      if (clause) clauses.push(clause);
+    }.bind(this));
+    return clauses.join(' ');
   };
 
   Statement.prototype._add = function _add(arr, name) {
@@ -543,7 +626,7 @@
     if (!this[name])
       this[name] = {};
 
-    _.extend(this[name], obj);
+    extend(this[name], obj);
     return this;
   };
 
@@ -552,7 +635,7 @@
   };
 
   Statement.prototype._addExpression = function _addExpression(args, name) {
-    if (args.length <= 1 && (args[0] == null || _.isEmpty(args[0])))
+    if (args.length <= 1 && (args[0] == null || isEmpty(args[0])))
       return this;
 
     if (!this[name])
@@ -575,7 +658,7 @@
       tbls = argsToArray(args);
     }
 
-    _.forEach(tbls, function(tbl) {
+    tbls.forEach(function(tbl) {
       var left_tbl = this.last_join || (this._from && this._from[this._from.length - 1]);
       this.joins.push(new Join(tbl, left_tbl, on, type));
     }.bind(this));
@@ -604,7 +687,7 @@
       return this.type + ' JOIN ' + tbl;
     
     // Not a natural or cross, check for criteria.
-    if (!on || _.isEmpty(on)) {
+    if (!on || isEmpty(on)) {
       if (sql._joinCriteria) {
         var left_tbl = handleTable(this.left_tbl, opts);
         on = this.autoGenerateOn(tbl, left_tbl);
@@ -615,8 +698,8 @@
     }
 
     // Array value for on indicates join using "using", rather than "on".
-    if (_.isArray(on)) {
-      on = _.map(on, function (column) {
+    if (types.isArray(on)) {
+      on = on.map(function (column) {
         return handleColumn(column);
       }).join(', ');
       return this.type + ' JOIN ' + tbl + ' USING (' + on + ')';
@@ -627,7 +710,7 @@
       on = on.toString(opts);
     }
     else {
-      on = _.map(_.keys(on), function(key) {
+      on = Object.keys(on).map(function(key) {
         return handleColumn(key, opts) + ' = ' + handleColumn(on[key], opts);
       }).join(' AND ')
     }
@@ -636,12 +719,17 @@
 
   // handle an array, a comma-delimited str or separate args
   function argsToArray(args) {
-    if (_.isArray(args[0]))
+    if (types.isArray(args[0])) {
       return args[0];
-    else if (typeof args[0] == 'string' && args[0].indexOf(',') > -1)
-      return _.invoke(args[0].split(','), 'trim');
-    else
-      return _.toArray(args);
+    }
+    else if (typeof args[0] == 'string' && args[0].indexOf(',') > -1) {
+      return args[0].split(',').map(function(arg) {
+        return arg.trim();
+      });
+    }
+    else {
+      return toArray(args);
+    }
   }
 
   function argsToObject(args) {
@@ -655,8 +743,13 @@
   }
 
   function argsToExpressions(args) {
-    var flat_args = _.all(args, function(arg) {
-      return typeof arg != 'object' || arg instanceof val || arg instanceof sql || arg == null;
+    var flat_args = true;
+    Object.keys(args).forEach(function(key) {
+      var arg = args[key];
+      if (!(typeof arg != 'object' || arg instanceof val || arg instanceof sql || arg == null)) {
+        flat_args = false;
+        return;
+      }
     });
     if (flat_args) {
       if (args[0] instanceof sql && args.length == 1)
@@ -666,7 +759,8 @@
     }
     else {
       var exprs = [];
-      _.each(args, function(expr) {
+      Object.keys(args).forEach(function(key) {
+        var expr = args[key];
         if (isExpr(expr))
           exprs.push(expr);
         else
@@ -684,7 +778,7 @@
   function Group(op, expressions) {
     this.op = op;
     this.expressions = [];
-    _.forEach(expressions, function(expr) {
+    expressions.forEach(function(expr) {
       if (isExpr(expr))
         this.expressions.push(expr);
       else
@@ -693,13 +787,15 @@
   }
   sql.Group = Group;
   Group.prototype.clone = function clone() {
-    return new Group(this.op, _.invoke(this.expressions, 'clone'));
+    return new Group(this.op, this.expressions.map(function(expr) {
+      return expr.clone();
+    }));
   };
   Group.prototype.toString = function toString(opts) {
-    opts = opts || _.extend({}, default_opts);
-    var sql = _.map(this.expressions, function(expr) {
-      return expr.toString(opts);
-    }).join(' ' + this.op + ' ');
+    opts = opts || extend({}, default_opts);
+    var sql = Object.keys(this.expressions).map(function(expr) {
+      return this.expressions[expr].toString(opts);
+    }.bind(this)).join(' ' + this.op + ' ');
     if (this.expressions.length > 1 && this.parens !== false)
       sql = '(' + sql + ')';
     return sql;
@@ -733,7 +829,7 @@
       return new Binary(binary_ops[name], col, val);
     }.bind(null, name);
 
-    _.forEach(quantifiers, function(name, quantifier) {
+    quantifiers.forEach(function(name, quantifier) {
       sql[name + quantifier] = function(col, val) {
         return new Binary(binary_ops[name], col, val, quantifier.toUpperCase() + ' ');
       };
@@ -810,10 +906,10 @@
   };
 
   sql['in'] = function(col, list) {
-    if (_.isArray(list) || list instanceof Statement)
+    if (types.isArray(list) || list instanceof Statement)
       return new In(col, list);
     else
-      return new In(col, _.toArray(arguments).slice(1));
+      return new In(col, toArray(arguments).slice(1));
   };
 
   function In(col, list) {
@@ -822,13 +918,13 @@
   }
   sql.In = In;
   In.prototype.clone = function clone() {
-    var list = (this.list instanceof Statement) ? this.list.clone() : _.clone(this.list);
+    var list = (this.list instanceof Statement) ? this.list.clone() : cloneObj(this.list);
     return new In(this.col, list);
   };
   In.prototype.toString = function toString(opts) {
     var col_sql = handleColumn(this.col, opts);
     var sql;
-    if (_.isArray(this.list))
+    if (types.isArray(this.list))
       sql = handleValues(this.list, opts).join(', ');
     else if (this.list instanceof Statement)
       sql = this.list._toString(opts);
@@ -916,9 +1012,10 @@
   sql._handleValue = handleValue;
 
   sql.convert = function(val) {
-    for (var type in sql.conversions)
-      if (_['is' + type].call(_, val))
+    for (var type in sql.conversions) {
+      if (types['is' + type](val))
         return sql.conversions[type](val);
+    }
 
     throw new Error('value is of an unsupported type and cannot be converted to SQL: ' + val);
   }
@@ -999,11 +1096,15 @@
   // Postgres: Table C-1 of http://www.postgresql.org/docs/9.3/static/sql-keywords-appendix.html
   // SQLite: http://www.sqlite.org/lang_keywords.html
   var reserved = ['all', 'analyse', 'analyze', 'and', 'any', 'array', 'as', 'asc', 'asymmetric', 'authorization', 'both', 'case', 'cast', 'check', 'collate', 'collation', 'column', 'constraint', 'create', 'cross', 'current_catalog', 'current_date', 'current_role', 'current_time', 'current_timestamp', 'current_user', 'default', 'deferrable', 'desc', 'distinct', 'do', 'else', 'end', 'except', 'false', 'fetch', 'for', 'foreign', 'freeze', 'from', 'full', 'grant', 'group', 'having', 'ilike', 'in', 'initially', 'inner', 'intersect', 'into', 'is', 'isnull', 'join', 'lateral', 'leading', 'left', 'like', 'limit', 'localtime', 'localtimestamp', 'natural', 'not', 'notnull', 'null', 'offset', 'on', 'only', 'or', 'order', 'outer', 'over', 'overlaps', 'placing', 'primary', 'references', 'returning', 'right', 'select', 'session_user', 'similar', 'some', 'symmetric', 'table', 'then', 'to', 'trailing', 'true', 'union', 'unique', 'user', 'using', 'variadic', 'verbose', 'when', 'where', 'window', 'with', 'abort', 'action', 'add', 'after', 'all', 'alter', 'analyze', 'and', 'as', 'asc', 'attach', 'autoincrement', 'before', 'begin', 'between', 'by', 'cascade', 'case', 'cast', 'check', 'collate', 'column', 'commit', 'conflict', 'constraint', 'create', 'cross', 'current_date', 'current_time', 'current_timestamp', 'database', 'default', 'deferrable', 'deferred', 'delete', 'desc', 'detach', 'distinct', 'drop', 'each', 'else', 'end', 'escape', 'except', 'exclusive', 'exists', 'explain', 'fail', 'for', 'foreign', 'from', 'full', 'glob', 'group', 'having', 'if', 'ignore', 'immediate', 'in', 'index', 'indexed', 'initially', 'inner', 'insert', 'instead', 'intersect', 'into', 'is', 'isnull', 'join', 'key', 'left', 'like', 'limit', 'match', 'natural', 'no', 'not', 'notnull', 'null', 'of', 'offset', 'on', 'or', 'order', 'outer', 'plan', 'pragma', 'primary', 'query', 'raise', 'references', 'regexp', 'reindex', 'release', 'rename', 'replace', 'restrict', 'right', 'rollback', 'row', 'savepoint', 'select', 'set', 'table', 'temp', 'temporary', 'then', 'to', 'transaction', 'trigger', 'union', 'unique', 'update', 'using', 'vacuum', 'values', 'view', 'virtual', 'when', 'where'];
-  reserved = _.object(reserved, reserved);
+  var reserved_obj = {};
+  reserved.forEach(function(val) {
+    reserved_obj[val] = val;
+  });
+  reserved = reserved_obj;
   sql._reserved = reserved;
 
   function isPlainObject(val) {
-    return _.isObject(val) && !_.isArray(val);
+    return types.isObject(val) && !types.isArray(val);
   }
 
 
@@ -1050,7 +1151,7 @@
   sql._extension = function () {
     var ext = subclass(sql);
 
-    _.forEach(_.keys(sql), function(prop_name) {
+    Object.keys(sql).forEach(function(prop_name) {
       ext[prop_name] = sql[prop_name];
     });
 
@@ -1078,7 +1179,7 @@
 
   // http://stackoverflow.com/a/8843181/194758
   function applyNew(cls, args) {
-    args = _.toArray(args);
+    args = toArray(args);
     args.unshift(null);
     return new (cls.bind.apply(cls, args));
   }

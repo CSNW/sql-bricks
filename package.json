@@ -32,9 +32,7 @@
   "engines": {
     "node": "*"
   },
-  "dependencies": {
-    "underscore": "1.4.x"
-  },
+  "dependencies": {},
   "devDependencies": {
     "mocha": "^6.2.2"
   },

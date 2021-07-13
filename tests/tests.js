@@ -2,7 +2,6 @@
 
 var is_common_js = typeof exports != 'undefined';
 
-var _ = is_common_js ? require('underscore') : window._;
 var sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
 
 if (is_common_js) {
@@ -25,8 +24,23 @@ else {
   assert.equal = function(actual, expected) {
     if (actual != expected) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
+  assert._eq = function(actual, expected) {
+    if (typeof actual != 'object') return actual === expected;
+
+    var actual_keys = Object.keys(actual), expected_keys = Object.keys(expected);
+    if (actual_keys.length != expected_keys.length)
+      return false;
+
+    var result = true;
+    actual_keys.forEach(function(key) {
+      if (!assert._eq(actual[key], expected[key])) result = false;
+    });
+
+    return result;
+  };
   assert.deepEqual = function(actual, expected) {
-    if (!_.isEqual(actual, expected)) throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
+    if (!assert._eq(actual, expected))
+      throw new Error(JSON.stringify(actual) + ' == ' + JSON.stringify(expected));
   };
   assert.throws = function(fn) {
     try {
@@ -48,7 +62,10 @@ var and = sql.and, or = sql.or, like = sql.like, not = sql.not, $in = sql.in,
   union = sql.union;
 
 var alias_expansions = {'usr': 'user', 'psn': 'person', 'addr': 'address'};
-var table_to_alias = _.invert(alias_expansions);
+var table_to_alias = {};
+Object.keys(alias_expansions).forEach(function(key) {
+  table_to_alias[alias_expansions[key]] = key;
+});
 sql.aliasExpansions(alias_expansions);
 
 sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
@@ -773,7 +790,7 @@ describe('SQL Bricks', function() {
         for (var col in criteria) {
           var val = criteria[col];
           var expr;
-          if (_.isArray(val))
+          if (val instanceof Array)
             expr = or(val.map(function(val) { return eq(col, val); }));
           else
             expr = eq(col, val);

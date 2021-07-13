@@ -762,7 +762,7 @@ select().from('psn').join('addr', {'psn.addr_id': 'addr.id'});
 
         <pre>
 var alias_expansions = {'psn': 'person', 'addr': 'address', 'zip': 'zipcode', 'usr': 'user'};
-var table_to_alias = _.invert(alias_expansions);
+var table_to_alias = invert(alias_expansions);
 sql.joinCriteria(function(left_tbl, left_alias, right_tbl, right_alias) {
   var criteria = {};
   criteria[left_alias + '.' + table_to_alias[right_tbl] + '_id'] = right_alias + '.id';
