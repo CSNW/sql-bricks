@@ -11,6 +11,7 @@ SQL Bricks.js is a transparent, schemaless library for building and composing SQ
 - Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
 - Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
 - Single [source file](sql-bricks.js) (~1,100 lines)
+- No production dependencies and only 1 dev dependency (Mocha.js)
 
 Comparison with other SQL-generation JS libraries:
 
@@ -56,8 +57,6 @@ library         | lines | files | schema     | other notes
   * A way to augment your connector with your SQL query builder (has a sql-bricks plugin)
 
 # Use
-
-SQLBricks' only dependency is [Underscore.js](http://underscorejs.org/).
 
 In the browser:
 
