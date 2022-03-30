@@ -974,6 +974,23 @@ describe('SQL Bricks', function() {
       assert(ext.select.prototype.clauses !== sql.select.prototype.clauses)
     });
   });
+
+  describe('defineClause', function() {
+    // this extension mechanism is used by sql-bricks-postgres
+    it('should be able to inject clauses after other clauses', function() {
+      var Insert = sql.insert;
+      Insert.defineClause('returning', function(opts) {
+        return `RETURNING test_column`;
+      }, {after: 'values'});
+
+      check(insert('user', {'id': 33, 'name': 'Fred'}),
+        "INSERT INTO \"user\" (id, name) VALUES (33, 'Fred') RETURNING test_column");
+
+      // remove the newly-added clause, so subsequent INSERT tests won't fail
+      var ix = Insert.prototype.clauses.findIndex(clause => clause.clause_id == 'returning');
+      Insert.prototype.clauses.splice(ix, 1);
+    });
+  })
 });
 
 function check(stmt, expected) {
