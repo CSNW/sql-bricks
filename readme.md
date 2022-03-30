@@ -4,12 +4,12 @@
 
 SQL Bricks.js is a transparent, schemaless library for building and composing SQL statements.
 
-- The core library supports all [SQL-92](http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for `SELECT`, `INSERT`, `UPDATE` and `DELETE` (with the exception of asc/desc/collate options for `orderBy()`, see [#73](https://github.com/CSNW/sql-bricks/issues/73))
+- The core library supports all [SQL-92](https://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt) clauses for `SELECT`, `INSERT`, `UPDATE` and `DELETE` (with the exception of asc/desc/collate options for `orderBy()`, see [#73](https://github.com/CSNW/sql-bricks/issues/73))
   - Postgres extensions are at https://github.com/Suor/sql-bricks-postgres
   - MySQL extensions are at https://github.com/tamarzil/mysql-bricks
   - SQLite extensions are at https://github.com/CSNW/sql-bricks-sqlite
-- Over [200 tests](http://csnw.github.io/sql-bricks/browser-tests.html)
-- Easy-to-use, comprehensive [docs](http://csnw.github.io/sql-bricks)
+- Over [200 tests](https://csnw.github.io/sql-bricks/browser-tests.html)
+- Easy-to-use, comprehensive [docs](https://csnw.github.io/sql-bricks)
 - Single [source file](sql-bricks.js) (~1,100 lines)
 - No production dependencies and only 1 dev dependency (Mocha.js)
 
@@ -88,7 +88,7 @@ While `toString()` is slightly easier, `toParams()` is recommended because:
 
 # Examples
 
-The [SQLBricks API](http://csnw.github.io/sql-bricks/) is comprehensive, supporting all of SQL-92 for select/insert/update/delete. It is also quite flexible; in most places arguments can be passed in a variety of ways (arrays, objects, separate arguments, etc). That said, here are some of the most common operations:
+The [SQLBricks API](https://csnw.github.io/sql-bricks/) is comprehensive, supporting all of SQL-92 for select/insert/update/delete. It is also quite flexible; in most places arguments can be passed in a variety of ways (arrays, objects, separate arguments, etc). That said, here are some of the most common operations:
 
 ```javascript
 // convenience variables (for node; for the browser: "var sql = SqlBricks;")
@@ -136,6 +136,6 @@ update('person', {'first_name': 'Fred'}).where({'last_name': 'Flintstone'}).toPa
 // {"text": "UPDATE person SET first_name = ? WHERE last_name = ?", "values": ["Fred", "Flintstone"]}
 ```
 
-Full documentation: http://csnw.github.io/sql-bricks
+Full documentation: https://csnw.github.io/sql-bricks
 
 License: [MIT](LICENSE.md)

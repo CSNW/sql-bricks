@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="viewport" content="target-densitydpi=device-dpi" />
   <meta name="HandheldFriendly" content="true"/>
-  <link rel="canonical" href="http://csnw.github.io/sql-bricks" />
+  <link rel="canonical" href="https://csnw.github.io/sql-bricks" />
   <title>SQL Bricks</title>
   <style>
     body {
@@ -129,7 +129,7 @@
     SQL Bricks.js
     
     <ul class="toc_section">
-      <li>&raquo; <a href="http://github.com/CSNW/sql-bricks">GitHub Repository</a></li>
+      <li>&raquo; <a href="https://github.com/CSNW/sql-bricks">GitHub Repository</a></li>
     </ul>
     <a class="toc_title" href="#">
       Introduction
@@ -235,8 +235,8 @@
     <p id="introduction">SQL Bricks was created to help eliminate DRY violations in SQL-heavy applications. SQL statements can be easily stored, cloned, modified and passed around to other parts of an application and they can generate both parameterized and non-parameterized SQL.</p>
     <p>In addition, SQL Bricks contains a few conveniences to aid in re-use and to make SQL generation a little less of a chore: automatic quoting of columns that collide with keywords (<tt>order</tt>, <tt>desc</tt>, etc) &amp; columns that contain capital letters, automatic <a href="#aliasExpansions">alias expansion</a>, user-supplied <a href="#joinCriteria">join criteria</a> functions.</p>
     <p>SQL Bricks differs from similar libraries in that it does not require a schema and it is designed to be transparent, matching SQL so faithfully that developers with knowledge of SQL will pick up the API extremely quickly.</p>
-    <p>The core SQL Bricks library supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="http://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">SQL-92</a></b> (additional clauses supported by <b>Postgres</b>, <b>MySQL</b>, and <b>SQLite</b> are in the dialect-specific extension libraries, <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a>, <a href="https://github.com/tamarzil/mysql-bricks">mysql-bricks</a> and <a href="https://github.com/CSNW/sql-bricks-sqlite">sql-bricks-sqlite</a>, respectively). Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
-    <p>The <a href="http://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html">200 tests</a> are available for your perusal.</p>
+    <p>The core SQL Bricks library supports the four CRUD statements (<tt>SELECT</tt>, <tt>INSERT</tt>, <tt>UPDATE</tt>, <tt>DELETE</tt>) and all of their clauses as defined by <b><a href="https://www.contrib.andrew.cmu.edu/~shadow/sql/sql1992.txt">SQL-92</a></b> (additional clauses supported by <b>Postgres</b>, <b>MySQL</b>, and <b>SQLite</b> are in the dialect-specific extension libraries, <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a>, <a href="https://github.com/tamarzil/mysql-bricks">mysql-bricks</a> and <a href="https://github.com/CSNW/sql-bricks-sqlite">sql-bricks-sqlite</a>, respectively). Adding support for other SQL statements (<tt>CREATE</tt>, <tt>ALTER TABLE</tt>, etc) would clutter the library without providing much real benefit.</p>
+    <p>The <a href="https://github.com/CSNW/sql-bricks">source</a> is on GitHub and over <a href="browser-tests.html">200 tests</a> are available for your perusal.</p>
 
     <h2>Related Libraries</h2>
     <p><a href="https://github.com/tamarzil/mysql-bricks">mysql-bricks</a> adds mysql-dialect extensions, like <tt>INSERT ... ON DUPLICATE KEY UPDATE ...</tt>, <tt>INSERT IGNORE ...</tt>, <tt>LIMIT (SELECT / UPDATE / DELETE)</tt>, <tt>OFFSET</tt>, <tt>ORDER BY (UPDATE / DELETE)</tt></p>
@@ -248,7 +248,7 @@
     <div id="documentation">
       <h2 id="use">Use</h2>
       <p>
-        <p>In <a href="http://nodejs.org">node</a>, SQL Bricks can be accessed with <tt>require('sql-bricks')</tt>. In the browser, it can be accessed with the <tt>SqlBricks</tt> global. SQL Bricks' only dependency is <a href="http://underscorejs.org">Underscore.js</a>. Throughout this documentation, it is assumed that SQL Bricks is set to a local <tt>sql</tt> variable and that top-level functions are also set to local variables (for example: <tt>var sql = SqlBricks, select = sql.select, or = sql.or, $in = sql.in;</tt>).</p>
+        <p>In <a href="https://nodejs.org">node</a>, SQL Bricks can be accessed with <tt>require('sql-bricks')</tt>. In the browser, it can be accessed with the <tt>SqlBricks</tt> global. SQL Bricks has no production dependencies; its only dev dependency is Mocha.js. Throughout this documentation, it is assumed that SQL Bricks is set to a local <tt>sql</tt> variable and that top-level functions are also set to local variables (for example: <tt>var sql = SqlBricks, select = sql.select, or = sql.or, $in = sql.in;</tt>).</p>
         <p>The API is designed to mirror SQL faithfully, with SQL keywords represented by chainable camelCase method and non-keywords passed as string arguments. To make the API easier to use, objects can also be passed in wherever there are key/value pairs.</p>
         <pre>
 select().from('person')
@@ -268,7 +268,7 @@ select('*').from('person').where({'billing_addr_id': sql('mailing_addr_id')})
 // SELECT * FROM person WHERE billing_addr_id = mailing_addr_id
 </pre>
       </p>
-      <p>Multiple <b>values</b> can be passed in as separate arguments or as an array (this example uses the postgres <a href="http://www.postgresql.org/docs/9.4/static/functions-json.html#FUNCTIONS-JSONB-OP-TABLE">jsonb contains operator</a>, <tt>@&gt;</tt>):
+      <p>Multiple <b>values</b> can be passed in as separate arguments or as an array (this example uses the postgres <a href="https://www.postgresql.org/docs/9.4/static/functions-json.html#FUNCTIONS-JSONB-OP-TABLE">jsonb contains operator</a>, <tt>@&gt;</tt>):
         <pre>
 select().where(sql('field @> $ and field @> $', { key: 'value' }, { key: 'value2' })).toParams()
 // {"text": "SELECT * WHERE field @> $1 and field @> $2", "values": [{"key": "value"}, {"key": "value2"}]}
@@ -840,7 +840,7 @@ select('person.order AS person_order').from('person');
       <h2 id="acknowledgments">Acknowledgments</h2>
       <p>Thanks to <a href="https://github.com/Suor">Suor</a> for taking over maintenance of the postgres-dialect extension library: <a href="https://github.com/Suor/sql-bricks-postgres">sql-bricks-postgres</a>. Thanks to <a href="https://github.com/tamarzil">tamarzil</a> for creating and maintaining the mysql-dialect extension library: <a href="https://github.com/tamarzil/mysql-bricks">mysql-bricks</a></p>
       <p>Huge thanks to <a href="https://github.com/brianc">Brian C</a> for his hard work supporting and maintaining <a href="https://github.com/brianc/node-sql">node-sql</a> and <a href="https://github.com/brianc/node-postgres">node-postgres</a> and especially for his patience with me and my pull requests.</p>
-      <p>Also, thanks to <a href="https://github.com/jashkenas">jashkenas</a> for <a href="https://github.com/jashkenas/underscore">underscore</a>, which SQL Bricks depends on -- and for its documentation, which served as a model and template for these docs.</p>
+      <p>Also, thanks to <a href="https://github.com/jashkenas">jashkenas</a> for Underscore.js and its documentation, which served as a model and template for these docs.</p>
 
       <h2 id="license">License</h2>
       <p>SQL Bricks is <a href="https://github.com/CSNW/sql-bricks/raw/master/LICENSE.md">MIT licensed</a>.</p>
@@ -849,7 +849,6 @@ select('person.order AS person_order').from('person');
   </div>
 
   <!-- include it so you can play in the console -->
-  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
   <script type="text/javascript" src="sql-bricks.js"></script>
   <script>
     sql = SqlBricks;
