@@ -25,7 +25,7 @@
 
   function cloneObj(obj) {
     if (types.isArray(obj))
-      return [].concat(arr);
+      return [].concat(obj);
     else
       return extend({}, obj);
   }
