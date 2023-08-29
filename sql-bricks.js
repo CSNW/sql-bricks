@@ -1035,19 +1035,33 @@
   sql._handleTables = handleTables;
 
   function handleTable(table, opts) {
-    return handleColumn(expandAlias(table), opts);
+    if (typeof table === 'string') {
+      return sql._prepareTableIdentifier(table, opts);
+    }
+    return prepareTableIdentifier(table, opts);
   }
-  sql._handleTable = handleTable;
+
+  function prepareTableIdentifier(table, opts) {
+    return prepareColumnIdentifier(expandAlias(table), opts);
+  }
+  sql._prepareTableIdentifier = prepareTableIdentifier;
 
   function handleColumns(cols, opts) {
     return cols.map(function(col) { return handleColumn(col, opts); }).join(', ');
   }
   sql._handleColumns = handleColumns;
 
+  var function_regex = /\(/g;
+  function handleColumn(expr, opts) {
+    if (typeof expr === 'string' && !function_regex.test(expr)) {
+      return sql._prepareColumnIdentifier(expr, opts);
+    }
+    return prepareColumnIdentifier(expr, opts);
+  }
   // handles prefixes before a '.' and suffixes after a ' '
   // for example: 'tbl.order AS tbl_order' -> 'tbl."order" AS tbl_order'
   var unquoted_regex = /^[\w\.]+(( AS)? \w+)?$/i;
-  function handleColumn(expr, opts) {
+  function prepareColumnIdentifier(expr, opts) {
     if (expr instanceof Statement)
       return expr._toNestedString(opts);
 
@@ -1062,7 +1076,7 @@
     else
       return expr;
   }
-  sql._handleColumn = handleColumn;
+  sql._prepareColumnIdentifier = prepareColumnIdentifier;
 
   function quoteColOrTbl(expr) {
     var prefix = '';

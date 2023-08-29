@@ -961,6 +961,83 @@ describe('SQL Bricks', function() {
     });
   });
 
+  describe('overriding _prepareTableIdentifier', function() {
+    var sql;
+    var oldFunc;
+    before('override _prepareTableIdentifier', function() {
+      sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
+      oldFunc = sql._prepareTableIdentifier;
+      sql._prepareTableIdentifier = function(expr, opts) {
+        if (typeof expr === 'string') {
+          var snake = expr.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`).replace(/^_/, '');
+          return oldFunc(snake, opts);
+        }
+        return oldFunc(expr, opts);
+      };
+    });
+
+    after('restore _prepareTableIdentifier', function() {
+      sql._prepareTableIdentifier = oldFunc;
+    });
+    it('should allow camelCase conversions', function() {
+      check(sql.select('myColumn').from('myTable'),
+            'SELECT "myColumn" FROM my_table')
+    });
+  });
+
+  describe('overriding _prepareColumnIdentifier', function() {
+    var sql;
+    var oldFunc;
+    before('override _prepareColumnIdentifier', function() {
+      sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
+      oldFunc = sql._prepareColumnIdentifier;
+      sql._prepareColumnIdentifier = function(expr, opts) {
+        var snake = expr.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`).replace(/^_/, '');
+        return oldFunc(snake, opts);
+      };
+    });
+
+    after('restore _prepareColumnIdentifier', function() {
+      sql._prepareColumnIdentifier = oldFunc;
+    });
+    it('should allow camelCase conversions', function() {
+      check(sql.select('myColumn').from('my_table'),
+            'SELECT my_column FROM my_table')
+    });
+    it('should not affect table names', function() {
+      check(sql.select('myColumn').from('myTable'),
+            'SELECT my_column FROM "myTable"')
+    });
+    it('should not affect functions', function() {
+      check(sql.select('COUNT(*)').from('myTable'),
+            'SELECT COUNT(*) FROM "myTable"')
+    });
+  });
+
+  describe('overriding _prepareColumnIdentifier 2', function() {
+    var sql;
+    var oldFunc;
+    before('override _prepareColumnIdentifier', function() {
+      sql = is_common_js ? require('../sql-bricks.js') : window.SqlBricks;
+      oldFunc = sql._prepareColumnIdentifier;
+      sql._prepareColumnIdentifier = function(expr, opts) {
+		if (/[A-Z]/g.test(expr)) {
+          var snake = expr.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`).replace(/^_/, '');
+          return oldFunc(`${snake} AS "${expr}"`, opts);
+		}
+		return oldFunc(expr, opts);
+      };
+    });
+
+    after('restore _prepareColumnIdentifier', function() {
+      sql._prepareColumnIdentifier = oldFunc;
+    });
+    it('should allow emitting complex expressions', function() {
+      check(sql.select('myColumn').from('my_table'),
+            'SELECT my_column AS "myColumn" FROM my_table')
+    });
+  });
+
   describe('_extension()', function() {
     it('should shield base', function() {
       var ext = sql._extension();
