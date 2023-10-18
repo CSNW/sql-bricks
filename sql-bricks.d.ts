@@ -365,6 +365,7 @@ interface SqlBricksFn {
   isNull(column: string): SqlBricks.WhereExpression
   isNotNull(column: string): SqlBricks.WhereExpression
   like(column: string, value: any, escapeStr?: string): SqlBricks.WhereExpression
+  regexp_like(column: string, value: any, escapeStr?: string): SqlBricks.WhereExpression
   exists(stmt: any): SqlBricks.WhereExpression
   in(column: string, stmt: SqlBricks.SelectStatement): SqlBricks.WhereExpression
   in(column: string, ...values: any[]): SqlBricks.WhereExpression
